@@ -21,6 +21,8 @@ This project would not be possible without his work.
 -Kyle Krafka, Oct. 24, 2012
 */
 
+// TODO: Would it be better to use TCX files?  I believe they can hold heart rate data, while GPX cannot!
+
 // Set your username and password for Garmin Connect here.
 // WARNING: This data will be send in cleartext over HTTP
 // so be sure you're on a private connection, and be aware
@@ -38,6 +40,8 @@ $current_date = date('Y-m-d'); // TODO is this string format correct!?
 
 // End of user edits.
 
+$limit_maximum = 100; // Maximum number of activities you can request at once
+
 // URLs for various services
 $urlGCLogin    = 'http://connect.garmin.com/signin';
 $urlGCSearch   = 'http://connect.garmin.com/proxy/activity-search-service-1.0/json/activities?';
@@ -50,183 +54,157 @@ curl( $urlGCLogin );
 curl( $urlGCLogin . '?login=login&login:signInButton=Sign%20In&javax.faces.ViewState=j_id1&login:loginUsernameField='.$username.'&login:password='.$password.'&login:rememberMe=on');
 
 
-// Now we search GC for the latest activity.
-// We support calling multiples from command line if specified,
-// otherwise, only pull the last activity.
+$csv_file = fopen($current_date . '_garmin_connect_backup.csv', 'w+');
+
+$activities_directory = './' . $current_date . '_garmin_connect_backup';
+// Create directory for gpx files
+if (!file_exists($activities_directory)) {
+    mkdir($activities_directory);
+}
+
+// Write header to CSV
+fwrite( $csv_file, "Activity ID,Activity Name,Description,Begin Timestamp,Begin Timestamp (Raw Milliseconds),End Timestamp,End Timestamp (Raw Milliseconds),Device,Activity Parent,Activity Type,Event Type,Activity Time Zone,Max. Elevation,Max. Elevation (Raw),Begin Latitude (Decimal Degrees Raw),Begin Longitude (Decimal Degrees Raw),End Latitude (Decimal Degrees Raw),End Longitude (Decimal Degrees Raw),Average Moving Speed,Average Moving Speed (Raw),Max. Heart Rate (bpm),Average Heart Rate (bpm),Max. Speed,Max. Speed (Raw),Calories,Calories (Raw),Duration (h:m:s),Duration (Raw Seconds),Moving Duration (h:m:s),Moving Duration (Raw Seconds),Average Speed,Average Speed (Raw),Distance,Distance (Raw),Max. Heart Rate (bpm),Min. Elevation,Min. Elevation (Raw),Elevation Gain,Elevation Gain (Raw),Elevation Loss,Elevation Loss (Raw)\n" );
+
+$download_all = false;
 if ( ! empty( $argc ) && ( is_numeric( $argv[1] ) ) ) {
-	$search_opts = array(
-		'start' => 0,
-		'limit' => $argv[1] // Maximum of 100... 400 return status if over 100.
-		);
+	$total_to_download = $argv[1];
+} else if ( ! empty( $argc ) && strcasecmp($argv[1], "all") == 0 ) {
+	// If the user wants to download all activities, first download one,
+	// then the result of that request will tell us how many are available
+	// so we will modify the variables then.
+	$total_to_download = 1;
+	$download_all = true;
 } else {
+	$total_to_download = 1;
+}
+$total_downloaded = 0;
+
+// This loop will download multiple chunks if needed
+while( $total_downloaded < $total_to_download ) {
+	$num_to_download = ($total_to_download - $total_downloaded > 100) ? 100 : ($total_to_download - $total_downloaded); // Maximum of 100... 400 return status if over 100.  So download 100 or whatever remains if less than 100.
+
+	// Now we search GC for the latest activity.
+	// We support calling multiples from command line if specified,
+	// otherwise, only pull the last activity.                        <-- TODO: update doc
 	$search_opts = array(
-		'start' => 0,
-		'limit' => 1
+		'start' => $total_downloaded,
+		'limit' => $num_to_download
 		);
+
+	$result = curl( $urlGCSearch . http_build_query( $search_opts ) );
+	$json = json_decode( $result );
+
+	if ( ! $json ) {
+		echo "Error: ";	
+		switch(json_last_error()) {
+			case JSON_ERROR_DEPTH:
+				echo ' - Maximum stack depth exceeded';
+				break;
+			case JSON_ERROR_CTRL_CHAR:
+				echo ' - Unexpected control character found';
+				break;
+			case JSON_ERROR_SYNTAX:
+				echo ' - Syntax error, malformed JSON';
+				break;
+		}
+		echo PHP_EOL;
+		var_dump( $result );
+		die();
+	}
+
+	$search = $json->{'results'}->{'search'};
+
+	if ( $download_all ) {
+		$total_to_download = intval( $search->{'totalFound'} );
+		$download_all = false;
+	}
+
+	// Pull out just the list of activites
+	$activities = $json->{'results'}->{'activities'};
+
+	// Process each activity.
+	foreach ( $activities as $a ) {
+		// Display which entry we're working on.
+		print "Garmin Connect activity: [" . $a->{'activity'}->{'activityId'} . "] ";
+		print $a->{'activity'}->{'beginTimestamp'}->{'display'}  . ": ";
+		print $a->{'activity'}->{'activityName'}->{'value'} . "\n";
+
+		// Write data to CSV
+		// TODO: put these in a better order
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'activityId'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'activityName'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'activityDescription'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'beginTimestamp'}->{'display'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'beginTimestamp'}->{'millis'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'endTimestamp'}->{'display'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'endTimestamp'}->{'millis'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'device'}->{'display'} . " " . $a->{'activity'}->{'device'}->{'version'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'activityType'}->{'parent'}->{'display'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'activityType'}->{'display'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'eventType'}->{'display'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'activityTimeZone'}->{'display'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'maxElevation'}->{'withUnit'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'maxElevation'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'beginLatitude'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'beginLongitude'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'endLatitude'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'endLongitude'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'weightedMeanMovingSpeed'}->{'display'}) . "\"," ); // The units vary between Minutes per Mile and mph, but withUnit always displays "Minutes per Mile"
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'weightedMeanMovingSpeed'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'maxHeartRate'}->{'display'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'weightedMeanHeartRate'}->{'display'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'maxSpeed'}->{'display'}) . "\"," ); // The units vary between Minutes per Mile and mph, but withUnit always displays "Minutes per Mile"
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'maxSpeed'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'sumEnergy'}->{'display'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'sumEnergy'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'sumElapsedDuration'}->{'display'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'sumElapsedDuration'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'sumMovingDuration'}->{'display'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'sumMovingDuration'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'weightedMeanSpeed'}->{'withUnit'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'weightedMeanSpeed'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'sumDistance'}->{'withUnit'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'sumDistance'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'minHeartRate'}->{'display'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'maxElevation'}->{'withUnit'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'maxElevation'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'gainElevation'}->{'withUnit'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'gainElevation'}->{'value'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'lossElevation'}->{'withUnit'}) . "\"," );
+		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'lossElevation'}->{'value'}) . "\"");
+		fwrite( $csv_file, "\n");
+
+		// Download the GPX file from GC.
+		print "\tDownloading .GPX ... ";
+
+		$gpx_filename = $activities_directory . '/activity_' . $a->{'activity'}->{'activityId'} . '.gpx';
+		$save_file = fopen( $gpx_filename, 'w+' );
+		$curl_opts = array(
+			CURLOPT_FILE => $save_file
+			);
+		curl( $urlGCActivity . $a->{'activity'}->{'activityId'} . '?full=true', array(), array(), $curl_opts );
+		fclose( $save_file );
+
+		// Now we need to validate the .GPX.  If we have an activity without GPS data, GC still kicks out a .GPX file for it.
+		// As I ride a trainer in the bad months, this is a common occurance for me, as I would imagine it would be for anyone
+		// using a treadmill as well.
+		$gpx = simplexml_load_file( $gpx_filename, 'SimpleXMLElement', LIBXML_NOCDATA );
+		$gpxdataexists = ( count( $gpx->trk->trkseg->trkpt ) > 0);
+
+		if ( $gpxdataexists ) {
+			print "Done. GPX data saved.\n";
+		} else {
+			// We don't need to create a track, as we have no GPS track data. :(
+			print "Done. No track points found.\n";
+		}
+	}
+
+	$total_downloaded += $num_to_download;
+
+// end while for multiple chunks
 }
 
-$result = curl( $urlGCSearch . http_build_query( $search_opts ) );
-$json = json_decode( $result );
-
-if ( ! $json ) {
-	echo "Error: ";	
-	switch(json_last_error()) {
-		case JSON_ERROR_DEPTH:
-			echo ' - Maximum stack depth exceeded';
-			break;
-		case JSON_ERROR_CTRL_CHAR:
-			echo ' - Unexpected control character found';
-			break;
-		case JSON_ERROR_SYNTAX:
-			echo ' - Syntax error, malformed JSON';
-			break;
-	}
-	echo PHP_EOL;
-	var_dump( $result );
-	die();
-}
-
-// Info on the search, for future paging.
-// @TODO: Add in support for loading all activities
-$search     = $json->{'results'}->{'search'};
-
-// Pull out just the list of activites
-$activities = $json->{'results'}->{'activities'};
-
-// Process each activity.
-foreach ( $activities as $a ) {
-	// Display which entry we're working on.
-	print "Garmin Connect activity: [" . $a->{'activity'}->{'activityId'} . "] ";
-	print $a->{'activity'}->{'beginTimestamp'}->{'display'}  . ": ";
-	print $a->{'activity'}->{'activityName'}->{'value'} . "\n";
-
-	// GC activity URL - to append to DM message
-	$activity_gc_url = 'http://connect.garmin.com/activity/' . $a->{'activity'}->{'activityId'};
-
-	/*
-	// Change the activityType into something that DM understands
-	switch( $a->{'activity'}->{'activityType'}->{'key'} ) {
-		case 'running':
-		case 'street_running':
-		case 'track_running':
-		case 'trail_running':
-		case 'treadmill_running':
-			$activity_type = 'running';
-			break;
-
-		case 'cycling':
-		case 'cyclocross':
-		case 'downhill_biking':
-		case 'indoor_cycling':
-		case 'mountain_biking':
-		case 'recumbent_cycling':
-		case 'road_biking':
-		case 'track_cycling':
-			$activity_type = 'cycling';
-			break;
-
-		case 'swimming':
-		case 'lap_swimming':
-		case 'open_water_swimming':
-			$activity_type = 'swimming';
-			break;
-
-		case 'walking':
-		case 'casual_walking':
-		case 'speed_walking':
-		case 'snow_shoe':
-		case 'hiking':
-			$activity_type = 'walking';
-			break;
-
-		default:
-			$activity_type = 'fitness';
-			break;
-	}
-
-	// Generate the DM Entry Name
-	if ( $a->{'activity'}->{'activityName'}->{'value'} && $a->{'activity'}->{'activityName'}->{'value'} != 'Untitled' ) {
-		$activity_name = $a->{'activity'}->{'activityName'}->{'value'} . ' (' . $a->{'activity'}->{'activityId'} . ')';
-	} else {
-		$activity_name = $a->{'activity'}->{'activityId'};
-	}
-
-	// Start building our DM entry array.
-	$dm_entry = array();
-	// Add in our Auth Token as it needs to be part of the post fields.
-	$dm_entry{'oauth_token'} = $oauth;
-
-	// Add message
-	if ( $a->{'activity'}->{'activityDescription'}->{'value'} ) {
-		$dm_entry{'message'} = $a->{'activity'}->{'activityDescription'}->{'value'};
-		$dm_entry{'message'} .= "\nOriginal activity at: " . $activity_gc_url;
-	} else {
-		$dm_entry{'message'} = "\nOriginal activity at: " . $activity_gc_url;
-	}
-
-	// add geolocation:
-	if ( $a->{'activity'}->{'beginLatitude'}->{'value'} && $a->{'activity'}->{'beginLongitude'}->{'value'} ) {
-		$dm_entry{'lat'} = $a->{'activity'}->{'beginLatitude'}->{'value'};
-		$dm_entry{'lon'} = $a->{'activity'}->{'beginLongitude'}->{'value'};
-	}
-
-	$dm_entry{'workout[activity_type]'} = $activity_type;
-	$dm_entry{'workout[completed_at]'} = date( "c", strtotime( $a->{'activity'}->{'endTimestamp'}->{'display'} ) );
-	$dm_entry{'workout[distance][value]'} = $a->{'activity'}->{'sumDistance'}->{'display'};
-	$dm_entry{'workout[distance][units]'} = $a->{'activity'}->{'sumDistance'}->{'uom'};
-	$dm_entry{'workout[duration]'} = $a->{'activity'}->{'sumElapsedDuration'}->{'value'};
-	//$dm_entry{'workout[felt]'} = '';
-	$dm_entry{'workout[calories]'} = $a->{'activity'}->{'sumEnergy'}->{'display'};
-	$dm_entry{'workout[title]'} = $activity_name;
-	*/
-
-	// Download the GPX file from GC.
-	print "\tDownloading .GPX ... ";
-
-	/* TEMPORARY ONLY DOWNLOAD CYCLING
-	switch( $a->{'activity'}->{'activityType'}->{'key'} ) {
-		case 'cycling':
-		case 'cyclocross':
-		case 'downhill_biking':
-		case 'indoor_cycling':
-		case 'mountain_biking':
-		case 'recumbent_cycling':
-		case 'road_biking':
-		case 'track_cycling':
-			$activity_type = 'cycling';
-			break;
-		default:
-			$activity_type = 'fitness';
-			break;
-	}
-
-	if(strcmp($activity_type, 'fitness')==0) {
-		print "\tUh oh!  It's not a cycling track.  I'm going to skip it.\n";
-		continue;
-	}
-	// END TEMPORARY */
-
-	$gpx_filename = './activities/activity_' . $a->{'activity'}->{'activityId'} . '.gpx';
-	$save_file = fopen( $gpx_filename, 'w+' );
-	$curl_opts = array(
-		CURLOPT_FILE => $save_file
-		);
-	curl( $urlGCActivity . $a->{'activity'}->{'activityId'} . '?full=true', array(), array(), $curl_opts );
-	fclose( $save_file );
-
-	// Now we need to validate the .GPX.  If we have an activity without GPS data, GC still kicks out a .GPX file for it.
-	// As I ride a trainer in the bad months, this is a common occurance for me, as I would imagine it would be for anyone
-	// using a treadmill as well.
-	$gpx = simplexml_load_file( $gpx_filename, 'SimpleXMLElement', LIBXML_NOCDATA );
-	$gpxdataexists = ( count( $gpx->trk->trkseg->trkpt ) > 0);
-
-	if ( $gpxdataexists ) {
-		print "Done. GPX data saved.\n";
-	} else {
-		// We don't need to create a track, as we have no GPS track data. :(
-		print "Done. No track points found.\n";
-	}
-}
+fclose($csv_file);
 
 print "\n\n";
 // End
