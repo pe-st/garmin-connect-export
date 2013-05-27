@@ -1,15 +1,40 @@
 #!/usr/bin/php
 <?php
+/*
+This script will backup your personal Garmin Connect data.
+Activity records and details will go in a CSV file called     <-- TODO
+'YYYY-MM-DD_garmin_connect_backup.csv' saved to the current
+working directory.  GPX files containing track data,
+activity title, and activity descriptions, will be saved in a
+folder within the current working directory, called
+'YYYY-MM-DD_garmin_connect_backup_gpx'.
+
+Code is intended to be run from the command line as so:
+	php -f backup_garmin_connect.php [how_many]
+where [how_many] is how many recent activities to download.
+The default is 1 and 'all' will download all activities.      <-- TODO
+
+Code based on Garmin Connect export to Dailymile code
+on http://www.ciscomonkey.net/gc-to-dm-export/ by rmullins@ciscomonkey.net
+This project would not be possible without his work.
+
+-Kyle Krafka, Oct. 24, 2012
+*/
 
 // Set your username and password for Garmin Connect here.
+// WARNING: This data will be send in cleartext over HTTP
+// so be sure you're on a private connection, and be aware
+// that any remote parties storing HTTP requests will have
+// your username and password right there.
+// It might be best just to temporarily change your password
+// at https://my.garmin.com/mygarmin/customers/updateAccountInformation.faces
+// to use this script.
 $username = 'username';
 $password = 'password';
 
-// Set your oauth key for dailymile here.
-$oauth = 'You need to generate this for the DM API';
-
 // Set this if you need it on your installation.
-date_default_timezone_set('America/Chicago');
+date_default_timezone_set('America/New_York');
+$current_date = date('Y-m-d'); // TODO is this string format correct!?
 
 // End of user edits.
 
@@ -17,8 +42,6 @@ date_default_timezone_set('America/Chicago');
 $urlGCLogin    = 'http://connect.garmin.com/signin';
 $urlGCSearch   = 'http://connect.garmin.com/proxy/activity-search-service-1.0/json/activities?';
 $urlGCActivity = 'http://connect.garmin.com/proxy/activity-service-1.1/gpx/activity/';
-$urlDMPut      = 'https://api.dailymile.com/';
-$urlDMGet      = 'http://api.dailymile.com/';
 
 // Initially, we need to get a valid session cookie, so we pull the login page.
 curl( $urlGCLogin );
@@ -33,7 +56,7 @@ curl( $urlGCLogin . '?login=login&login:signInButton=Sign%20In&javax.faces.ViewS
 if ( ! empty( $argc ) && ( is_numeric( $argv[1] ) ) ) {
 	$search_opts = array(
 		'start' => 0,
-		'limit' => $argv[1]
+		'limit' => $argv[1] // Maximum of 100... 400 return status if over 100.
 		);
 } else {
 	$search_opts = array(
@@ -80,6 +103,7 @@ foreach ( $activities as $a ) {
 	// GC activity URL - to append to DM message
 	$activity_gc_url = 'http://connect.garmin.com/activity/' . $a->{'activity'}->{'activityId'};
 
+	/*
 	// Change the activityType into something that DM understands
 	switch( $a->{'activity'}->{'activityType'}->{'key'} ) {
 		case 'running':
@@ -154,9 +178,34 @@ foreach ( $activities as $a ) {
 	//$dm_entry{'workout[felt]'} = '';
 	$dm_entry{'workout[calories]'} = $a->{'activity'}->{'sumEnergy'}->{'display'};
 	$dm_entry{'workout[title]'} = $activity_name;
+	*/
 
 	// Download the GPX file from GC.
 	print "\tDownloading .GPX ... ";
+
+	/* TEMPORARY ONLY DOWNLOAD CYCLING
+	switch( $a->{'activity'}->{'activityType'}->{'key'} ) {
+		case 'cycling':
+		case 'cyclocross':
+		case 'downhill_biking':
+		case 'indoor_cycling':
+		case 'mountain_biking':
+		case 'recumbent_cycling':
+		case 'road_biking':
+		case 'track_cycling':
+			$activity_type = 'cycling';
+			break;
+		default:
+			$activity_type = 'fitness';
+			break;
+	}
+
+	if(strcmp($activity_type, 'fitness')==0) {
+		print "\tUh oh!  It's not a cycling track.  I'm going to skip it.\n";
+		continue;
+	}
+	// END TEMPORARY */
+
 	$gpx_filename = './activities/activity_' . $a->{'activity'}->{'activityId'} . '.gpx';
 	$save_file = fopen( $gpx_filename, 'w+' );
 	$curl_opts = array(
@@ -169,52 +218,14 @@ foreach ( $activities as $a ) {
 	// As I ride a trainer in the bad months, this is a common occurance for me, as I would imagine it would be for anyone
 	// using a treadmill as well.
 	$gpx = simplexml_load_file( $gpx_filename, 'SimpleXMLElement', LIBXML_NOCDATA );
-	$gpxupload = ( count( $gpx->trk->trkseg->trkpt ) > 0);
+	$gpxdataexists = ( count( $gpx->trk->trkseg->trkpt ) > 0);
 
-	if ( $gpxupload ) {
-		print "Done. GPX will be uploaded.\n";
-
-		// Now we need to create a track on DM
-		print "\tCreating dailymile track\n";
-		$curl_post = array(
-			'oauth_token' => $oauth,
-			'name' => $activity_name,
-			'activity_type' => $activity_type
-			);
-		$result = curl( $urlDMPut . 'routes.json', $curl_post );
-		$json = json_decode( $result );
-
-		// Get the route ID
-		$dm_route_id = $json->{'id'};
-		$dm_entry{'workout[route_id]'} = $dm_route_id;
-		print "\t\tcreated route $dm_route_id\n";
-
-		// Now we need to upload our .GPX file
-		$put_file = fopen( $gpx_filename, 'r' );
-		$curl_opts = array( 
-			CURLOPT_PUT => 1,
-			CURLOPT_INFILE => $put_file,
-			CURLOPT_INFILESIZE => filesize( $gpx_filename )
-			);
-
-		$curl_header = array(
-			'Content-Type' => 'application/gpx+xml'
-			);
-
-		print "\t\tuploading $gpx_filename as gpx track\n";
-		curl( $urlDMPut . 'routes/' . $dm_route_id . '/track.json?oauth_token=' . $oauth, array(), $curl_header, $curl_opts );
-		fclose( $put_file );
-		print "\t\tfinished updating gpx track\n";
+	if ( $gpxdataexists ) {
+		print "Done. GPX data saved.\n";
 	} else {
 		// We don't need to create a track, as we have no GPS track data. :(
 		print "Done. No track points found.\n";
 	}
-
-	print "\tCreating dailymile workout entry\n";
-	$result = curl( $urlDMPut . 'entries.json', $dm_entry );
-	$json = json_decode( $result );
-
-	print "\t\tcreated workout id " . $json->{'id'} . " (" . $json->{'url'} . ")\n";
 }
 
 print "\n\n";
