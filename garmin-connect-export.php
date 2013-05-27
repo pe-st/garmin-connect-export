@@ -1,46 +1,39 @@
 #!/usr/bin/php
 <?php
 /*
-This script will backup your personal Garmin Connect data.
-Activity records and details will go in a CSV file called     <-- TODO
-'YYYY-MM-DD_garmin_connect_backup.csv' saved to the current
-working directory.  GPX files containing track data,
-activity title, and activity descriptions, will be saved in a
-folder within the current working directory, called
-'YYYY-MM-DD_garmin_connect_backup_gpx'.
+File: garmin-connect-export.php
+Author: Kyle Krafka (https://github.com/kjkjava/)
+Original Code: http://www.ciscomonkey.net/gc-to-dm-export/
+Date (Original Code): March 28, 2011
+Date (Project Started): October 2012
+Date (Latest Update): May 27, 2013
 
-Code is intended to be run from the command line as so:
-	php -f backup_garmin_connect.php [how_many]
-where [how_many] is how many recent activities to download.
-The default is 1 and 'all' will download all activities.      <-- TODO
-
-Code based on Garmin Connect export to Dailymile code
-on http://www.ciscomonkey.net/gc-to-dm-export/ by rmullins@ciscomonkey.net
-This project would not be possible without his work.
-
--Kyle Krafka, Oct. 24, 2012
+Description: 	Use this script to export your fitness data from Garmin Connect.
+				See README.md for more information.
 */
 
-// TODO: Would it be better to use TCX files?  I believe they can hold heart rate data, while GPX cannot!
+// Begin user edits.
 
 // Set your username and password for Garmin Connect here.
-// WARNING: This data will be send in cleartext over HTTP
+// WARNING: This data will be sent in cleartext over HTTP
 // so be sure you're on a private connection, and be aware
 // that any remote parties storing HTTP requests will have
-// your username and password right there.
-// It might be best just to temporarily change your password
+// your username and password on record.
+// For the paranoid, you might want to temporarily change your password
 // at https://my.garmin.com/mygarmin/customers/updateAccountInformation.faces
-// to use this script.
+// to use this script.  Also, you might want to revert this
+// file back to 'username' and 'password' when you're done.
 $username = 'username';
 $password = 'password';
 
 // Set this if you need it on your installation.
 date_default_timezone_set('America/New_York');
-$current_date = date('Y-m-d'); // TODO is this string format correct!?
+$current_date = date('Y-m-d');
 
 // End of user edits.
 
-$limit_maximum = 100; // Maximum number of activities you can request at once
+// Maximum number of activities you can request at once.  Set and enforced by Garmin.
+$limit_maximum = 100;
 
 // URLs for various services
 $urlGCLogin    = 'http://connect.garmin.com/signin';
@@ -53,16 +46,15 @@ curl( $urlGCLogin );
 // Now we'll actually login
 curl( $urlGCLogin . '?login=login&login:signInButton=Sign%20In&javax.faces.ViewState=j_id1&login:loginUsernameField='.$username.'&login:password='.$password.'&login:rememberMe=on');
 
-
-$csv_file = fopen($current_date . '_garmin_connect_backup.csv', 'w+');
-
-$activities_directory = './' . $current_date . '_garmin_connect_backup';
-// Create directory for gpx files
+$activities_directory = './' . $current_date . '_garmin_connect_export';
+// Create directory for GPX files
 if (!file_exists($activities_directory)) {
     mkdir($activities_directory);
 }
 
-// Write header to CSV
+$csv_file = fopen($activities_directory . '/activities.csv', 'w+');
+
+// Write header to CSV file
 fwrite( $csv_file, "Activity ID,Activity Name,Description,Begin Timestamp,Begin Timestamp (Raw Milliseconds),End Timestamp,End Timestamp (Raw Milliseconds),Device,Activity Parent,Activity Type,Event Type,Activity Time Zone,Max. Elevation,Max. Elevation (Raw),Begin Latitude (Decimal Degrees Raw),Begin Longitude (Decimal Degrees Raw),End Latitude (Decimal Degrees Raw),End Longitude (Decimal Degrees Raw),Average Moving Speed,Average Moving Speed (Raw),Max. Heart Rate (bpm),Average Heart Rate (bpm),Max. Speed,Max. Speed (Raw),Calories,Calories (Raw),Duration (h:m:s),Duration (Raw Seconds),Moving Duration (h:m:s),Moving Duration (Raw Seconds),Average Speed,Average Speed (Raw),Distance,Distance (Raw),Max. Heart Rate (bpm),Min. Elevation,Min. Elevation (Raw),Elevation Gain,Elevation Gain (Raw),Elevation Loss,Elevation Loss (Raw)\n" );
 
 $download_all = false;
@@ -79,13 +71,11 @@ if ( ! empty( $argc ) && ( is_numeric( $argv[1] ) ) ) {
 }
 $total_downloaded = 0;
 
-// This loop will download multiple chunks if needed
+// This while loop will download data from the server in multiple chunks, if necessary
 while( $total_downloaded < $total_to_download ) {
 	$num_to_download = ($total_to_download - $total_downloaded > 100) ? 100 : ($total_to_download - $total_downloaded); // Maximum of 100... 400 return status if over 100.  So download 100 or whatever remains if less than 100.
 
-	// Now we search GC for the latest activity.
-	// We support calling multiples from command line if specified,
-	// otherwise, only pull the last activity.                        <-- TODO: update doc
+	// Query Garmin Connect
 	$search_opts = array(
 		'start' => $total_downloaded,
 		'limit' => $num_to_download
@@ -115,11 +105,13 @@ while( $total_downloaded < $total_to_download ) {
 	$search = $json->{'results'}->{'search'};
 
 	if ( $download_all ) {
+		// Modify $total_to_download based on how many activities the server reports
 		$total_to_download = intval( $search->{'totalFound'} );
+		// Do it only once
 		$download_all = false;
 	}
 
-	// Pull out just the list of activites
+	// Pull out just the list of activities
 	$activities = $json->{'results'}->{'activities'};
 
 	// Process each activity.
@@ -130,7 +122,6 @@ while( $total_downloaded < $total_to_download ) {
 		print $a->{'activity'}->{'activityName'}->{'value'} . "\n";
 
 		// Write data to CSV
-		// TODO: put these in a better order
 		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'activityId'}) . "\"," );
 		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'activityName'}->{'value'}) . "\"," );
 		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'activityDescription'}->{'value'}) . "\"," );
@@ -174,8 +165,9 @@ while( $total_downloaded < $total_to_download ) {
 		fwrite( $csv_file, "\"" . str_replace("\"", "\"\"", $a->{'activity'}->{'lossElevation'}->{'value'}) . "\"");
 		fwrite( $csv_file, "\n");
 
-		// Download the GPX file from GC.
-		print "\tDownloading .GPX ... ";
+		// Download the GPX file from Garmin Connect
+		// TODO: Consider using TCX files?  Does Garmin Connect include heart rate data in TCX downloads?
+		print "\tDownloading GPX file... ";
 
 		$gpx_filename = $activities_directory . '/activity_' . $a->{'activity'}->{'activityId'} . '.gpx';
 		$save_file = fopen( $gpx_filename, 'w+' );
@@ -185,28 +177,26 @@ while( $total_downloaded < $total_to_download ) {
 		curl( $urlGCActivity . $a->{'activity'}->{'activityId'} . '?full=true', array(), array(), $curl_opts );
 		fclose( $save_file );
 
-		// Now we need to validate the .GPX.  If we have an activity without GPS data, GC still kicks out a .GPX file for it.
-		// As I ride a trainer in the bad months, this is a common occurance for me, as I would imagine it would be for anyone
-		// using a treadmill as well.
+		// Validate the GPX data.  If we have an activity without GPS data (e.g. running on a treadmill),
+		// Garmin Connect still kicks out a GPX, but there is only activity information, no GPS data.
 		$gpx = simplexml_load_file( $gpx_filename, 'SimpleXMLElement', LIBXML_NOCDATA );
 		$gpxdataexists = ( count( $gpx->trk->trkseg->trkpt ) > 0);
 
 		if ( $gpxdataexists ) {
 			print "Done. GPX data saved.\n";
 		} else {
-			// We don't need to create a track, as we have no GPS track data. :(
 			print "Done. No track points found.\n";
 		}
 	}
 
 	$total_downloaded += $num_to_download;
 
-// end while for multiple chunks
+// End while loop for multiple chunks
 }
 
 fclose($csv_file);
 
-print "\n\n";
+print "Done!\n\n";
 // End
 
 function curl( $url, $post = array(), $head = array(), $opts = array() )
