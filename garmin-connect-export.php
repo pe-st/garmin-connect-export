@@ -58,9 +58,9 @@ $csv_file = fopen($activities_directory . '/activities.csv', 'w+');
 fwrite( $csv_file, "Activity ID,Activity Name,Description,Begin Timestamp,Begin Timestamp (Raw Milliseconds),End Timestamp,End Timestamp (Raw Milliseconds),Device,Activity Parent,Activity Type,Event Type,Activity Time Zone,Max. Elevation,Max. Elevation (Raw),Begin Latitude (Decimal Degrees Raw),Begin Longitude (Decimal Degrees Raw),End Latitude (Decimal Degrees Raw),End Longitude (Decimal Degrees Raw),Average Moving Speed,Average Moving Speed (Raw),Max. Heart Rate (bpm),Average Heart Rate (bpm),Max. Speed,Max. Speed (Raw),Calories,Calories (Raw),Duration (h:m:s),Duration (Raw Seconds),Moving Duration (h:m:s),Moving Duration (Raw Seconds),Average Speed,Average Speed (Raw),Distance,Distance (Raw),Max. Heart Rate (bpm),Min. Elevation,Min. Elevation (Raw),Elevation Gain,Elevation Gain (Raw),Elevation Loss,Elevation Loss (Raw)\n" );
 
 $download_all = false;
-if ( ! empty( $argc ) && ( is_numeric( $argv[1] ) ) ) {
+if ( $argc > 1 && ( is_numeric( $argv[1] ) ) ) {
 	$total_to_download = $argv[1];
-} else if ( ! empty( $argc ) && strcasecmp($argv[1], "all") == 0 ) {
+} else if ( $argc > 1 && strcasecmp($argv[1], "all") == 0 ) {
 	// If the user wants to download all activities, first download one,
 	// then the result of that request will tell us how many are available
 	// so we will modify the variables then.
