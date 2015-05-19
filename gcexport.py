@@ -7,8 +7,9 @@ Date: April 28, 2015
 
 Description:	Use this script to export your fitness data from Garmin Connect.
 				See README.md for more information.
-Usage:			python gcexport.py [how_many] [directory]
+Usage:			python gcexport.py [how_many] [format] [directory]
 					how_many - number of recent activities to download, or "all" (default: 1)
+					format - export format, can be gpx, tcx or original (default: gpx)
 					directory - the directory to export to (default: "YYYY-MM-DD_garmin_connect_export")
 """
 
@@ -22,15 +23,23 @@ from os import mkdir
 from xml.dom.minidom import parseString
 
 import urllib2, cookielib, json
+from fileinput import filename
 
-if len(argv) > 3:
+if len(argv) > 4:
 	raise Exception('Too many arguments.')
 
-if len(argv) > 2:
-	activities_directory = argv[2]
+if len(argv) > 3:
+	activities_directory = argv[3]
 else:
 	current_date = datetime.now().strftime('%Y-%m-%d')
 	activities_directory = './' + current_date + '_garmin_connect_export'
+
+if len(argv) > 2:
+	operationFormat = argv[2]
+	if operationFormat != 'gpx' and operationFormat != 'tcx' and operationFormat != 'original':
+		raise Exception('format can only be ''gpx'', ''tcx'' or ''original''.')
+else:
+	operationFormat = 'gpx'
 
 cookie_jar = cookielib.CookieJar()
 opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
@@ -67,7 +76,9 @@ limit_maximum = 100
 url_gc_login     = 'https://sso.garmin.com/sso/login?service=https%3A%2F%2Fconnect.garmin.com%2Fpost-auth%2Flogin&webhost=olaxpw-connect04&source=https%3A%2F%2Fconnect.garmin.com%2Fen-US%2Fsignin&redirectAfterAccountLoginUrl=https%3A%2F%2Fconnect.garmin.com%2Fpost-auth%2Flogin&redirectAfterAccountCreationUrl=https%3A%2F%2Fconnect.garmin.com%2Fpost-auth%2Flogin&gauthHost=https%3A%2F%2Fsso.garmin.com%2Fsso&locale=en_US&id=gauth-widget&cssUrl=https%3A%2F%2Fstatic.garmincdn.com%2Fcom.garmin.connect%2Fui%2Fcss%2Fgauth-custom-v1.1-min.css&clientId=GarminConnect&rememberMeShown=true&rememberMeChecked=false&createAccountShown=true&openCreateAccount=false&usernameShown=false&displayNameShown=false&consumeServiceTicket=false&initialFocus=true&embedWidget=false&generateExtraServiceTicket=false'
 url_gc_post_auth = 'https://connect.garmin.com/post-auth/login?'
 url_gc_search    = 'http://connect.garmin.com/proxy/activity-search-service-1.0/json/activities?'
-url_gc_activity  = 'http://connect.garmin.com/proxy/activity-service-1.1/gpx/activity/'
+url_gc_gpx_activity  = 'http://connect.garmin.com/proxy/activity-service-1.1/gpx/activity/'
+url_gc_tcx_activity  = 'http://connect.garmin.com/proxy/activity-service-1.1/tcx/activity/'
+url_gc_original_activity  = 'http://connect.garmin.com/proxy/download-service/files/activity/'
 
 # Initially, we need to get a valid session cookie, so we pull the login page.
 http_req(url_gc_login)
@@ -150,8 +161,20 @@ while total_downloaded < total_to_download:
 		print a['activity']['beginTimestamp']['display']  + ':',
 		print a['activity']['activityName']['value']
 
-		gpx_filename = activities_directory + '/activity_' + a['activity']['activityId'] + '.gpx'
-		if isfile(gpx_filename):
+		if operationFormat == 'gpx':
+			filename = activities_directory + '/activity_' + a['activity']['activityId'] + '.gpx'
+			downloadUrl = url_gc_gpx_activity + a['activity']['activityId'] + '?full=true'
+			fileMode = 'w'
+		elif operationFormat == 'tcx':
+			filename = activities_directory + '/activity_' + a['activity']['activityId'] + '.tcx'
+			downloadUrl = url_gc_tcx_activity + a['activity']['activityId'] + '?full=true'
+			fileMode = 'w'
+		else:
+			filename = activities_directory + '/activity_' + a['activity']['activityId'] + '.zip'
+			downloadUrl = url_gc_original_activity + a['activity']['activityId']
+			fileMode = 'wb'
+
+		if isfile(filename):
 			print '\tGPX file already exists; skipping...'
 			continue
 
@@ -159,11 +182,11 @@ while total_downloaded < total_to_download:
 		# If the download fails (e.g., due to timeout), this script will die, but nothing
 		# will have been written to disk about this activity, so just running it again
 		# should pick up where it left off.
-		print '\tDownloading GPX file... ',
+		print '\tDownloading file... ',
 
-		gpx_data = http_req(url_gc_activity + a['activity']['activityId'] + '?full=true')
-		save_file = open(gpx_filename, 'w')
-		save_file.write(gpx_data)
+		data = http_req(downloadUrl)
+		save_file = open(filename, fileMode)
+		save_file.write(data)
 		save_file.close()
 
 		# Write data to CSV.
@@ -216,16 +239,19 @@ while total_downloaded < total_to_download:
 
 		csv_file.write(csv_record.encode('utf8'))
 
-		# Validate the GPX data. If we have an activity without GPS data (e.g., running on a treadmill),
-		# Garmin Connect still kicks out a GPX, but there is only activity information, no GPS data.
-		# N.B. You can omit the XML parse (and the associated log messages) to speed things up.
-		gpx = parseString(gpx_data)
-		gpx_data_exists = len(gpx.getElementsByTagName('trkpt')) > 0
+		if operationFormat == 'gpx':
+			# Validate the GPX data. If we have an activity without GPS data (e.g., running on a treadmill),
+			# Garmin Connect still kicks out a GPX, but there is only activity information, no GPS data.
+			# N.B. You can omit the XML parse (and the associated log messages) to speed things up.
+			gpx = parseString(data)
+			gpx_data_exists = len(gpx.getElementsByTagName('trkpt')) > 0
 
-		if gpx_data_exists:
-			print 'Done. GPX data saved.'
+			if gpx_data_exists:
+				print 'Done. GPX data saved.'
+			else:
+				print 'Done. No track points found.'
 		else:
-			print 'Done. No track points found.'
+			print 'Done. Data saved.'
 	total_downloaded += num_to_download
 # End while loop for multiple chunks.
 
