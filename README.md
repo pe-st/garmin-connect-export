@@ -9,15 +9,17 @@ This script will backup your personal Garmin Connect data. All downloaded data w
 
 Usage
 -----
-Usage: `python gcexport.py [how_many] [directory]`
+Usage: `python gcexport.py [how_many] [format] [directory]`
 
 `[how_many]` specifies the number of recent activities you wish to download. You may also specify `all` to download everything. The default is `1`.
+
+`[format]` specifies the desired export format. Valid formats are `gpx`, `tcx` or `original`. The default is `gpx`. When using `original`, a ZIP file is exported that contains the initial input format (e.g., FIT files).
 
 `[directory]` specifies the output directory for the CSV file and the GPX files. The default is a subdirectory with the format `YYYY-MM-DD_garmin_connect_export`. If the directory does not exist, it will be created. If it does exist, activities with existing GPX files will be skipped and the CSV file will be appended to. This should make it easy to restart failed downloads without repeating work. This also allows you to specify a master directory so that this script can be run regularly (to maintain an up-to-date backup) without re-downloading everything.
 
 Example: `python gcexport.py all` will download all of your data to a dated directory.
 
-Alternatively, you may run it with `./gcexport.py [how_many] [directory]` if you set the file as executable (i.e., `chmod u+x gcexport.py`).
+Alternatively, you may run it with `./gcexport.py [how_many] [format] [directory]` if you set the file as executable (i.e., `chmod u+x gcexport.py`).
 
 Of course, you must have Python installed to run this. Most Mac and Linux users should already have it. Also, you should have some basic command line experience.
 
