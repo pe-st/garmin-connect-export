@@ -9,7 +9,7 @@ Description:	Use this script to export your fitness data from Garmin Connect.
 				See README.md for more information.
 Usage:			python gcexport.py [how_many] [format] [directory]
 					how_many - number of recent activities to download, or "all" (default: 1)
-					format - export format, can be gpx, tcx or original (default: gpx)
+					format - export format; can be "gpx," "tcx," or "original" (default: gpx)
 					directory - the directory to export to (default: "YYYY-MM-DD_garmin_connect_export")
 """
 
@@ -35,11 +35,11 @@ else:
 	activities_directory = './' + current_date + '_garmin_connect_export'
 
 if len(argv) > 2:
-	operationFormat = argv[2]
-	if operationFormat != 'gpx' and operationFormat != 'tcx' and operationFormat != 'original':
-		raise Exception('format can only be ''gpx'', ''tcx'' or ''original''.')
+	data_format = argv[2]
+	if data_format != 'gpx' and data_format != 'tcx' and data_format != 'original':
+		raise Exception('Format can only be "gpx," "tcx," or "original."')
 else:
-	operationFormat = 'gpx'
+	data_format = 'gpx'
 
 cookie_jar = cookielib.CookieJar()
 opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
@@ -62,7 +62,7 @@ def http_req(url, post=None, headers={}):
 
 print 'Welcome to Garmin Connect Exporter!'
 
-# Create directory for GPX files.
+# Create directory for data files.
 if isdir(activities_directory):
 	print 'Warning: Output directory already exists. Will skip already-downloaded files and append to the CSV file.'
 
@@ -161,35 +161,35 @@ while total_downloaded < total_to_download:
 		print a['activity']['beginTimestamp']['display']  + ':',
 		print a['activity']['activityName']['value']
 
-		if operationFormat == 'gpx':
+		if data_format == 'gpx':
 			filename = activities_directory + '/activity_' + a['activity']['activityId'] + '.gpx'
-			downloadUrl = url_gc_gpx_activity + a['activity']['activityId'] + '?full=true'
-			fileMode = 'w'
-		elif operationFormat == 'tcx':
+			download_url = url_gc_gpx_activity + a['activity']['activityId'] + '?full=true'
+			file_mode = 'w'
+		elif data_format == 'tcx':
 			filename = activities_directory + '/activity_' + a['activity']['activityId'] + '.tcx'
-			downloadUrl = url_gc_tcx_activity + a['activity']['activityId'] + '?full=true'
-			fileMode = 'w'
+			download_url = url_gc_tcx_activity + a['activity']['activityId'] + '?full=true'
+			file_mode = 'w'
 		else:
 			filename = activities_directory + '/activity_' + a['activity']['activityId'] + '.zip'
-			downloadUrl = url_gc_original_activity + a['activity']['activityId']
-			fileMode = 'wb'
+			download_url = url_gc_original_activity + a['activity']['activityId']
+			file_mode = 'wb'
 
 		if isfile(filename):
-			print '\tGPX file already exists; skipping...'
+			print '\tData file already exists; skipping...'
 			continue
 
-		# Download the GPX file from Garmin Connect.
+		# Download the data file from Garmin Connect.
 		# If the download fails (e.g., due to timeout), this script will die, but nothing
 		# will have been written to disk about this activity, so just running it again
 		# should pick up where it left off.
 		print '\tDownloading file... ',
 
-		data = http_req(downloadUrl)
-		save_file = open(filename, fileMode)
+		data = http_req(download_url)
+		save_file = open(filename, file_mode)
 		save_file.write(data)
 		save_file.close()
 
-		# Write data to CSV.
+		# Write stats to CSV.
 		empty_record = '"",'
 
 		csv_record = ''
@@ -239,8 +239,8 @@ while total_downloaded < total_to_download:
 
 		csv_file.write(csv_record.encode('utf8'))
 
-		if operationFormat == 'gpx':
-			# Validate the GPX data. If we have an activity without GPS data (e.g., running on a treadmill),
+		if data_format == 'gpx':
+			# Validate GPX data. If we have an activity without GPS data (e.g., running on a treadmill),
 			# Garmin Connect still kicks out a GPX, but there is only activity information, no GPS data.
 			# N.B. You can omit the XML parse (and the associated log messages) to speed things up.
 			gpx = parseString(data)
@@ -251,7 +251,8 @@ while total_downloaded < total_to_download:
 			else:
 				print 'Done. No track points found.'
 		else:
-			print 'Done. Data saved.'
+			# TODO: Consider validating other formats.
+			print 'Done.'
 	total_downloaded += num_to_download
 # End while loop for multiple chunks.
 
