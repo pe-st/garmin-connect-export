@@ -35,7 +35,7 @@ else:
 	activities_directory = './' + current_date + '_garmin_connect_export'
 
 if len(argv) > 2:
-	data_format = argv[2]
+	data_format = argv[2].lower()
 	if data_format != 'gpx' and data_format != 'tcx' and data_format != 'original':
 		raise Exception('Format can only be "gpx," "tcx," or "original."')
 else:
@@ -52,9 +52,9 @@ def http_req(url, post=None, headers={}):
 		request.add_header(header_key, header_value)
 	if post:
 		post = urlencode(post)  # Convert dictionary to POST parameter string.
-	response = opener.open(request, data=post)
+	response = opener.open(request, data=post)  # This line may throw a urllib2.HTTPError.
 
-	# N.B. urllib2 will follow any 302 redirects.
+	# N.B. urllib2 will follow any 302 redirects. Also, the "open" call above may throw a urllib2.HTTPError which is checked for below.
 	if response.getcode() != 200:
 		raise Exception('Bad return code (' + response.getcode() + ') for: ' + url)
 
@@ -96,7 +96,7 @@ for cookie in cookie_jar:
 		break
 
 if not login_ticket:
-	raise Exception('Did not get a ticket cookie. Cannot log in.')
+	raise Exception('Did not get a ticket cookie. Cannot log in. Did you enter the correct username and password?')
 
 # Chop of 'TGT-' off the beginning, prepend 'ST-0'.
 login_ticket = 'ST-0' + login_ticket[4:]
@@ -182,9 +182,26 @@ while total_downloaded < total_to_download:
 		# If the download fails (e.g., due to timeout), this script will die, but nothing
 		# will have been written to disk about this activity, so just running it again
 		# should pick up where it left off.
-		print '\tDownloading file... ',
+		print '\tDownloading file...',
 
-		data = http_req(download_url)
+		try:
+			data = http_req(download_url)
+		except urllib2.HTTPError as e:
+			# Handle expected (though unfortunate) error codes; die on unexpected ones.
+			if e.code == 500 and data_format == 'tcx':
+				# Garmin will give an internal server error (HTTP 500) when downloading TCX files if the original was a manual GPX upload.
+				# Writing an empty file prevents this file from being redownloaded, similar to the way GPX files are saved even when there are no tracks.
+				# One could be generated here, but that's a bit much. Use the GPX format if you want actual data in every file, as I believe Garmin provides a GPX file for every activity.
+				print 'Writing empty file since Garmin did not generate a TCX file for this activity...',
+				data = ''
+			elif e.code == 404 and data_format == 'original':
+				# For manual activities (i.e., entered in online without a file upload), there is no original file.
+				# Write an empty file to prevent redownloading it.
+				print 'Writing empty file since there was no original activity data...',
+				data = ''
+			else:
+				raise Exception('Failed. Got an unexpected HTTP error (' + str(e.code) + ').')
+
 		save_file = open(filename, file_mode)
 		save_file.write(data)
 		save_file.close()
