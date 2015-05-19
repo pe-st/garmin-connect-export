@@ -13,7 +13,7 @@ Usage: `python gcexport.py [how_many] [directory]`
 
 `[how_many]` specifies the number of recent activities you wish to download. You may also specify `all` to download everything. The default is `1`.
 
-`[directory]` specifies the output directory for the CSV file and the GPX files. The default is a subdirectory with the format `YYYY-MM-DD_garmin_connect_export`. If the directory does not exist, it will be created. If it does exist, activities with existing GPX files will be skipped and the CSV file will be appended to. This should make it easy to restart failed downloads without repeating work.
+`[directory]` specifies the output directory for the CSV file and the GPX files. The default is a subdirectory with the format `YYYY-MM-DD_garmin_connect_export`. If the directory does not exist, it will be created. If it does exist, activities with existing GPX files will be skipped and the CSV file will be appended to. This should make it easy to restart failed downloads without repeating work. This also allows you to specify a master directory so that this script can be run regularly (to maintain an up-to-date backup) without re-downloading everything.
 
 Example: `python gcexport.py all` will download all of your data to a dated directory.
 
@@ -35,12 +35,16 @@ This script is for personal use only. It simulates a standard user session (i.e.
 
 History
 -------
-The original project was written in PHP (now in the `old` directory), based on "Garmin Connect export to Dailymile" code at http://www.ciscomonkey.net/gc-to-dm-export/. It no longer works due to the way Garmin handles logins. It could be updated, but I decided to rewrite everything in Python for the latest version.
+The original project was written in PHP (now in the `old` directory), based on "Garmin Connect export to Dailymile" code at http://www.ciscomonkey.net/gc-to-dm-export/ (link has been down for a while). It no longer works due to the way Garmin handles logins. It could be updated, but I decided to rewrite everything in Python for the latest version.
 
 Contributions
 -------------
-Contributions are welcome, particularly if this script stops working with Garmin Connect. You might want to open a GitHub Issue first.
+Contributions are welcome, particularly if this script stops working with Garmin Connect. You may consider opening a GitHub Issue first. New features, however simple, are encouraged.
+
+License
+-------
+[MIT](https://github.com/kjkjava/garmin-connect-export/blob/master/LICENSE) &copy; 2015 Kyle Krafka
 
 Thank You
 ---------
-Thanks for using this script and I hope you find it as useful as I do!
+Thanks for using this script and I hope you find it as useful as I do! :smile:
