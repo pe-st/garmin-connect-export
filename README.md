@@ -13,17 +13,41 @@ If you have many activities, you may find that this script crashes with an "Oper
 
 Usage
 -----
-Usage: `python gcexport.py [how_many] [format] [directory]`
+```
+usage: gcexport.py [-h] [-v] [--version] [--username [USERNAME]]
+                   [--password [PASSWORD]] [-c [COUNT]]
+                   [-f [{tcx,gpx,origin}]] [-d [DIRECTORY]] [-u]
 
-`[how_many]` specifies the number of recent activities you wish to download. You may also specify `all` to download everything. The default is `1`.
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --verbose         increase output verbosity
+  --version             print version and exit
+  --username [USERNAME]
+                        your garmin connect username. If not give you will be
+                        prompted to enter
+  --password [PASSWORD]
+                        your garmin connect password. If not give you will be
+                        prompted to enter
+  -c [COUNT], --count [COUNT]
+                        number of recent activities to download, or 'all'
+                        (default: 1)
+  -f [{tcx,gpx,origin}], --format [{tcx,gpx,origin}]
+                        export format; can be 'gpx', 'tcx', or 'original'
+                        (default: origin)
+  -d [DIRECTORY], --directory [DIRECTORY]
+                        directory - the directory to export to (default:
+                        'YYYY-MM-DD_garmin_connect_export')
+  -u, --unzip           if downloading zip files (format: origin) unzips the
+                        file and removes the .zip file
+```
 
-`[format]` specifies the desired export format. Valid formats are `gpx`, `tcx` or `original`. The default is `gpx`. When using `original`, a ZIP file is exported that contains the initial input format (e.g., FIT files).
+Examples:  
+`python gcexport.py --count all` will download all of your data to a dated directory.
 
-`[directory]` specifies the output directory for the CSV file and the GPX files. The default is a subdirectory with the format `YYYY-MM-DD_garmin_connect_export`. If the directory does not exist, it will be created. If it does exist, activities with existing GPX files will be skipped and the CSV file will be appended to. This should make it easy to restart failed downloads without repeating work. This also allows you to specify a master directory so that this script can be run regularly (to maintain an up-to-date backup) without re-downloading everything.
+`python gcexport.py -d ~/MyActivities -c 3  -u  --username user --password ********` will download last three (new) activities into ~/MyActivities directory.
 
-Example: `python gcexport.py all` will download all of your data to a dated directory.
 
-Alternatively, you may run it with `./gcexport.py [how_many] [format] [directory]` if you set the file as executable (i.e., `chmod u+x gcexport.py`).
+Alternatively, you may run it with `./gcexport.py` if you set the file as executable (i.e., `chmod u+x gcexport.py`).
 
 Of course, you must have Python installed to run this. Most Mac and Linux users should already have it. Also, you should have some basic command line experience.
 
