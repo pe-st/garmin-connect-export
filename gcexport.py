@@ -170,7 +170,9 @@ while total_downloaded < total_to_download:
 	for a in activities:
 		# Display which entry we're working on.
 		print 'Garmin Connect activity: [' + a['activity']['activityId'] + ']',
-		print a['activity']['beginTimestamp']['display']  + ':',
+		print a['activity']['beginTimestamp']['display'] + ', ',
+		print a['activity']['sumElapsedDuration']['display'] + ', ',
+		print a['activity']['sumDistance']['withUnit'] + ':',
 		print a['activity']['activityName']['value']
 
 		if args.format == 'gpx':
