@@ -24,6 +24,7 @@ from xml.dom.minidom import parseString
 
 import urllib2, cookielib, json
 from fileinput import filename
+import json
 
 if len(argv) > 4:
 	raise Exception('Too many arguments.')
@@ -36,8 +37,8 @@ else:
 
 if len(argv) > 2:
 	data_format = argv[2].lower()
-	if data_format != 'gpx' and data_format != 'tcx' and data_format != 'original':
-		raise Exception('Format can only be "gpx," "tcx," or "original."')
+	if data_format not in ['gpx', 'tcx', 'original', 'json']:
+		raise Exception('Format can only be "gpx", "tcx", "original", or "json".')
 else:
 	data_format = 'gpx'
 
@@ -141,7 +142,7 @@ while total_downloaded < total_to_download:
 	# Query Garmin Connect
 	result = http_req(url_gc_search + urlencode(search_params))
 	json_results = json.loads(result)  # TODO: Catch possible exceptions here.
-		
+
 
 	search = json_results['results']['search']
 
@@ -169,6 +170,9 @@ while total_downloaded < total_to_download:
 			filename = activities_directory + '/activity_' + a['activity']['activityId'] + '.tcx'
 			download_url = url_gc_tcx_activity + a['activity']['activityId'] + '?full=true'
 			file_mode = 'w'
+		elif data_format == 'json':
+			filename = activities_directory + '/activity_' + a['activity']['activityId'] + '.json'
+			file_mode = 'w'
 		else:
 			filename = activities_directory + '/activity_' + a['activity']['activityId'] + '.zip'
 			download_url = url_gc_original_activity + a['activity']['activityId']
@@ -184,23 +188,27 @@ while total_downloaded < total_to_download:
 		# should pick up where it left off.
 		print '\tDownloading file...',
 
-		try:
-			data = http_req(download_url)
-		except urllib2.HTTPError as e:
-			# Handle expected (though unfortunate) error codes; die on unexpected ones.
-			if e.code == 500 and data_format == 'tcx':
-				# Garmin will give an internal server error (HTTP 500) when downloading TCX files if the original was a manual GPX upload.
-				# Writing an empty file prevents this file from being redownloaded, similar to the way GPX files are saved even when there are no tracks.
-				# One could be generated here, but that's a bit much. Use the GPX format if you want actual data in every file, as I believe Garmin provides a GPX file for every activity.
-				print 'Writing empty file since Garmin did not generate a TCX file for this activity...',
-				data = ''
-			elif e.code == 404 and data_format == 'original':
-				# For manual activities (i.e., entered in online without a file upload), there is no original file.
-				# Write an empty file to prevent redownloading it.
-				print 'Writing empty file since there was no original activity data...',
-				data = ''
-			else:
-				raise Exception('Failed. Got an unexpected HTTP error (' + str(e.code) + ').')
+                if data_format != 'json':
+			try:
+				data = http_req(download_url)
+			except urllib2.HTTPError as e:
+				# Handle expected (though unfortunate) error codes; die on unexpected ones.
+				if e.code == 500 and data_format == 'tcx':
+					# Garmin will give an internal server error (HTTP 500) when downloading TCX files if the original was a manual GPX upload.
+					# Writing an empty file prevents this file from being redownloaded, similar to the way GPX files are saved even when there are no tracks.
+					# One could be generated here, but that's a bit much. Use the GPX format if you want actual data in every file, as I believe Garmin provides a GPX file for every activity.
+					print 'Writing empty file since Garmin did not generate a TCX file for this activity...',
+					data = ''
+				elif e.code == 404 and data_format == 'original':
+					# For manual activities (i.e., entered in online without a file upload), there is no original file.
+					# Write an empty file to prevent redownloading it.
+					print 'Writing empty file since there was no original activity data...',
+					data = ''
+				else:
+					raise Exception('Failed. Got an unexpected HTTP error (' + str(e.code) + ').')
+
+                else:
+			data = json.dumps(a)
 
 		save_file = open(filename, file_mode)
 		save_file.write(data)
