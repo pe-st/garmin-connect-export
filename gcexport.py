@@ -25,7 +25,7 @@ from fileinput import filename
 import argparse
 import zipfile
 
-prog_version = '1.0.0'
+script_version = '1.0.0'
 current_date = datetime.now().strftime('%Y-%m-%d')
 activities_directory = './' + current_date + '_garmin_connect_export'
 
@@ -40,8 +40,8 @@ parser.add_argument('--password', help="your Garmin Connect password (otherwise,
 parser.add_argument('-c', '--count', nargs='?', default="1",
 	help="number of recent activities to download, or 'all' (default: 1)")
 
-parser.add_argument('-f', '--format', nargs='?', choices=['tcx', 'gpx', 'original'], default="original",
-	help="export format; can be 'gpx', 'tcx', or 'original' (default: 'original')")
+parser.add_argument('-f', '--format', nargs='?', choices=['tcx', 'gpx', 'original'], default="gpx",
+	help="export format; can be 'gpx', 'tcx', or 'original' (default: 'gpx')")
 
 parser.add_argument('-d', '--directory', nargs='?', default=activities_directory,
 	help="the directory to export to (default: './YYYY-MM-DD_garmin_connect_export')")
@@ -53,7 +53,7 @@ parser.add_argument('-u', '--unzip',
 args = parser.parse_args()
 
 if args.version:
-	print argv[0] + ", version " + prog_version
+	print argv[0] + ", version " + script_version
 	exit(0)
 
 cookie_jar = cookielib.CookieJar()
@@ -62,7 +62,7 @@ opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
 # url is a string, post is a dictionary of POST parameters, headers is a dictionary of headers.
 def http_req(url, post=None, headers={}):
 	request = urllib2.Request(url)
-	request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36')  # Tell Garmin we're some supported browser.
+	request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1337 Safari/537.36')  # Tell Garmin we're some supported browser.
 	for header_key, header_value in headers.iteritems():
 		request.add_header(header_key, header_value)
 	if post:
@@ -171,10 +171,10 @@ while total_downloaded < total_to_download:
 	for a in activities:
 		# Display which entry we're working on.
 		print 'Garmin Connect activity: [' + a['activity']['activityId'] + ']',
-		print a['activity']['beginTimestamp']['display'] + ', ',
-		print a['activity']['sumElapsedDuration']['display'] + ', ',
-		print a['activity']['sumDistance']['withUnit'] + ':',
 		print a['activity']['activityName']['value']
+		print '\t' + a['activity']['beginTimestamp']['display'] + ',',
+		print a['activity']['sumElapsedDuration']['display'] + ',',
+		print a['activity']['sumDistance']['withUnit']
 
 		if args.format == 'gpx':
 			datafilename = args.directory + '/activity_' + a['activity']['activityId'] + '.gpx'
