@@ -25,35 +25,36 @@ from fileinput import filename
 import argparse
 import zipfile
 
-prog_version = '1.0'
+prog_version = '1.0.0'
 current_date = datetime.now().strftime('%Y-%m-%d')
 activities_directory = './' + current_date + '_garmin_connect_export'
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-v', '--verbose', help="increase output verbosity", action="store_true")
+# TODO: Implement verbose and/or quiet options.
+# parser.add_argument('-v', '--verbose', help="increase output verbosity", action="store_true")
 parser.add_argument('--version', help="print version and exit", action="store_true")
-parser.add_argument('--username', help="your garmin connect username. If not give you will be prompted to enter", nargs='?')
-parser.add_argument('--password', help="your garmin connect password. If not give you will be prompted to enter", nargs='?')
+parser.add_argument('--username', help="your Garmin Connect username (otherwise, you will be prompted)", nargs='?')
+parser.add_argument('--password', help="your Garmin Connect password (otherwise, you will be prompted)", nargs='?')
 
 parser.add_argument('-c', '--count', nargs='?', default="1",
-                    help="number of recent activities to download, or 'all' (default: 1)")
+					help="number of recent activities to download, or 'all' (default: 1)")
 
-parser.add_argument('-f', '--format', nargs='?', choices=['tcx', 'gpx', 'origin'], default="origin",
-                    help="export format; can be 'gpx', 'tcx', or 'original' (default: origin)")
+parser.add_argument('-f', '--format', nargs='?', choices=['tcx', 'gpx', 'original'], default="original",
+					help="export format; can be 'gpx', 'tcx', or 'original' (default: 'original')")
 
 parser.add_argument('-d', '--directory', nargs='?', default=activities_directory,
-                    help="directory - the directory to export to (default: 'YYYY-MM-DD_garmin_connect_export')")
+					help="the directory to export to (default: './YYYY-MM-DD_garmin_connect_export')")
 
 parser.add_argument('-u', '--unzip',
-                    help="if downloading zip files (format: origin) unzips the file and removes the .zip file",
-                    action="store_true")
+					help="if downloading ZIP files (format: 'original'), unzip the file and removes the ZIP file",
+					action="store_true")
 
 args = parser.parse_args()
 
 if args.version:
-    print argv[0] + " - version: " + prog_version
-    exit(0)
+	print argv[0] + ", version " + prog_version
+	exit(0)
 
 cookie_jar = cookielib.CookieJar()
 opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
@@ -176,24 +177,26 @@ while total_downloaded < total_to_download:
 		print a['activity']['activityName']['value']
 
 		if args.format == 'gpx':
-			filename = args.directory + '/activity_' + a['activity']['activityId'] + '.gpx'
+			datafilename = args.directory + '/activity_' + a['activity']['activityId'] + '.gpx'
 			download_url = url_gc_gpx_activity + a['activity']['activityId'] + '?full=true'
 			file_mode = 'w'
 		elif args.format == 'tcx':
-			filename = args.directory + '/activity_' + a['activity']['activityId'] + '.tcx'
+			datafilename = args.directory + '/activity_' + a['activity']['activityId'] + '.tcx'
 			download_url = url_gc_tcx_activity + a['activity']['activityId'] + '?full=true'
 			file_mode = 'w'
-		else:
-			filename = args.directory + '/activity_' + a['activity']['activityId'] + '.zip'
-                        fitfilename = args.directory + '/' + a['activity']['activityId'] + '.fit'
+		elif args.format == 'original':
+			datafilename = args.directory + '/activity_' + a['activity']['activityId'] + '.zip'
+			fitfilename = args.directory + '/' + a['activity']['activityId'] + '.fit'
 			download_url = url_gc_original_activity + a['activity']['activityId']
 			file_mode = 'wb'
+		else:
+			raise Exception('Unrecognized format.')
 
-		if isfile(filename):
+		if isfile(datafilename):
 			print '\tData file already exists; skipping...'
 			continue
-		if ('origin' == args.format) and isfile(fitfilename):
-			print '\tFIT Data file already exists; skipping...'
+		if args.format == 'original' and isfile(fitfilename):  # Regardless of unzip setting, don't redownload if the ZIP or FIT file exists.
+			print '\tFIT data file already exists; skipping...'
 			continue
 
 		# Download the data file from Garmin Connect.
@@ -221,7 +224,7 @@ while total_downloaded < total_to_download:
 			else:
 				raise Exception('Failed. Got an unexpected HTTP error (' + str(e.code) + ').')
 
-		save_file = open(filename, file_mode)
+		save_file = open(datafilename, file_mode)
 		save_file.write(data)
 		save_file.close()
 
@@ -286,16 +289,16 @@ while total_downloaded < total_to_download:
 				print 'Done. GPX data saved.'
 			else:
 				print 'Done. No track points found.'
-                elif args.format == 'origin':
-                        if args.unzip:
-                                print "unzipping and removing original files"
-                                fh = open(filename, 'rb')
-                                z = zipfile.ZipFile(fh)
-                                for name in z.namelist():
-                                        z.extract(name, args.directory)
-                                fh.close()
-                                remove(filename)
-                        print 'Done.'
+		elif args.format == 'original':
+			if args.unzip:
+				print "Unzipping and removing original files...",
+				zip_file = open(datafilename, 'rb')
+				z = zipfile.ZipFile(zip_file)
+				for name in z.namelist():
+					z.extract(name, args.directory)
+				zip_file.close()
+				remove(datafilename)
+			print 'Done.'
 		else:
 			# TODO: Consider validating other formats.
 			print 'Done.'

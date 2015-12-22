@@ -13,35 +13,35 @@ If you have many activities, you may find that this script crashes with an "Oper
 
 Usage
 -----
+Here are the usage details from the help option:
 ```
-usage: gcexport.py [-h] [-v] [--version] [--username [USERNAME]]
+usage: gcexport.py [-h] [--version] [--username [USERNAME]]
                    [--password [PASSWORD]] [-c [COUNT]]
-                   [-f [{tcx,gpx,origin}]] [-d [DIRECTORY]] [-u]
+                   [-f [{tcx,gpx,original}]] [-d [DIRECTORY]] [-u]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -v, --verbose         increase output verbosity
   --version             print version and exit
   --username [USERNAME]
-                        your garmin connect username. If not give you will be
-                        prompted to enter
+                        your Garmin Connect username (otherwise, you will be
+                        prompted)
   --password [PASSWORD]
-                        your garmin connect password. If not give you will be
-                        prompted to enter
+                        your Garmin Connect password (otherwise, you will be
+                        prompted)
   -c [COUNT], --count [COUNT]
                         number of recent activities to download, or 'all'
                         (default: 1)
-  -f [{tcx,gpx,origin}], --format [{tcx,gpx,origin}]
+  -f [{tcx,gpx,original}], --format [{tcx,gpx,original}]
                         export format; can be 'gpx', 'tcx', or 'original'
-                        (default: origin)
+                        (default: 'original')
   -d [DIRECTORY], --directory [DIRECTORY]
-                        directory - the directory to export to (default:
-                        'YYYY-MM-DD_garmin_connect_export')
-  -u, --unzip           if downloading zip files (format: origin) unzips the
-                        file and removes the .zip file
+                        the directory to export to (default: './YYYY-MM-
+                        DD_garmin_connect_export')
+  -u, --unzip           if downloading ZIP files (format: 'original'), unzip
+                        the file and removes the ZIP file
 ```
 
-Examples:  
+Examples:
 `python gcexport.py --count all` will download all of your data to a dated directory.
 
 `python gcexport.py -d ~/MyActivities -c 3  -u  --username user --password ********` will download last three (new) activities into ~/MyActivities directory.
