@@ -38,17 +38,17 @@ parser.add_argument('--username', help="your Garmin Connect username (otherwise,
 parser.add_argument('--password', help="your Garmin Connect password (otherwise, you will be prompted)", nargs='?')
 
 parser.add_argument('-c', '--count', nargs='?', default="1",
-					help="number of recent activities to download, or 'all' (default: 1)")
+	help="number of recent activities to download, or 'all' (default: 1)")
 
 parser.add_argument('-f', '--format', nargs='?', choices=['tcx', 'gpx', 'original'], default="original",
-					help="export format; can be 'gpx', 'tcx', or 'original' (default: 'original')")
+	help="export format; can be 'gpx', 'tcx', or 'original' (default: 'original')")
 
 parser.add_argument('-d', '--directory', nargs='?', default=activities_directory,
-					help="the directory to export to (default: './YYYY-MM-DD_garmin_connect_export')")
+	help="the directory to export to (default: './YYYY-MM-DD_garmin_connect_export')")
 
 parser.add_argument('-u', '--unzip',
-					help="if downloading ZIP files (format: 'original'), unzip the file and removes the ZIP file",
-					action="store_true")
+	help="if downloading ZIP files (format: 'original'), unzip the file and removes the ZIP file",
+	action="store_true")
 
 args = parser.parse_args()
 
@@ -91,9 +91,9 @@ limit_maximum = 100
 url_gc_login     = 'https://sso.garmin.com/sso/login?service=https%3A%2F%2Fconnect.garmin.com%2Fpost-auth%2Flogin&webhost=olaxpw-connect04&source=https%3A%2F%2Fconnect.garmin.com%2Fen-US%2Fsignin&redirectAfterAccountLoginUrl=https%3A%2F%2Fconnect.garmin.com%2Fpost-auth%2Flogin&redirectAfterAccountCreationUrl=https%3A%2F%2Fconnect.garmin.com%2Fpost-auth%2Flogin&gauthHost=https%3A%2F%2Fsso.garmin.com%2Fsso&locale=en_US&id=gauth-widget&cssUrl=https%3A%2F%2Fstatic.garmincdn.com%2Fcom.garmin.connect%2Fui%2Fcss%2Fgauth-custom-v1.1-min.css&clientId=GarminConnect&rememberMeShown=true&rememberMeChecked=false&createAccountShown=true&openCreateAccount=false&usernameShown=false&displayNameShown=false&consumeServiceTicket=false&initialFocus=true&embedWidget=false&generateExtraServiceTicket=false'
 url_gc_post_auth = 'https://connect.garmin.com/post-auth/login?'
 url_gc_search    = 'http://connect.garmin.com/proxy/activity-search-service-1.0/json/activities?'
-url_gc_gpx_activity  = 'http://connect.garmin.com/proxy/activity-service-1.1/gpx/activity/'
-url_gc_tcx_activity  = 'http://connect.garmin.com/proxy/activity-service-1.1/tcx/activity/'
-url_gc_original_activity  = 'http://connect.garmin.com/proxy/download-service/files/activity/'
+url_gc_gpx_activity = 'http://connect.garmin.com/proxy/activity-service-1.1/gpx/activity/'
+url_gc_tcx_activity = 'http://connect.garmin.com/proxy/activity-service-1.1/tcx/activity/'
+url_gc_original_activity = 'http://connect.garmin.com/proxy/download-service/files/activity/'
 
 # Initially, we need to get a valid session cookie, so we pull the login page.
 http_req(url_gc_login)
