@@ -13,11 +13,12 @@ If you have many activities, you may find that this script crashes with an "Oper
 
 Usage
 -----
-Here are the usage details from the help option:
+You will need a little experience running things from the command line to use this script. That said, here are the usage details from the `--help` flag:
+
 ```
 usage: gcexport.py [-h] [--version] [--username [USERNAME]]
                    [--password [PASSWORD]] [-c [COUNT]]
-                   [-f [{tcx,gpx,original}]] [-d [DIRECTORY]] [-u]
+                   [-f [{gpx,tcx,original}]] [-d [DIRECTORY]] [-u]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -31,9 +32,9 @@ optional arguments:
   -c [COUNT], --count [COUNT]
                         number of recent activities to download, or 'all'
                         (default: 1)
-  -f [{tcx,gpx,original}], --format [{tcx,gpx,original}]
+  -f [{gpx,tcx,original}], --format [{gpx,tcx,original}]
                         export format; can be 'gpx', 'tcx', or 'original'
-                        (default: 'original')
+                        (default: 'gpx')
   -d [DIRECTORY], --directory [DIRECTORY]
                         the directory to export to (default: './YYYY-MM-
                         DD_garmin_connect_export')
@@ -44,12 +45,11 @@ optional arguments:
 Examples:
 `python gcexport.py --count all` will download all of your data to a dated directory.
 
-`python gcexport.py -d ~/MyActivities -c 3  -u  --username user --password ********` will download last three (new) activities into ~/MyActivities directory.
-
+`python gcexport.py -d ~/MyActivities -c 3 -f original -u --username bobbyjoe --password bestpasswordever1` will download your three most recent activities in the FIT file format (or whatever they were uploaded as) into the `~/MyActivities` directory (unless they already exist). Using the `--username` and `--password` flags are not recommended because your password will be stored in your command line history. Instead, omit them to be prompted (and note that nothing will be displayed when you type your password).
 
 Alternatively, you may run it with `./gcexport.py` if you set the file as executable (i.e., `chmod u+x gcexport.py`).
 
-Of course, you must have Python installed to run this. Most Mac and Linux users should already have it. Also, you should have some basic command line experience.
+Of course, you must have Python installed to run this. Most Mac and Linux users should already have it. Also, as stated above, you should have some basic command line experience.
 
 Data
 ----

@@ -40,7 +40,7 @@ parser.add_argument('--password', help="your Garmin Connect password (otherwise,
 parser.add_argument('-c', '--count', nargs='?', default="1",
 	help="number of recent activities to download, or 'all' (default: 1)")
 
-parser.add_argument('-f', '--format', nargs='?', choices=['tcx', 'gpx', 'original'], default="gpx",
+parser.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original'], default="gpx",
 	help="export format; can be 'gpx', 'tcx', or 'original' (default: 'gpx')")
 
 parser.add_argument('-d', '--directory', nargs='?', default=activities_directory,
@@ -173,29 +173,35 @@ while total_downloaded < total_to_download:
 		print 'Garmin Connect activity: [' + a['activity']['activityId'] + ']',
 		print a['activity']['activityName']['value']
 		print '\t' + a['activity']['beginTimestamp']['display'] + ',',
-		print a['activity']['sumElapsedDuration']['display'] + ',',
-		print a['activity']['sumDistance']['withUnit']
+		if 'sumElapsedDuration' in a['activity']:
+			print a['activity']['sumElapsedDuration']['display'] + ',',
+		else:
+			print '??:??:??,',
+		if 'sumDistance' in a['activity']:
+			print a['activity']['sumDistance']['withUnit']
+		else:
+			print '0.00 Miles'
 
 		if args.format == 'gpx':
-			datafilename = args.directory + '/activity_' + a['activity']['activityId'] + '.gpx'
+			data_filename = args.directory + '/activity_' + a['activity']['activityId'] + '.gpx'
 			download_url = url_gc_gpx_activity + a['activity']['activityId'] + '?full=true'
 			file_mode = 'w'
 		elif args.format == 'tcx':
-			datafilename = args.directory + '/activity_' + a['activity']['activityId'] + '.tcx'
+			data_filename = args.directory + '/activity_' + a['activity']['activityId'] + '.tcx'
 			download_url = url_gc_tcx_activity + a['activity']['activityId'] + '?full=true'
 			file_mode = 'w'
 		elif args.format == 'original':
-			datafilename = args.directory + '/activity_' + a['activity']['activityId'] + '.zip'
-			fitfilename = args.directory + '/' + a['activity']['activityId'] + '.fit'
+			data_filename = args.directory + '/activity_' + a['activity']['activityId'] + '.zip'
+			fit_filename = args.directory + '/' + a['activity']['activityId'] + '.fit'
 			download_url = url_gc_original_activity + a['activity']['activityId']
 			file_mode = 'wb'
 		else:
 			raise Exception('Unrecognized format.')
 
-		if isfile(datafilename):
+		if isfile(data_filename):
 			print '\tData file already exists; skipping...'
 			continue
-		if args.format == 'original' and isfile(fitfilename):  # Regardless of unzip setting, don't redownload if the ZIP or FIT file exists.
+		if args.format == 'original' and isfile(fit_filename):  # Regardless of unzip setting, don't redownload if the ZIP or FIT file exists.
 			print '\tFIT data file already exists; skipping...'
 			continue
 
@@ -224,7 +230,7 @@ while total_downloaded < total_to_download:
 			else:
 				raise Exception('Failed. Got an unexpected HTTP error (' + str(e.code) + ').')
 
-		save_file = open(datafilename, file_mode)
+		save_file = open(data_filename, file_mode)
 		save_file.write(data)
 		save_file.close()
 
@@ -290,14 +296,14 @@ while total_downloaded < total_to_download:
 			else:
 				print 'Done. No track points found.'
 		elif args.format == 'original':
-			if args.unzip:
+			if args.unzip and data_filename[-3:].lower() == 'zip':  # Even manual upload of a GPX file is zipped, but we'll validate the extension.
 				print "Unzipping and removing original files...",
-				zip_file = open(datafilename, 'rb')
+				zip_file = open(data_filename, 'rb')
 				z = zipfile.ZipFile(zip_file)
 				for name in z.namelist():
 					z.extract(name, args.directory)
 				zip_file.close()
-				remove(datafilename)
+				remove(data_filename)
 			print 'Done.'
 		else:
 			# TODO: Consider validating other formats.
