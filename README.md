@@ -40,6 +40,8 @@ optional arguments:
                         DD_garmin_connect_export')
   -u, --unzip           if downloading ZIP files (format: 'original'), unzip
                         the file and removes the ZIP file
+  -ot, --originaltime   will set downloaded (and possibly unzipped) file time
+                        to the activity start time
 ```
 
 Examples:
