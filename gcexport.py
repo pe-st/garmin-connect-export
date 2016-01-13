@@ -17,6 +17,7 @@ from os.path import isdir
 from os.path import isfile
 from os import mkdir
 from os import remove
+from os import utime
 from xml.dom.minidom import parseString
 
 import urllib2, cookielib, json
@@ -48,6 +49,10 @@ parser.add_argument('-d', '--directory', nargs='?', default=activities_directory
 
 parser.add_argument('-u', '--unzip',
 	help="if downloading ZIP files (format: 'original'), unzip the file and removes the ZIP file",
+	action="store_true")
+
+parser.add_argument('-ot', '--originaltime',
+	help="will set downloaded (and possibly unzipped) file time to the activity start time",
 	action="store_true")
 
 args = parser.parse_args()
@@ -234,6 +239,10 @@ while total_downloaded < total_to_download:
 		save_file.write(data)
 		save_file.close()
 
+		if args.originaltime:
+			start_time=int(a['activity']['beginTimestamp']['millis']) // 1000
+			utime(data_filename, (start_time,start_time))
+
 		# Write stats to CSV.
 		empty_record = '"",'
 
@@ -301,7 +310,9 @@ while total_downloaded < total_to_download:
 				zip_file = open(data_filename, 'rb')
 				z = zipfile.ZipFile(zip_file)
 				for name in z.namelist():
-					z.extract(name, args.directory)
+					ef=z.extract(name, args.directory)
+					if args.originaltime:
+						utime(ef, (start_time,start_time))
 				zip_file.close()
 				remove(data_filename)
 			print 'Done.'
