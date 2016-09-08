@@ -293,7 +293,8 @@ while total_downloaded < total_to_download:
 
 	if download_all:
 		# Modify total_to_download based on how many activities the server reports.
-		total_to_download = int(json_results['totalFound'])
+		total_to_download = int(json_results['results']['totalFound'])
+		
 		# Do it only once.
 		download_all = False
 
