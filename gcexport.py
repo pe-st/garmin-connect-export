@@ -44,7 +44,7 @@ parser.add_argument('--password', help="your Garmin Connect password (otherwise,
 parser.add_argument('-c', '--count', nargs='?', default="1",
 	help="number of recent activities to download, or 'all' (default: 1)")
 
-parser.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original'], default="tcx",
+parser.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original'], default="gpx",
 	help="export format; can be 'gpx', 'tcx', or 'original' (default: 'gpx')")
 
 parser.add_argument('-d', '--directory', nargs='?', default=activities_directory,
