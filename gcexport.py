@@ -286,7 +286,13 @@ while total_downloaded < total_to_download:
 	print url_gc_search + urlencode(search_params)
 	result = http_req(url_gc_search + urlencode(search_params))
 	print "Finished activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-	print result
+
+	# Persist JSON
+	json_filename = args.directory + '/activities.json'
+	json_file = open(json_filename, 'a')
+	json_file.write(result)
+	json_file.close()
+
 	json_results = json.loads(result)  # TODO: Catch possible exceptions here.
 
 	# search = json_results['results']['search']
