@@ -71,7 +71,7 @@ def http_req(url, post=None, headers={}):
 
 	# N.B. urllib2 will follow any 302 redirects. Also, the "open" call above may throw a urllib2.HTTPError which is checked for below.
 	if response.getcode() != 200:
-		raise Exception('Bad return code (' + response.getcode() + ') for: ' + url)
+		raise Exception('Bad return code (' + str(response.getcode()) + ') for: ' + url)
 
 	return response.read()
 
@@ -90,10 +90,10 @@ limit_maximum = 100
 # URLs for various services.
 url_gc_login     = 'https://sso.garmin.com/sso/login?service=https%3A%2F%2Fconnect.garmin.com%2Fpost-auth%2Flogin&webhost=olaxpw-connect04&source=https%3A%2F%2Fconnect.garmin.com%2Fen-US%2Fsignin&redirectAfterAccountLoginUrl=https%3A%2F%2Fconnect.garmin.com%2Fpost-auth%2Flogin&redirectAfterAccountCreationUrl=https%3A%2F%2Fconnect.garmin.com%2Fpost-auth%2Flogin&gauthHost=https%3A%2F%2Fsso.garmin.com%2Fsso&locale=en_US&id=gauth-widget&cssUrl=https%3A%2F%2Fstatic.garmincdn.com%2Fcom.garmin.connect%2Fui%2Fcss%2Fgauth-custom-v1.1-min.css&clientId=GarminConnect&rememberMeShown=true&rememberMeChecked=false&createAccountShown=true&openCreateAccount=false&usernameShown=false&displayNameShown=false&consumeServiceTicket=false&initialFocus=true&embedWidget=false&generateExtraServiceTicket=false'
 url_gc_post_auth = 'https://connect.garmin.com/post-auth/login?'
-url_gc_search    = 'http://connect.garmin.com/proxy/activity-search-service-1.0/json/activities?'
-url_gc_gpx_activity = 'http://connect.garmin.com/proxy/activity-service-1.1/gpx/activity/'
-url_gc_tcx_activity = 'http://connect.garmin.com/proxy/activity-service-1.1/tcx/activity/'
-url_gc_original_activity = 'http://connect.garmin.com/proxy/download-service/files/activity/'
+url_gc_search    = 'https://connect.garmin.com/proxy/activity-search-service-1.0/json/activities?'
+url_gc_gpx_activity = 'https://connect.garmin.com/modern/proxy/download-service/export/gpx/activity/'
+url_gc_tcx_activity = 'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
+url_gc_original_activity = 'https://connect.garmin.com/proxy/download-service/files/activity/'
 
 # Initially, we need to get a valid session cookie, so we pull the login page.
 http_req(url_gc_login)
@@ -184,11 +184,11 @@ while total_downloaded < total_to_download:
 
 		if args.format == 'gpx':
 			data_filename = args.directory + '/activity_' + a['activity']['activityId'] + '.gpx'
-			download_url = url_gc_gpx_activity + a['activity']['activityId'] + '?full=true'
+			download_url = url_gc_gpx_activity + a['activity']['activityId']
 			file_mode = 'w'
 		elif args.format == 'tcx':
 			data_filename = args.directory + '/activity_' + a['activity']['activityId'] + '.tcx'
-			download_url = url_gc_tcx_activity + a['activity']['activityId'] + '?full=true'
+			download_url = url_gc_tcx_activity + a['activity']['activityId']
 			file_mode = 'w'
 		elif args.format == 'original':
 			data_filename = args.directory + '/activity_' + a['activity']['activityId'] + '.zip'
@@ -228,7 +228,7 @@ while total_downloaded < total_to_download:
 				print 'Writing empty file since there was no original activity data...',
 				data = ''
 			else:
-				raise Exception('Failed. Got an unexpected HTTP error (' + str(e.code) + ').')
+				raise Exception('Failed. Got an unexpected HTTP error (' + str(e.code) + ') for %s' % download_url)
 
 		save_file = open(data_filename, file_mode)
 		save_file.write(data)
