@@ -32,8 +32,9 @@ optional arguments:
   -c [COUNT], --count [COUNT]
                         number of recent activities to download, or 'all'
                         (default: 1)
-  -f [{gpx,tcx,original}], --format [{gpx,tcx,original}]
-                        export format; can be 'gpx', 'tcx', or 'original'
+  -f [{gpx,tcx,original,json}], --format [{gpx,tcx,original,json}]
+                        export format; can be 'gpx', 'tcx', 'original' or 'json'
+                        When using `json`, only the activity's metadata is exported.
                         (default: 'gpx')
   -d [DIRECTORY], --directory [DIRECTORY]
                         the directory to export to (default: './YYYY-MM-
