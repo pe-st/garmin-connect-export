@@ -20,6 +20,7 @@ from os.path import isdir
 from os.path import isfile
 from os import mkdir
 from os import remove
+from os import stat
 from xml.dom.minidom import parseString
 from subprocess import call
 
@@ -456,11 +457,15 @@ while total_downloaded < total_to_download:
 		elif args.format == 'original':
 			if args.unzip and data_filename[-3:].lower() == 'zip':  # Even manual upload of a GPX file is zipped, but we'll validate the extension.
 				print "Unzipping and removing original files...",
-				zip_file = open(data_filename, 'rb')
-				z = zipfile.ZipFile(zip_file)
-				for name in z.namelist():
-					z.extract(name, args.directory)
-				zip_file.close()
+				print 'Filesize is: ' + str(stat(data_filename).st_size)
+				if stat(data_filename).st_size > 0:
+					zip_file = open(data_filename, 'rb')
+					z = zipfile.ZipFile(zip_file)
+					for name in z.namelist():
+						z.extract(name, args.directory)
+					zip_file.close()
+				else:
+					print 'Skipping 0Kb zip file.'
 				remove(data_filename)
 			print 'Done.'
 		else:
