@@ -67,7 +67,12 @@ def http_req(url, post=None, headers={}):
 		request.add_header(header_key, header_value)
 	if post:
 		post = urlencode(post)  # Convert dictionary to POST parameter string.
-	response = opener.open(request, data=post)  # This line may throw a urllib2.HTTPError.
+	try:
+		response = opener.open(request, data=post)  # This line may throw a urllib2.HTTPError.
+	except urllib2.HTTPError as e:
+		print str(e.code) + ' for URL ' + url + '.'
+		print e.read()
+		raise
 
 	# N.B. urllib2 will follow any 302 redirects. Also, the "open" call above may throw a urllib2.HTTPError which is checked for below.
 	if response.getcode() == 204:
