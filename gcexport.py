@@ -14,6 +14,7 @@ Description:	Use this script to export your fitness data from Garmin Connect.
 
 from urllib import urlencode
 from datetime import datetime
+from datetime import timedelta
 from getpass import getpass
 from sys import argv
 from os.path import isdir
@@ -136,7 +137,8 @@ print urllib.urlencode(data)
 # URLs for various services.
 url_gc_login     = 'https://sso.garmin.com/sso/login?' + urllib.urlencode(data)
 url_gc_post_auth = 'https://connect.garmin.com/post-auth/login?'
-url_gc_search    = 'http://connect.garmin.com/proxy/activity-search-service-1.2/json/activities?'
+url_gc_summary    = 'http://connect.garmin.com/proxy/activity-search-service-1.2/json/activities?start=0&limit=1'
+url_gc_search    = 'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
 url_gc_gpx_activity = 'https://connect.garmin.com/modern/proxy/download-service/export/gpx/activity/'
 url_gc_tcx_activity = 'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
 url_gc_original_activity = 'http://connect.garmin.com/proxy/download-service/files/activity/'
@@ -258,13 +260,24 @@ Sample count\n')
 # Max. elevation (m),\
 # Activity parent,\
 
-download_all = False
 if args.count == 'all':
 	# If the user wants to download all activities, first download one,
 	# then the result of that request will tell us how many are available
 	# so we will modify the variables then.
-	total_to_download = 1
-	download_all = True
+	print "Making result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	print url_gc_summary
+	result = http_req(url_gc_summary)
+	print "Finished result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+
+	# Persist JSON
+	json_filename = args.directory + '/activities-summary.json'
+	json_file = open(json_filename, 'a')
+	json_file.write(result)
+	json_file.close()
+
+	# Modify total_to_download based on how many activities the server reports.
+	json_results = json.loads(result)  # TODO: Catch possible exceptions here.
+	total_to_download = int(json_results['results']['totalFound'])
 else:
 	total_to_download = int(args.count)
 total_downloaded = 0
@@ -295,45 +308,38 @@ while total_downloaded < total_to_download:
 
 	# search = json_results['results']['search']
 
-	if download_all:
-		# Modify total_to_download based on how many activities the server reports.
-		total_to_download = int(json_results['results']['totalFound'])
-
-		# Do it only once.
-		download_all = False
-
 	# Pull out just the list of activities.
-	activities = json_results['results']['activities']
+	activities = json_results
 
 	# Process each activity.
 	for a in activities:
 		# Display which entry we're working on.
-		print 'Garmin Connect activity: [' + str(a['activity']['activityId']) + ']',
-		print a['activity']['activityName']
-		print '\t' + a['activity']['activitySummary']['BeginTimestamp']['display'] + ',',
-		if 'SumElapsedDuration' in a['activity']['activitySummary']:
-			print a['activity']['activitySummary']['SumElapsedDuration']['display'] + ',',
+		print 'Garmin Connect activity: [' + str(a['activityId']) + ']',
+		print a['activityName']
+		print '\t' + a['startTimeLocal'] + ',',
+		if 'duration' in a:
+			print str(timedelta(seconds=a['duration'])) + ',',
 		else:
 			print '??:??:??,',
-		if 'SumDistance' in a['activity']['activitySummary']:
-			print a['activity']['activitySummary']['SumDistance']['withUnit']
+		if 'distance' in a:
+			print a['distance']
 		else:
 			print '0.00 Miles'
 
 		if args.format == 'gpx':
-			data_filename = args.directory + '/activity_' + str(a['activity']['activityId']) + '.gpx'
-			download_url = url_gc_gpx_activity + str(a['activity']['activityId']) + '?full=true'
-			# download_url = url_gc_gpx_activity + str(a['activity']['activityId']) + '?full=true' + '&original=true'
+			data_filename = args.directory + '/activity_' + str(a['activityId']) + '.gpx'
+			download_url = url_gc_gpx_activity + str(a['activityId']) + '?full=true'
+			# download_url = url_gc_gpx_activity + str(a['activityId']) + '?full=true' + '&original=true'
 			print download_url
 			file_mode = 'w'
 		elif args.format == 'tcx':
-			data_filename = args.directory + '/activity_' + str(a['activity']['activityId']) + '.tcx'
-			download_url = url_gc_tcx_activity + str(a['activity']['activityId']) + '?full=true'
+			data_filename = args.directory + '/activity_' + str(a['activityId']) + '.tcx'
+			download_url = url_gc_tcx_activity + str(a['activityId']) + '?full=true'
 			file_mode = 'w'
 		elif args.format == 'original':
-			data_filename = args.directory + '/activity_' + str(a['activity']['activityId']) + '.zip'
-			fit_filename = args.directory + '/' + str(a['activity']['activityId']) + '.fit'
-			download_url = url_gc_original_activity + str(a['activity']['activityId'])
+			data_filename = args.directory + '/activity_' + str(a['activityId']) + '.zip'
+			fit_filename = args.directory + '/' + str(a['activityId']) + '.fit'
+			download_url = url_gc_original_activity + str(a['activityId'])
 			file_mode = 'wb'
 		else:
 			raise Exception('Unrecognized format.')
@@ -379,68 +385,68 @@ while total_downloaded < total_to_download:
 
 		csv_record = ''
 
-		csv_record += empty_record if 'activityName' not in a['activity'] else '"' + a['activity']['activityName'].replace('"', '""') + '",'
-		csv_record += empty_record if 'activityDescription' not in a['activity'] else '"' + a['activity']['activityDescription'].replace('"', '""') + '",'
-		csv_record += empty_record if 'BeginTimestamp' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['BeginTimestamp']['display'].replace('"', '""') + '",'
-		csv_record += empty_record if 'SumElapsedDuration' not in a['activity']['activitySummary'] else a['activity']['activitySummary']['SumElapsedDuration']['display'].replace('"', '""') + ','
-		csv_record += empty_record if 'SumMovingDuration' not in a['activity']['activitySummary'] else a['activity']['activitySummary']['SumMovingDuration']['display'].replace('"', '""') + ','
-		csv_record += empty_record if 'SumDistance' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['SumDistance']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'WeightedMeanSpeed' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['WeightedMeanSpeed']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'WeightedMeanMovingSpeed' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['WeightedMeanMovingSpeed']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'MaxSpeed' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['MaxSpeed']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'LossUncorrectedElevation' not in a['activity']['activitySummary'] else '"' + str(float(a['activity']['activitySummary']['LossUncorrectedElevation']['value'])/100) + '",'
-		csv_record += empty_record if 'GainUncorrectedElevation' not in a['activity']['activitySummary'] else '"' + str(float(a['activity']['activitySummary']['GainUncorrectedElevation']['value'])/100) + '",'
-		csv_record += empty_record if 'MinUncorrectedElevation' not in a['activity']['activitySummary'] else '"' + str(float(a['activity']['activitySummary']['MinUncorrectedElevation']['value'])/100) + '",'
-		csv_record += empty_record if 'MaxUncorrectedElevation' not in a['activity']['activitySummary'] else '"' + str(float(a['activity']['activitySummary']['MaxUncorrectedElevation']['value'])/100) + '",'
-		csv_record += empty_record if 'MinHeartRate' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['MinHeartRate']['display'].replace('"', '""') + '",'
-		csv_record += empty_record if 'MaxHeartRate' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['MaxHeartRate']['display'].replace('"', '""') + '",'
-		csv_record += empty_record if 'WeightedMeanHeartRate' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['WeightedMeanHeartRate']['display'].replace('"', '""') + '",'
-		csv_record += empty_record if 'SumEnergy' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['SumEnergy']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'WeightedMeanBikeCadence' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['WeightedMeanBikeCadence']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'MaxBikeCadence' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['MaxBikeCadence']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'SumStrokes' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['SumStrokes']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'WeightedMeanAirTemperature' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['WeightedMeanAirTemperature']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'MinAirTemperature' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['MinAirTemperature']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'MaxAirTemperature' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['MaxAirTemperature']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'activityId' not in a['activity'] else '"https://connect.garmin.com/modern/activity/' + str(a['activity']['activityId']).replace('"', '""') + '",'
-		csv_record += empty_record if 'EndTimestamp' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['EndTimestamp']['display'].replace('"', '""') + '",'
-		csv_record += empty_record if 'BeginTimestamp' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['BeginTimestamp']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'EndTimestamp' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['EndTimestamp']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'device' not in a['activity'] else '"' + a['activity']['device']['display'].replace('"', '""') + ' ' + a['activity']['device']['version'].replace('"', '""') + '",'
-		csv_record += empty_record if 'activityType' not in a['activity'] else '"' + a['activity']['activityType']['display'].replace('"', '""') + '",'
-		csv_record += empty_record if 'eventType' not in a['activity'] else '"' + a['activity']['eventType']['display'].replace('"', '""') + '",'
-		csv_record += empty_record if 'activityTimeZone' not in a['activity'] else '"' + a['activity']['activityTimeZone']['display'].replace('"', '""') + '",'
-		csv_record += empty_record if 'BeginLatitude' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['BeginLatitude']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'BeginLongitude' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['BeginLongitude']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'EndLatitude' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['EndLatitude']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'EndLongitude' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['EndLongitude']['value'].replace('"', '""') + '",'
-		csv_record += empty_record if 'GainCorrectedElevation' not in a['activity']['activitySummary'] else '"' + str(float(a['activity']['activitySummary']['GainCorrectedElevation']['value'])/100) + '",'
-		csv_record += empty_record if 'LossCorrectedElevation' not in a['activity']['activitySummary'] else '"' + str(float(a['activity']['activitySummary']['LossCorrectedElevation']['value'])/100) + '",'
-		csv_record += empty_record if 'MaxCorrectedElevation' not in a['activity']['activitySummary'] else '"' + str(float(a['activity']['activitySummary']['MaxCorrectedElevation']['value'])/100) + '",'
-		csv_record += empty_record if 'MinCorrectedElevation' not in a['activity']['activitySummary'] else '"' + str(float(a['activity']['activitySummary']['MinCorrectedElevation']['value'])/100) + '",'
-		csv_record += empty_record if 'SumSampleCountDuration' not in a['activity']['activitySummary'] else '"' + a['activity']['activitySummary']['SumSampleCountDuration']['value'].replace('"', '""') + '"'
+		csv_record += empty_record if 'activityName' not in a else '"' + a['activityName'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'activityDescription' not in a else '"' + a['activityDescription'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'BeginTimestamp' not in a['activitySummary'] else '"' + a['activitySummary']['BeginTimestamp']['display'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'SumElapsedDuration' not in a['activitySummary'] else a['activitySummary']['SumElapsedDuration']['display'].replace('"', '""') + ','
+#		csv_record += empty_record if 'SumMovingDuration' not in a['activitySummary'] else a['activitySummary']['SumMovingDuration']['display'].replace('"', '""') + ','
+#		csv_record += empty_record if 'SumDistance' not in a['activitySummary'] else '"' + a['activitySummary']['SumDistance']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'WeightedMeanSpeed' not in a['activitySummary'] else '"' + a['activitySummary']['WeightedMeanSpeed']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'WeightedMeanMovingSpeed' not in a['activitySummary'] else '"' + a['activitySummary']['WeightedMeanMovingSpeed']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'MaxSpeed' not in a['activitySummary'] else '"' + a['activitySummary']['MaxSpeed']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'LossUncorrectedElevation' not in a['activitySummary'] else '"' + str(float(a['activitySummary']['LossUncorrectedElevation']['value'])/100) + '",'
+#		csv_record += empty_record if 'GainUncorrectedElevation' not in a['activitySummary'] else '"' + str(float(a['activitySummary']['GainUncorrectedElevation']['value'])/100) + '",'
+#		csv_record += empty_record if 'MinUncorrectedElevation' not in a['activitySummary'] else '"' + str(float(a['activitySummary']['MinUncorrectedElevation']['value'])/100) + '",'
+#		csv_record += empty_record if 'MaxUncorrectedElevation' not in a['activitySummary'] else '"' + str(float(a['activitySummary']['MaxUncorrectedElevation']['value'])/100) + '",'
+#		csv_record += empty_record if 'MinHeartRate' not in a['activitySummary'] else '"' + a['activitySummary']['MinHeartRate']['display'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'MaxHeartRate' not in a['activitySummary'] else '"' + a['activitySummary']['MaxHeartRate']['display'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'WeightedMeanHeartRate' not in a['activitySummary'] else '"' + a['activitySummary']['WeightedMeanHeartRate']['display'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'SumEnergy' not in a['activitySummary'] else '"' + a['activitySummary']['SumEnergy']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'WeightedMeanBikeCadence' not in a['activitySummary'] else '"' + a['activitySummary']['WeightedMeanBikeCadence']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'MaxBikeCadence' not in a['activitySummary'] else '"' + a['activitySummary']['MaxBikeCadence']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'SumStrokes' not in a['activitySummary'] else '"' + a['activitySummary']['SumStrokes']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'WeightedMeanAirTemperature' not in a['activitySummary'] else '"' + a['activitySummary']['WeightedMeanAirTemperature']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'MinAirTemperature' not in a['activitySummary'] else '"' + a['activitySummary']['MinAirTemperature']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'MaxAirTemperature' not in a['activitySummary'] else '"' + a['activitySummary']['MaxAirTemperature']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'activityId' not in a else '"https://connect.garmin.com/modern/activity/' + str(a['activityId']).replace('"', '""') + '",'
+#		csv_record += empty_record if 'EndTimestamp' not in a['activitySummary'] else '"' + a['activitySummary']['EndTimestamp']['display'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'BeginTimestamp' not in a['activitySummary'] else '"' + a['activitySummary']['BeginTimestamp']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'EndTimestamp' not in a['activitySummary'] else '"' + a['activitySummary']['EndTimestamp']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'device' not in a else '"' + a['device']['display'].replace('"', '""') + ' ' + a['device']['version'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'activityType' not in a else '"' + a['activityType']['display'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'eventType' not in a else '"' + a['eventType']['display'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'activityTimeZone' not in a else '"' + a['activityTimeZone']['display'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'BeginLatitude' not in a['activitySummary'] else '"' + a['activitySummary']['BeginLatitude']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'BeginLongitude' not in a['activitySummary'] else '"' + a['activitySummary']['BeginLongitude']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'EndLatitude' not in a['activitySummary'] else '"' + a['activitySummary']['EndLatitude']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'EndLongitude' not in a['activitySummary'] else '"' + a['activitySummary']['EndLongitude']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'GainCorrectedElevation' not in a['activitySummary'] else '"' + str(float(a['activitySummary']['GainCorrectedElevation']['value'])/100) + '",'
+#		csv_record += empty_record if 'LossCorrectedElevation' not in a['activitySummary'] else '"' + str(float(a['activitySummary']['LossCorrectedElevation']['value'])/100) + '",'
+#		csv_record += empty_record if 'MaxCorrectedElevation' not in a['activitySummary'] else '"' + str(float(a['activitySummary']['MaxCorrectedElevation']['value'])/100) + '",'
+#		csv_record += empty_record if 'MinCorrectedElevation' not in a['activitySummary'] else '"' + str(float(a['activitySummary']['MinCorrectedElevation']['value'])/100) + '",'
+#		csv_record += empty_record if 'SumSampleCountDuration' not in a['activitySummary'] else '"' + a['activitySummary']['SumSampleCountDuration']['value'].replace('"', '""') + '"'
 		csv_record += '\n'
 
-#		csv_record += empty_record if 'gainElevation' not in a['activity'] else '"' + a['activity']['gainElevation']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'minElevation' not in a['activity'] else '"' + a['activity']['minElevation']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'maxElevation' not in a['activity'] else '"' + a['activity']['maxElevation']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'maxElevation' not in a['activity'] else '"' + a['activity']['maxElevation']['withUnit'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'weightedMeanMovingSpeed' not in a['activity'] else '"' + a['activity']['weightedMeanMovingSpeed']['display'].replace('"', '""') + '",'  # The units vary between Minutes per Mile and mph, but withUnit always displays "Minutes per Mile"
-#		csv_record += empty_record if 'maxSpeed' not in a['activity'] else '"' + a['activity']['maxSpeed']['display'].replace('"', '""') + '",'  # The units vary between Minutes per Mile and mph, but withUnit always displays "Minutes per Mile"
-#		csv_record += empty_record if 'sumEnergy' not in a['activity'] else '"' + a['activity']['sumEnergy']['display'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'sumElapsedDuration' not in a['activity'] else '"' + a['activity']['sumElapsedDuration']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'sumMovingDuration' not in a['activity'] else '"' + a['activity']['sumMovingDuration']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'weightedMeanSpeed' not in a['activity'] else '"' + a['activity']['weightedMeanSpeed']['withUnit'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'sumDistance' not in a['activity'] else '"' + a['activity']['sumDistance']['withUnit'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'minElevation' not in a['activity'] else '"' + a['activity']['minElevation']['withUnit'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'gainElevation' not in a['activity'] else '"' + a['activity']['gainElevation']['withUnit'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'lossElevation' not in a['activity'] else '"' + a['activity']['lossElevation']['withUnit'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'weightedMeanBikeCadence' not in a['activity'] else '"' + a['activity']['weightedMeanBikeCadence']['withUnitAbbr'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'maxBikeCadence' not in a['activity'] else '"' + a['activity']['maxBikeCadence']['withUnitAbbr'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'weightedMeanAirTemperature' not in a['activity'] else '"' + a['activity']['weightedMeanAirTemperature']['withUnitAbbr'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'minAirTemperature' not in a['activity'] else '"' + a['activity']['minAirTemperature']['withUnitAbbr'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'maxAirTemperature' not in a['activity'] else '"' + a['activity']['maxAirTemperature']['withUnitAbbr'].replace('"', '""') + '",'
-#		csv_record += empty_record if 'activityType' not in a['activity'] else '"' + a['activity']['activityType']['parent']['display'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'gainElevation' not in a else '"' + a['gainElevation']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'minElevation' not in a else '"' + a['minElevation']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'maxElevation' not in a else '"' + a['maxElevation']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'maxElevation' not in a else '"' + a['maxElevation']['withUnit'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'weightedMeanMovingSpeed' not in a else '"' + a['weightedMeanMovingSpeed']['display'].replace('"', '""') + '",'  # The units vary between Minutes per Mile and mph, but withUnit always displays "Minutes per Mile"
+#		csv_record += empty_record if 'maxSpeed' not in a else '"' + a['maxSpeed']['display'].replace('"', '""') + '",'  # The units vary between Minutes per Mile and mph, but withUnit always displays "Minutes per Mile"
+#		csv_record += empty_record if 'sumEnergy' not in a else '"' + a['sumEnergy']['display'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'sumElapsedDuration' not in a else '"' + a['sumElapsedDuration']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'sumMovingDuration' not in a else '"' + a['sumMovingDuration']['value'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'weightedMeanSpeed' not in a else '"' + a['weightedMeanSpeed']['withUnit'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'sumDistance' not in a else '"' + a['sumDistance']['withUnit'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'minElevation' not in a else '"' + a['minElevation']['withUnit'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'gainElevation' not in a else '"' + a['gainElevation']['withUnit'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'lossElevation' not in a else '"' + a['lossElevation']['withUnit'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'weightedMeanBikeCadence' not in a else '"' + a['weightedMeanBikeCadence']['withUnitAbbr'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'maxBikeCadence' not in a else '"' + a['maxBikeCadence']['withUnitAbbr'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'weightedMeanAirTemperature' not in a else '"' + a['weightedMeanAirTemperature']['withUnitAbbr'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'minAirTemperature' not in a else '"' + a['minAirTemperature']['withUnitAbbr'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'maxAirTemperature' not in a else '"' + a['maxAirTemperature']['withUnitAbbr'].replace('"', '""') + '",'
+#		csv_record += empty_record if 'activityType' not in a else '"' + a['activityType']['parent']['display'].replace('"', '""') + '",'
 
 		csv_file.write(csv_record.encode('utf8'))
 
