@@ -97,6 +97,9 @@ def absentOrNull(element, a):
 	else:
 		return True
 
+def isoTimestampFromEpochMillis(millis):
+	return datetime.utcfromtimestamp(millis/1000).isoformat()
+
 def hhmmssFromSeconds(sec):
 	return str(timedelta(seconds=int(sec))).zfill(8)
 
@@ -411,20 +414,20 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('elevationGain', a) else '"' + str(a['elevationGain']) + '",'
 		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('minElevation', a) else '"' + str(round(a['minElevation']/100, 1)) + '",'
 		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('maxElevation', a) else '"' + str(round(a['maxElevation']/100, 1)) + '",'
-#		csv_record += empty_record if absentOrNull('MinHeartRate', a) else '"' + a['MinHeartRate']['display'].replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('MaxHeartRate', a) else '"' + a['MaxHeartRate']['display'].replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('WeightedMeanHeartRate', a) else '"' + a['WeightedMeanHeartRate']['display'].replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('SumEnergy', a) else '"' + a['SumEnergy']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('WeightedMeanBikeCadence', a) else '"' + a['WeightedMeanBikeCadence']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('MaxBikeCadence', a) else '"' + a['MaxBikeCadence']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('SumStrokes', a) else '"' + a['SumStrokes']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('WeightedMeanAirTemperature', a) else '"' + a['WeightedMeanAirTemperature']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('MinAirTemperature', a) else '"' + a['MinAirTemperature']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('MaxAirTemperature', a) else '"' + a['MaxAirTemperature']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('activityId', a) else '"https://connect.garmin.com/modern/activity/' + str(a['activityId']).replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('EndTimestamp', a) else '"' + a['EndTimestamp']['display'].replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('BeginTimestamp', a) else '"' + a['BeginTimestamp']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('EndTimestamp', a) else '"' + a['EndTimestamp']['value'].replace('"', '""') + '",'
+		csv_record += empty_record # no minimum heart rate in JSON
+		csv_record += empty_record if absentOrNull('maxHR', a) else '"' + str(a['maxHR']).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('averageHR', a) else '"' + str(a['averageHR']).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('calories', a) else '"' + str(a['calories']).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('averageBikingCadenceInRevPerMinute', a) else '"' + str(a['averageBikingCadenceInRevPerMinute']).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('maxBikingCadenceInRevPerMinute', a) else '"' + str(a['maxBikingCadenceInRevPerMinute']).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('strokes', a) else '"' + str(a['strokes']).replace('"', '""') + '",'
+		csv_record += empty_record # no WeightedMeanAirTemperature in JSON
+		csv_record += empty_record if absentOrNull('minTemperature', a) else '"' + str(a['minTemperature']).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('maxTemperature', a) else '"' + str(a['maxTemperature']).replace('"', '""') + '",'
+		csv_record += '"https://connect.garmin.com/modern/activity/' + str(a['activityId']).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('elapsedDuration', a) or absentOrNull('beginTimestamp', a) else '"' + isoTimestampFromEpochMillis(a['beginTimestamp']+a['elapsedDuration']).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('elapsedDuration', a) or absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+a['elapsedDuration']).replace('"', '""') + '",'
 #		csv_record += empty_record if absentOrNull('device', a) else '"' + a['device']['display'].replace('"', '""') + ' ' + a['device']['version'].replace('"', '""') + '",'
 #		csv_record += empty_record if absentOrNull('activityType', a) else '"' + a['activityType']['display'].replace('"', '""') + '",'
 #		csv_record += empty_record if absentOrNull('eventType', a) else '"' + a['eventType']['display'].replace('"', '""') + '",'
