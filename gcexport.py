@@ -13,8 +13,7 @@ Description:	Use this script to export your fitness data from Garmin Connect.
 """
 
 from urllib import urlencode
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from sys import argv
 from os.path import isdir
@@ -97,8 +96,30 @@ def absentOrNull(element, a):
 	else:
 		return True
 
-def isoTimestampFromEpochMillis(millis):
-	return datetime.utcfromtimestamp(millis/1000).isoformat()
+# A class building tzinfo objects for fixed-offset time zones.
+# (copied from https://docs.python.org/2/library/datetime.html)
+class FixedOffset(tzinfo):
+    """Fixed offset in minutes east from UTC."""
+
+    def __init__(self, offset, name):
+        self.__offset = timedelta(minutes = offset)
+        self.__name = name
+
+    def utcoffset(self, dt):
+        return self.__offset
+
+    def tzname(self, dt):
+        return self.__name
+
+    def dst(self, dt):
+        return ZERO
+
+def offsetDateTime(timeLocal, timeGMT):
+	localDT = datetime.strptime(timeLocal, "%Y-%m-%d %H:%M:%S")
+	gmtDT = datetime.strptime(timeGMT, "%Y-%m-%d %H:%M:%S")
+	offset = localDT - gmtDT
+	offsetTz = FixedOffset(offset.seconds/60, "LCL")
+	return localDT.replace(tzinfo=offsetTz)
 
 def hhmmssFromSeconds(sec):
 	return str(timedelta(seconds=int(sec))).zfill(8)
@@ -332,7 +353,9 @@ while total_downloaded < total_to_download:
 		# Display which entry we're working on.
 		print 'Garmin Connect activity: [' + str(a['activityId']) + ']',
 		print a['activityName']
-		print '\t' + a['startTimeLocal'] + ',',
+		startTimeWithOffset = offsetDateTime(a['startTimeLocal'], a['startTimeGMT'])
+		endTimeWithOffset = startTimeWithOffset + timedelta(seconds=int(a['elapsedDuration']/1000))
+		print '\t' + startTimeWithOffset.isoformat() + ',',
 		if 'duration' in a:
 			print hhmmssFromSeconds(a['duration']) + ',',
 		else:
@@ -403,7 +426,7 @@ while total_downloaded < total_to_download:
 
 		csv_record += empty_record if 'activityName' not in a else '"' + a['activityName'].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('description', a) else '"' + a['description'].replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('startTimeLocal', a) else '"' + a['startTimeLocal'].replace('"', '""') + '",'
+		csv_record += '"' + startTimeWithOffset.isoformat().replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('duration', a) else hhmmssFromSeconds(a['duration']).replace('"', '""') + ','
 		csv_record += empty_record if absentOrNull('movingDuration', a) else hhmmssFromSeconds(a['movingDuration']).replace('"', '""') + ','
 		csv_record += empty_record if absentOrNull('distance', a) else '"' + "{0:.3f}".format(a['distance']/1000).replace('"', '""') + '",'
@@ -425,9 +448,9 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if absentOrNull('minTemperature', a) else '"' + str(a['minTemperature']).replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('maxTemperature', a) else '"' + str(a['maxTemperature']).replace('"', '""') + '",'
 		csv_record += '"https://connect.garmin.com/modern/activity/' + str(a['activityId']).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('elapsedDuration', a) or absentOrNull('beginTimestamp', a) else '"' + isoTimestampFromEpochMillis(a['beginTimestamp']+a['elapsedDuration']).replace('"', '""') + '",'
+		csv_record += '"' + endTimeWithOffset.isoformat().replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('elapsedDuration', a) or absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+a['elapsedDuration']).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('elapsedDuration', a) or absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+int(a['elapsedDuration'])).replace('"', '""') + '",'
 #		csv_record += empty_record if absentOrNull('device', a) else '"' + a['device']['display'].replace('"', '""') + ' ' + a['device']['version'].replace('"', '""') + '",'
 #		csv_record += empty_record if absentOrNull('activityType', a) else '"' + a['activityType']['display'].replace('"', '""') + '",'
 #		csv_record += empty_record if absentOrNull('eventType', a) else '"' + a['eventType']['display'].replace('"', '""') + '",'
