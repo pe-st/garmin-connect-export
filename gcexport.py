@@ -97,6 +97,9 @@ def absentOrNull(element, a):
 	else:
 		return True
 
+def hhmmssFromSeconds(sec):
+	return str(timedelta(seconds=int(sec))).zfill(8)
+
 print 'Welcome to Garmin Connect Exporter!'
 
 # Create directory for data files.
@@ -106,8 +109,10 @@ if isdir(args.directory):
 username = args.username if args.username else raw_input('Username: ')
 password = args.password if args.password else getpass()
 
-# Maximum number of activities you can request at once.  Set and enforced by Garmin.
-limit_maximum = 500
+# Maximum number of activities you can request at once.
+# Used to be 100 and enforced by Garmin for older endpoints; for the current endpoint 'url_gc_search'
+# the limit is not known (I have less than 1000 activities and could get them all in one go)
+limit_maximum = 1000
 
 hostname_url = http_req('http://connect.garmin.com/gauth/hostname')
 # print hostname_url
@@ -326,13 +331,13 @@ while total_downloaded < total_to_download:
 		print a['activityName']
 		print '\t' + a['startTimeLocal'] + ',',
 		if 'duration' in a:
-			print str(timedelta(seconds=int(a['duration']))) + ',',
+			print hhmmssFromSeconds(a['duration']) + ',',
 		else:
 			print '??:??:??,',
 		if 'distance' in a:
-			print a['distance']
+			print "{0:.3f}".format(a['distance']/1000)
 		else:
-			print '0.00 Miles'
+			print '0.000 km'
 
 		if args.format == 'gpx':
 			data_filename = args.directory + '/activity_' + str(a['activityId']) + '.gpx'
@@ -396,12 +401,12 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if 'activityName' not in a else '"' + a['activityName'].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('description', a) else '"' + a['description'].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('startTimeLocal', a) else '"' + a['startTimeLocal'].replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('duration', a) else str(timedelta(seconds=int(a['duration']))).replace('"', '""') + ','
-		csv_record += empty_record if absentOrNull('movingDuration', a) else str(timedelta(seconds=int(a['movingDuration']))).replace('"', '""') + ','
-#		csv_record += empty_record if absentOrNull('SumDistance', a) else '"' + a['SumDistance']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('WeightedMeanSpeed', a) else '"' + a['WeightedMeanSpeed']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('WeightedMeanMovingSpeed', a) else '"' + a['WeightedMeanMovingSpeed']['value'].replace('"', '""') + '",'
-#		csv_record += empty_record if absentOrNull('MaxSpeed', a) else '"' + a['MaxSpeed']['value'].replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('duration', a) else hhmmssFromSeconds(a['duration']).replace('"', '""') + ','
+		csv_record += empty_record if absentOrNull('movingDuration', a) else hhmmssFromSeconds(a['movingDuration']).replace('"', '""') + ','
+		csv_record += empty_record if absentOrNull('distance', a) else '"' + "{0:.3f}".format(a['distance']/1000).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('averageSpeed', a) else '"' + str(a['averageSpeed']*3.6).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('distance', a) or absentOrNull('movingDuration', a) else '"' + str(a['distance']/a['movingDuration']*3.6).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('maxSpeed', a) else '"' + str(a['maxSpeed']*3.6).replace('"', '""') + '",'
 #		csv_record += empty_record if absentOrNull('LossUncorrectedElevation', a) else '"' + str(float(a['LossUncorrectedElevation']['value'])/100) + '",'
 #		csv_record += empty_record if absentOrNull('GainUncorrectedElevation', a) else '"' + str(float(a['GainUncorrectedElevation']['value'])/100) + '",'
 #		csv_record += empty_record if absentOrNull('MinUncorrectedElevation', a) else '"' + str(float(a['MinUncorrectedElevation']['value'])/100) + '",'
