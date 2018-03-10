@@ -114,6 +114,8 @@ class FixedOffset(tzinfo):
     def dst(self, dt):
         return ZERO
 
+# build an 'aware' datetime from two 'naive' datetime objects (that is timestamps
+# as present in the activities.json), using the time difference as offset
 def offsetDateTime(timeLocal, timeGMT):
 	localDT = datetime.strptime(timeLocal, "%Y-%m-%d %H:%M:%S")
 	gmtDT = datetime.strptime(timeGMT, "%Y-%m-%d %H:%M:%S")
