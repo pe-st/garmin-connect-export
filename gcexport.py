@@ -356,7 +356,8 @@ while total_downloaded < total_to_download:
 		print 'Garmin Connect activity: [' + str(a['activityId']) + ']',
 		print a['activityName']
 		startTimeWithOffset = offsetDateTime(a['startTimeLocal'], a['startTimeGMT'])
-		endTimeWithOffset = startTimeWithOffset + timedelta(seconds=int(a['elapsedDuration']/1000))
+		duration = a['elapsedDuration']/1000 if a['elapsedDuration'] else a['duration']
+		endTimeWithOffset = startTimeWithOffset + timedelta(seconds=int(duration)) if duration else None
 		print '\t' + startTimeWithOffset.isoformat() + ',',
 		if 'duration' in a:
 			print hhmmssFromSeconds(a['duration']) + ',',
@@ -426,7 +427,7 @@ while total_downloaded < total_to_download:
 
 		csv_record = ''
 
-		csv_record += empty_record if 'activityName' not in a else '"' + a['activityName'].replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('activityName', a) else '"' + a['activityName'].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('description', a) else '"' + a['description'].replace('"', '""') + '",'
 		csv_record += '"' + startTimeWithOffset.isoformat().replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('duration', a) else hhmmssFromSeconds(a['duration']).replace('"', '""') + ','
@@ -450,7 +451,7 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if absentOrNull('minTemperature', a) else '"' + str(a['minTemperature']).replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('maxTemperature', a) else '"' + str(a['maxTemperature']).replace('"', '""') + '",'
 		csv_record += '"https://connect.garmin.com/modern/activity/' + str(a['activityId']).replace('"', '""') + '",'
-		csv_record += '"' + endTimeWithOffset.isoformat().replace('"', '""') + '",'
+		csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.isoformat().replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']).replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('elapsedDuration', a) or absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+int(a['elapsedDuration'])).replace('"', '""') + '",'
 		csv_record += empty_record # only deviceId in JSON, not the real name
