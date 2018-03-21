@@ -83,7 +83,12 @@ def http_req(url, post=None, headers={}):
 
 	# N.B. urllib2 will follow any 302 redirects. Also, the "open" call above may throw a urllib2.HTTPError which is checked for below.
 	# print response.getcode()
-	if response.getcode() != 200:
+	if response.getcode() == 204:
+		# For activities without GPS coordinates, there is no GPX download (204 = no content).
+		# Write an empty file to prevent redownloading it.
+		print 'Writing empty file since there was no GPX activity data...',
+		return ''
+	elif response.getcode() != 200:
 		raise Exception('Bad return code (' + str(response.getcode()) + ') for: ' + url)
 
 	return response.read()
@@ -444,9 +449,9 @@ while total_downloaded < total_to_download:
 
 		csv_file.write(csv_record.encode('utf8'))
 
-		if args.format == 'gpx':
+		if args.format == 'gpx' and data:
 			# Validate GPX data. If we have an activity without GPS data (e.g., running on a treadmill),
-			# Garmin Connect still kicks out a GPX, but there is only activity information, no GPS data.
+			# Garmin Connect still kicks out a GPX (sometimes), but there is only activity information, no GPS data.
 			# N.B. You can omit the XML parse (and the associated log messages) to speed things up.
 			gpx = parseString(data)
 			gpx_data_exists = len(gpx.getElementsByTagName('trkpt')) > 0
