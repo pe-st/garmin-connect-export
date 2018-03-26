@@ -245,10 +245,12 @@ Begin timestamp (ms),\
 End timestamp,\
 End timestamp (ms),\
 Device,\
-Activity Parent,\
+Activity parent,\
 Activity type,\
 Event type,\
 Time zone,\
+Max. Elevation,\
+Max. Elevation (Raw),\
 Duration (h:m:s),\
 Moving duration (h:m:s),\
 Distance (km),\
@@ -441,6 +443,8 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if absentOrNull('activityType', a) else '"' + a['activityType']['typeKey'].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('eventType', a) else '"' + a['eventType']['typeKey'].replace('"', '""') + '",'
 		csv_record += '"' + startTimeWithOffset.isoformat()[-6:].replace('"', '""') + '",'
+		csv_record += empty_record # no max Elevation with unit
+		csv_record += empty_record if absentOrNull('maxElevation', a) else '"' + str(round(a['maxElevation']/100, 1)) + '",'
 		csv_record += empty_record if absentOrNull('duration', a) else hhmmssFromSeconds(a['duration']).replace('"', '""') + ','
 		csv_record += empty_record if absentOrNull('movingDuration', a) else hhmmssFromSeconds(a['movingDuration']).replace('"', '""') + ','
 		csv_record += empty_record if absentOrNull('distance', a) else '"' + "{0:.3f}".format(a['distance']/1000).replace('"', '""') + '",'
