@@ -244,6 +244,11 @@ Begin timestamp,\
 Begin timestamp (ms),\
 End timestamp,\
 End timestamp (ms),\
+Device,\
+Activity Parent,\
+Activity type,\
+Event type,\
+Time zone,\
 Duration (h:m:s),\
 Moving duration (h:m:s),\
 Distance (km),\
@@ -265,10 +270,6 @@ Avg. temp (°C),\
 Min. temp (°C),\
 Max. temp (°C),\
 Map,\
-Device,\
-Activity type,\
-Event type,\
-Time zone,\
 Begin latitude (°DD),\
 Begin longitude (°DD),\
 End latitude (°DD),\
@@ -435,6 +436,11 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']).replace('"', '""') + '",'
 		csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.isoformat().replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('elapsedDuration', a) or absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+int(a['elapsedDuration'])).replace('"', '""') + '",'
+		csv_record += empty_record # only deviceId in JSON, not the real name
+		csv_record += empty_record if absentOrNull('activityType', a) else '"' + str(a['activityType']['parentTypeId']).replace('"', '""') + '",' # only typeId here...
+		csv_record += empty_record if absentOrNull('activityType', a) else '"' + a['activityType']['typeKey'].replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('eventType', a) else '"' + a['eventType']['typeKey'].replace('"', '""') + '",'
+		csv_record += '"' + startTimeWithOffset.isoformat()[-6:].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('duration', a) else hhmmssFromSeconds(a['duration']).replace('"', '""') + ','
 		csv_record += empty_record if absentOrNull('movingDuration', a) else hhmmssFromSeconds(a['movingDuration']).replace('"', '""') + ','
 		csv_record += empty_record if absentOrNull('distance', a) else '"' + "{0:.3f}".format(a['distance']/1000).replace('"', '""') + '",'
@@ -456,10 +462,6 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if absentOrNull('minTemperature', a) else '"' + str(a['minTemperature']).replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('maxTemperature', a) else '"' + str(a['maxTemperature']).replace('"', '""') + '",'
 		csv_record += '"https://connect.garmin.com/modern/activity/' + str(a['activityId']).replace('"', '""') + '",'
-		csv_record += empty_record # only deviceId in JSON, not the real name
-		csv_record += empty_record if absentOrNull('activityType', a) else '"' + a['activityType']['typeKey'].replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('eventType', a) else '"' + a['eventType']['typeKey'].replace('"', '""') + '",'
-		csv_record += '"' + startTimeWithOffset.isoformat()[-6:].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('startLatitude', a) else '"' + str(a['startLatitude']).replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('startLongitude', a) else '"' + str(a['startLongitude']).replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('endLatitude', a) else '"' + str(a['endLatitude']).replace('"', '""') + '",'
