@@ -179,6 +179,7 @@ url_gc_post_auth = 'https://connect.garmin.com/post-auth/login?'
 url_gc_summary   = 'http://connect.garmin.com/proxy/activity-search-service-1.2/json/activities?start=0&limit=1'
 url_gc_search    = 'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
 url_gc_activity  = 'https://connect.garmin.com/modern/proxy/activity-service/activity/'
+url_gc_device    = 'https://connect.garmin.com/modern/proxy/device-service/deviceservice/app-info/'
 url_gc_gpx_activity = 'https://connect.garmin.com/modern/proxy/download-service/export/gpx/activity/'
 url_gc_tcx_activity = 'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
 url_gc_original_activity = 'http://connect.garmin.com/proxy/download-service/files/activity/'
@@ -326,6 +327,8 @@ else:
 	total_to_download = int(args.count)
 total_downloaded = 0
 
+device_dict = dict()
+
 # This while loop will download data from the server in multiple chunks, if necessary.
 while total_downloaded < total_to_download:
 	# Maximum chunk size 'limit_maximum' ... 400 return status if over maximum.  So download maximum or whatever remains if less than maximum.
@@ -374,6 +377,19 @@ while total_downloaded < total_to_download:
 			print '0.000 km'
 
 		activity_details = http_req(url_gc_activity + str(a['activityId']))
+		json_details = json.loads(activity_details)  # TODO: Catch possible exceptions here.
+
+		device = None
+		device_app_inst_id = None if absentOrNull('metadataDTO', json_details) else json_details['metadataDTO']['deviceApplicationInstallationId']
+		if device_app_inst_id:
+			if not (device_dict.has_key(device_app_inst_id)):
+				device_details = http_req(url_gc_device + str(device_app_inst_id))
+				device_filename = args.directory + '/device_' + str(device_app_inst_id) + '.json'
+				device_file = open(device_filename, 'a')
+				device_file.write(device_details)
+				device_file.close()
+				device_dict[device_app_inst_id] = json.loads(device_details)  # TODO: Catch possible exceptions here.
+			device = device_dict[device_app_inst_id]
 
 		if args.format == 'gpx':
 			data_filename = args.directory + '/activity_' + str(a['activityId']) + '.gpx'
@@ -447,7 +463,7 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']).replace('"', '""') + '",'
 		csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.isoformat().replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('elapsedDuration', a) or absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+int(a['elapsedDuration'])).replace('"', '""') + '",'
-		csv_record += empty_record # only deviceId in JSON, not the real name
+		csv_record += empty_record if absentOrNull('productDisplayName', device) else '"' + device['productDisplayName'].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('activityType', a) else '"' + str(a['activityType']['parentTypeId']).replace('"', '""') + '",' # only typeId here...
 		csv_record += empty_record if absentOrNull('activityType', a) else '"' + a['activityType']['typeKey'].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('eventType', a) else '"' + a['eventType']['typeKey'].replace('"', '""') + '",'
