@@ -45,8 +45,8 @@ parser.add_argument('--password', help="your Garmin Connect password (otherwise,
 parser.add_argument('-c', '--count', nargs='?', default="1",
 	help="number of recent activities to download, or 'all' (default: 1)")
 
-parser.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original'], default="gpx",
-	help="export format; can be 'gpx', 'tcx', or 'original' (default: 'gpx')")
+parser.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original', 'json'], default="gpx",
+	help="export format; can be 'gpx', 'tcx', 'original' or 'json' (default: 'gpx')")
 
 parser.add_argument('-d', '--directory', nargs='?', default=activities_directory,
 	help="the directory to export to (default: './YYYY-MM-DD_garmin_connect_export')")
@@ -176,8 +176,9 @@ print urllib.urlencode(data)
 # URLs for various services.
 url_gc_login     = 'https://sso.garmin.com/sso/login?' + urllib.urlencode(data)
 url_gc_post_auth = 'https://connect.garmin.com/post-auth/login?'
-url_gc_summary    = 'http://connect.garmin.com/proxy/activity-search-service-1.2/json/activities?start=0&limit=1'
+url_gc_summary   = 'http://connect.garmin.com/proxy/activity-search-service-1.2/json/activities?start=0&limit=1'
 url_gc_search    = 'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
+url_gc_activity  = 'https://connect.garmin.com/modern/proxy/activity-service/activity/'
 url_gc_gpx_activity = 'https://connect.garmin.com/modern/proxy/download-service/export/gpx/activity/'
 url_gc_tcx_activity = 'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
 url_gc_original_activity = 'http://connect.garmin.com/proxy/download-service/files/activity/'
@@ -368,6 +369,8 @@ while total_downloaded < total_to_download:
 		else:
 			print '0.000 km'
 
+		activity_details = http_req(url_gc_activity + str(a['activityId']))
+
 		if args.format == 'gpx':
 			data_filename = args.directory + '/activity_' + str(a['activityId']) + '.gpx'
 			download_url = url_gc_gpx_activity + str(a['activityId']) + '?full=true'
@@ -383,6 +386,9 @@ while total_downloaded < total_to_download:
 			fit_filename = args.directory + '/' + str(a['activityId']) + '.fit'
 			download_url = url_gc_original_activity + str(a['activityId'])
 			file_mode = 'wb'
+		elif args.format == 'json':
+			data_filename = args.directory + '/activity_' + str(a['activityId']) + '.json'
+			file_mode = 'w'
 		else:
 			raise Exception('Unrecognized format.')
 
@@ -393,30 +399,33 @@ while total_downloaded < total_to_download:
 			print '\tFIT data file already exists; skipping...'
 			continue
 
-		# Download the data file from Garmin Connect.
-		# If the download fails (e.g., due to timeout), this script will die, but nothing
-		# will have been written to disk about this activity, so just running it again
-		# should pick up where it left off.
-		print '\tDownloading file...',
+		if args.format != 'json':
+			# Download the data file from Garmin Connect.
+			# If the download fails (e.g., due to timeout), this script will die, but nothing
+			# will have been written to disk about this activity, so just running it again
+			# should pick up where it left off.
+			print '\tDownloading file...',
 
-		try:
-			data = http_req(download_url)
-		except urllib2.HTTPError as e:
-			# Handle expected (though unfortunate) error codes; die on unexpected ones.
-			if e.code == 500 and args.format == 'tcx':
-				# Garmin will give an internal server error (HTTP 500) when downloading TCX files if the original was a manual GPX upload.
-				# Writing an empty file prevents this file from being redownloaded, similar to the way GPX files are saved even when there are no tracks.
-				# One could be generated here, but that's a bit much. Use the GPX format if you want actual data in every file,
-				# as I believe Garmin provides a GPX file for every activity.
-				print 'Writing empty file since Garmin did not generate a TCX file for this activity...',
-				data = ''
-			elif e.code == 404 and args.format == 'original':
-				# For manual activities (i.e., entered in online without a file upload), there is no original file.
-				# Write an empty file to prevent redownloading it.
-				print 'Writing empty file since there was no original activity data...',
-				data = ''
-			else:
-				raise Exception('Failed. Got an unexpected HTTP error (' + str(e.code) + download_url +').')
+			try:
+				data = http_req(download_url)
+			except urllib2.HTTPError as e:
+				# Handle expected (though unfortunate) error codes; die on unexpected ones.
+				if e.code == 500 and args.format == 'tcx':
+					# Garmin will give an internal server error (HTTP 500) when downloading TCX files if the original was a manual GPX upload.
+					# Writing an empty file prevents this file from being redownloaded, similar to the way GPX files are saved even when there are no tracks.
+					# One could be generated here, but that's a bit much. Use the GPX format if you want actual data in every file,
+					# as I believe Garmin provides a GPX file for every activity.
+					print 'Writing empty file since Garmin did not generate a TCX file for this activity...',
+					data = ''
+				elif e.code == 404 and args.format == 'original':
+					# For manual activities (i.e., entered in online without a file upload), there is no original file.
+					# Write an empty file to prevent redownloading it.
+					print 'Writing empty file since there was no original activity data...',
+					data = ''
+				else:
+					raise Exception('Failed. Got an unexpected HTTP error (' + str(e.code) + download_url +').')
+		else:
+			data = activity_details
 
 		save_file = open(data_filename, file_mode)
 		save_file.write(data)
@@ -517,6 +526,9 @@ while total_downloaded < total_to_download:
 					print 'Skipping 0Kb zip file.'
 				remove(data_filename)
 			print 'Done.'
+		elif args.format == 'json':
+			# print nothing here
+			pass
 		else:
 			# TODO: Consider validating other formats.
 			print 'Done.'
