@@ -94,7 +94,9 @@ def http_req(url, post=None, headers={}):
 	return response.read()
 
 def absentOrNull(element, a):
-	if element not in a:
+	if not a:
+		return True
+	elif element not in a:
 		return True
 	elif a[element]:
 		return False
@@ -384,16 +386,18 @@ while total_downloaded < total_to_download:
 		activity_details = http_req(url_gc_activity + str(a['activityId']))
 		json_details = json.loads(activity_details)  # TODO: Catch possible exceptions here.
 
+		# try to get the device details (and cache them, as they're used for multiple activities)
 		device = None
 		device_app_inst_id = None if absentOrNull('metadataDTO', json_details) else json_details['metadataDTO']['deviceApplicationInstallationId']
 		if device_app_inst_id:
 			if not (device_dict.has_key(device_app_inst_id)):
+				# print '\tGetting device details ' + str(device_app_inst_id)
 				device_details = http_req(url_gc_device + str(device_app_inst_id))
 				device_filename = args.directory + '/device_' + str(device_app_inst_id) + '.json'
 				device_file = open(device_filename, 'a')
 				device_file.write(device_details)
 				device_file.close()
-				device_dict[device_app_inst_id] = json.loads(device_details)  # TODO: Catch possible exceptions here.
+				device_dict[device_app_inst_id] = None if not device_details else json.loads(device_details)
 			device = device_dict[device_app_inst_id]
 
 		if args.format == 'gpx':
