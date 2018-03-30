@@ -390,7 +390,8 @@ while total_downloaded < total_to_download:
 		print a['activityName']
 		startTimeWithOffset = offsetDateTime(a['startTimeLocal'], a['startTimeGMT'])
 		duration = a['elapsedDuration']/1000 if a['elapsedDuration'] else a['duration']
-		endTimeWithOffset = startTimeWithOffset + timedelta(seconds=int(duration)) if duration else None
+		durationSeconds = int(round(duration))
+		endTimeWithOffset = startTimeWithOffset + timedelta(seconds=durationSeconds) if duration else None
 		print '\t' + startTimeWithOffset.isoformat() + ',',
 		if 'duration' in a:
 			print hhmmssFromSeconds(a['duration']) + ',',
@@ -491,7 +492,7 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']).replace('"', '""') + '",'
 		csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.strftime(ALMOST_RFC_1123).replace('"', '""') + '",'
 		# csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.isoformat().replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('elapsedDuration', a) or absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+int(a['elapsedDuration'])).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+durationSeconds*1000).replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('productDisplayName', device) else '"' + device['productDisplayName'].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('activityType', a) else '"' + str(a['activityType']['parentTypeId']).replace('"', '""') + '",' # only typeId here...
 		csv_record += empty_record if absentOrNull('activityType', a) else '"' + a['activityType']['typeKey'].replace('"', '""') + '",'
