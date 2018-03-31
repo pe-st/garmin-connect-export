@@ -339,6 +339,22 @@ Elevation Loss (m)\n')
 # Max. elevation (m),\
 # Activity parent,\
 
+# some dictionaries for the CSV output
+parent_type_id = {
+	1: 'running',
+	2: 'cycling',
+	3: 'hiking',
+	4: 'other',
+	9: 'walking',
+	17: 'any activity type',
+	26: 'swimming',
+	29: 'fitness equipment',
+	71: 'motorcycling',
+	83: 'transition',
+	144: 'diving',
+	149: 'yoga' }
+
+
 if args.count == 'all':
 	# If the user wants to download all activities, first download one,
 	# then the result of that request will tell us how many are available
@@ -508,7 +524,7 @@ while total_downloaded < total_to_download:
 		# csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.isoformat().replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+durationSeconds*1000).replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('productDisplayName', device) else '"' + device['productDisplayName'].replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('activityType', a) else '"' + str(a['activityType']['parentTypeId']).replace('"', '""') + '",' # only typeId here...
+		csv_record += empty_record if absentOrNull('activityType', a) else '"' + parent_type_id[a['activityType']['parentTypeId']].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('activityType', a) else '"' + a['activityType']['typeKey'].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('eventType', a) else '"' + a['eventType']['typeKey'].replace('"', '""') + '",'
 		csv_record += '"' + startTimeWithOffset.isoformat()[-6:].replace('"', '""') + '",'
