@@ -30,6 +30,15 @@ from fileinput import filename
 import argparse
 import zipfile
 
+# The version of the script in this branch tries to recreate the CSV output of
+# the original version by kjkjava using the activity-search-service-1.0
+# endpoint (which stopped working somewhere around February 2018). The goal
+# is to minimise the differences to spot remaining issues. To achieve this
+# some shortcomings of the old endpoint are reproduced, e.g. that the
+# endTimestamp is calculated based on the duration and not the elapsed
+# duration (and truncated, not rounded)
+from math import floor
+
 script_version = '1.0.0'
 current_date = datetime.now().strftime('%Y-%m-%d')
 activities_directory = './' + current_date + '_garmin_connect_export'
@@ -389,8 +398,13 @@ while total_downloaded < total_to_download:
 		print 'Garmin Connect activity: [' + str(a['activityId']) + ']',
 		print a['activityName']
 		startTimeWithOffset = offsetDateTime(a['startTimeLocal'], a['startTimeGMT'])
-		duration = a['elapsedDuration']/1000 if a['elapsedDuration'] else a['duration']
-		durationSeconds = int(round(duration))
+		# the endTimeLocal provided by the old activity-search-service-1.0 endpoint
+		# ignored breaks in the activity (duration instead of elapsed duration) and
+		# didn't round the seconds, but truncate them
+		duration = a['duration']
+		durationSeconds = int(floor(duration))
+		# duration = a['elapsedDuration']/1000 if a['elapsedDuration'] else a['duration']
+		# durationSeconds = int(round(duration))
 		endTimeWithOffset = startTimeWithOffset + timedelta(seconds=durationSeconds) if duration else None
 		print '\t' + startTimeWithOffset.isoformat() + ',',
 		if 'duration' in a:
