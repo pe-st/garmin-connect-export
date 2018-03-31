@@ -566,7 +566,7 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if absentOrNull('maxSpeed', a) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, a['maxSpeed'])) + '",'
 		csv_record += empty_record if absentOrNull('calories', a) else '"' + "{0:.0f}".format(a['calories']).replace('"', '""') + '",'
 		csv_record += empty_record # no raw calories
-		csv_record += empty_record if absentOrNull('duration', a) else hhmmssFromSeconds(a['duration']).replace('"', '""') + ','
+		csv_record += empty_record if absentOrNull('duration', a) else hhmmssFromSeconds(round(a['duration'])) + ','
 		csv_record += empty_record if absentOrNull('duration', a) else str(round(a['duration'], 3)).replace('"', '""') + ','
 		csv_record += empty_record if absentOrNull('movingDuration', a) else hhmmssFromSeconds(a['movingDuration']).replace('"', '""') + ','
 		csv_record += empty_record if absentOrNull('movingDuration', a) else str(a['movingDuration']).replace('"', '""') + ','
