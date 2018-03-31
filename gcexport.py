@@ -112,6 +112,9 @@ def absentOrNull(element, a):
 	else:
 		return True
 
+def trunc6(f):
+	return "{0:12.6f}".format(floor(f*1000000)/1000000).lstrip()
+
 # A class building tzinfo objects for fixed-offset time zones.
 # (copied from https://docs.python.org/2/library/datetime.html)
 class FixedOffset(tzinfo):
@@ -530,10 +533,10 @@ while total_downloaded < total_to_download:
 		csv_record += '"' + startTimeWithOffset.isoformat()[-6:].replace('"', '""') + '",'
 		csv_record += empty_record # no max Elevation with unit
 		csv_record += empty_record if absentOrNull('maxElevation', a) else '"' + str(round(a['maxElevation']/100, 2)) + '",'
-		csv_record += empty_record if absentOrNull('startLatitude', a) else '"' + str(a['startLatitude']).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('startLongitude', a) else '"' + str(a['startLongitude']).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('endLatitude', a) else '"' + str(a['endLatitude']).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('endLongitude', a) else '"' + str(a['endLongitude']).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('startLatitude', a) else '"' + trunc6(a['startLatitude']) + '",'
+		csv_record += empty_record if absentOrNull('startLongitude', a) else '"' + trunc6(a['startLongitude']) + '",'
+		csv_record += empty_record if absentOrNull('endLatitude', a) else '"' + trunc6(a['endLatitude']) + '",'
+		csv_record += empty_record if absentOrNull('endLongitude', a) else '"' + trunc6(a['endLongitude']) + '",'
 		csv_record += empty_record # no average moving speed with unit
 		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('averageMovingSpeed', details['summaryDTO']) else '"' + str(details['summaryDTO']['averageMovingSpeed']*3.6).replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('maxHR', a) else '"' + str(a['maxHR']).replace('"', '""') + '",'
