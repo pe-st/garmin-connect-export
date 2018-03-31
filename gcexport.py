@@ -523,13 +523,13 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.strftime(ALMOST_RFC_1123).replace('"', '""') + '",'
 		# csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.isoformat().replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+durationSeconds*1000).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('productDisplayName', device) else '"' + device['productDisplayName'].replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('productDisplayName', device) else '"' + device['productDisplayName'].replace('"', '""') + ' ' + device['versionString'] + '",'
 		csv_record += empty_record if absentOrNull('activityType', a) else '"' + parent_type_id[a['activityType']['parentTypeId']].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('activityType', a) else '"' + a['activityType']['typeKey'].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('eventType', a) else '"' + a['eventType']['typeKey'].replace('"', '""') + '",'
 		csv_record += '"' + startTimeWithOffset.isoformat()[-6:].replace('"', '""') + '",'
 		csv_record += empty_record # no max Elevation with unit
-		csv_record += empty_record if absentOrNull('maxElevation', a) else '"' + str(round(a['maxElevation']/100, 1)) + '",'
+		csv_record += empty_record if absentOrNull('maxElevation', a) else '"' + str(round(a['maxElevation']/100, 2)) + '",'
 		csv_record += empty_record if absentOrNull('startLatitude', a) else '"' + str(a['startLatitude']).replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('startLongitude', a) else '"' + str(a['startLongitude']).replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('endLatitude', a) else '"' + str(a['endLatitude']).replace('"', '""') + '",'
@@ -540,7 +540,7 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if absentOrNull('averageHR', a) else '"' + str(a['averageHR']).replace('"', '""') + '",'
 		csv_record += empty_record # no max speed with unit
 		csv_record += empty_record if absentOrNull('maxSpeed', a) else '"' + str(a['maxSpeed']*3.6).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('calories', a) else '"' + str(a['calories']).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('calories', a) else '"' + "{0:.0f}".format(a['calories']).replace('"', '""') + '",'
 		csv_record += empty_record # no raw calories
 		csv_record += empty_record if absentOrNull('duration', a) else hhmmssFromSeconds(a['duration']).replace('"', '""') + ','
 		csv_record += empty_record if absentOrNull('duration', a) else str(a['duration']).replace('"', '""') + ','
@@ -549,14 +549,14 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record # no average speed with unit
 		csv_record += empty_record if absentOrNull('averageSpeed', a) else '"' + str(a['averageSpeed']*3.6).replace('"', '""') + '",'
 		csv_record += empty_record # no distance with unit
-		csv_record += empty_record if absentOrNull('distance', a) else '"' + "{0:.3f}".format(a['distance']/1000).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('distance', a) else '"' + "{0:.5f}".format(a['distance']/1000).replace('"', '""') + '",'
 		csv_record += empty_record # no duplicate for max bpm
 		csv_record += empty_record # no min Elevation with unit
-		csv_record += empty_record if absentOrNull('minElevation', a) else '"' + str(round(a['minElevation']/100, 1)) + '",'
+		csv_record += empty_record if absentOrNull('minElevation', a) else '"' + str(round(a['minElevation']/100, 2)) + '",'
 		csv_record += empty_record # no Elevation Gain with unit
-		csv_record += empty_record if absentOrNull('elevationGain', a) else '"' + str(a['elevationGain']) + '",'
+		csv_record += empty_record if absentOrNull('elevationGain', a) else '"' + str(round(a['elevationGain'], 2)) + '",'
 		csv_record += empty_record # no Elevation Loss with unit
-		csv_record += empty_record if absentOrNull('elevationLoss', a) else '"' + str(a['elevationLoss']) + '",'
+		csv_record += empty_record if absentOrNull('elevationLoss', a) else '"' + str(round(a['elevationLoss'], 2)) + '",'
 		csv_record += '\n'
 
 		# csv_record += empty_record if a['elevationCorrected'] or absentOrNull('minElevation', a) else '"' + str(round(a['minElevation']/100, 1)) + '",'
