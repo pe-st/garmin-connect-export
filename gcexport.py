@@ -12,6 +12,16 @@ Description:	Use this script to export your fitness data from Garmin Connect.
 				See README.md for more information.
 """
 
+# The version of the script in this branch tries to recreate the CSV output of
+# the original version by kjkjava using the activity-search-service-1.0
+# endpoint (which stopped working somewhere around February 2018). The goal
+# is to minimise the differences to spot remaining issues. To achieve this
+# some shortcomings of the old endpoint are reproduced, e.g. that the
+# endTimestamp is calculated based on the duration and not the elapsed
+# duration (and truncated, not rounded)
+
+from math import floor
+from sets import Set
 from urllib import urlencode
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
@@ -29,15 +39,6 @@ from fileinput import filename
 
 import argparse
 import zipfile
-
-# The version of the script in this branch tries to recreate the CSV output of
-# the original version by kjkjava using the activity-search-service-1.0
-# endpoint (which stopped working somewhere around February 2018). The goal
-# is to minimise the differences to spot remaining issues. To achieve this
-# some shortcomings of the old endpoint are reproduced, e.g. that the
-# endTimestamp is calculated based on the duration and not the elapsed
-# duration (and truncated, not rounded)
-from math import floor
 
 script_version = '1.0.0'
 current_date = datetime.now().strftime('%Y-%m-%d')
@@ -148,6 +149,40 @@ def hhmmssFromSeconds(sec):
 # this is almost the datetime format Garmin used in the activity-search-service
 # JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
 ALMOST_RFC_1123 = "%a, %d %b %Y %H:%M"
+
+# map the numeric parentTypeId to its name for the CSV output
+parent_type_id = {
+	1: 'running',
+	2: 'cycling',
+	3: 'hiking',
+	4: 'other',
+	9: 'walking',
+	17: 'any activity type',
+	26: 'swimming',
+	29: 'fitness equipment',
+	71: 'motorcycling',
+	83: 'transition',
+	144: 'diving',
+	149: 'yoga' }
+
+# typeId values using pace instead of speed
+uses_pace = Set([1, 3, 9]) # running, hiking, walking
+
+def paceOrSpeedRaw(typeId, parentTypeId, mps):
+	kmh = 3.6 * mps
+	if (typeId in uses_pace) or (parentTypeId in uses_pace):
+		return 60 / kmh
+	else:
+		return kmh
+
+def paceOrSpeedFormatted(typeId, parentTypeId, mps):
+	kmh = 3.6 * mps
+	if (typeId in uses_pace) or (parentTypeId in uses_pace):
+		# format seconds per kilometer as MM:SS, see https://stackoverflow.com/a/27751293
+		return '{0:02d}:{1:02d}'.format(*divmod(int(round(3600 / kmh)), 60))
+	else:
+		return "{0:.1f}".format(kmh)
+
 
 print 'Welcome to Garmin Connect Exporter!'
 
@@ -342,22 +377,6 @@ Elevation Loss (m)\n')
 # Max. elevation (m),\
 # Activity parent,\
 
-# some dictionaries for the CSV output
-parent_type_id = {
-	1: 'running',
-	2: 'cycling',
-	3: 'hiking',
-	4: 'other',
-	9: 'walking',
-	17: 'any activity type',
-	26: 'swimming',
-	29: 'fitness equipment',
-	71: 'motorcycling',
-	83: 'transition',
-	144: 'diving',
-	149: 'yoga' }
-
-
 if args.count == 'all':
 	# If the user wants to download all activities, first download one,
 	# then the result of that request will tell us how many are available
@@ -437,6 +456,8 @@ while total_downloaded < total_to_download:
 
 		activity_details = http_req(url_gc_activity + str(a['activityId']))
 		details = json.loads(activity_details)  # TODO: Catch possible exceptions here.
+		parentTypeId = 4 if absentOrNull('activityType', a) else a['activityType']['parentTypeId']
+		typeId = 4 if absentOrNull('activityType', a) else a['activityType']['typeId']
 
 		# try to get the device details (and cache them, as they're used for multiple activities)
 		device = None
@@ -527,7 +548,7 @@ while total_downloaded < total_to_download:
 		# csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.isoformat().replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+durationSeconds*1000).replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('productDisplayName', device) else '"' + device['productDisplayName'].replace('"', '""') + ' ' + device['versionString'] + '",'
-		csv_record += empty_record if absentOrNull('activityType', a) else '"' + parent_type_id[a['activityType']['parentTypeId']].replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('activityType', a) else '"' + parent_type_id[parentTypeId].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('activityType', a) else '"' + a['activityType']['typeKey'].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('eventType', a) else '"' + a['eventType']['typeKey'].replace('"', '""') + '",'
 		csv_record += '"' + startTimeWithOffset.isoformat()[-6:].replace('"', '""') + '",'
@@ -537,20 +558,20 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if absentOrNull('startLongitude', a) else '"' + trunc6(a['startLongitude']) + '",'
 		csv_record += empty_record if absentOrNull('endLatitude', a) else '"' + trunc6(a['endLatitude']) + '",'
 		csv_record += empty_record if absentOrNull('endLongitude', a) else '"' + trunc6(a['endLongitude']) + '",'
-		csv_record += empty_record # no average moving speed with unit
-		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('averageMovingSpeed', details['summaryDTO']) else '"' + str(details['summaryDTO']['averageMovingSpeed']*3.6).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('averageMovingSpeed', details['summaryDTO']) else '"' + paceOrSpeedFormatted(typeId, parentTypeId, details['summaryDTO']['averageMovingSpeed']) + '",'
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('averageMovingSpeed', details['summaryDTO']) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, details['summaryDTO']['averageMovingSpeed'])) + '",'
 		csv_record += empty_record if absentOrNull('maxHR', a) else '"' + str(a['maxHR']).replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('averageHR', a) else '"' + str(a['averageHR']).replace('"', '""') + '",'
-		csv_record += empty_record # no max speed with unit
-		csv_record += empty_record if absentOrNull('maxSpeed', a) else '"' + str(a['maxSpeed']*3.6).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('maxSpeed', a) else '"' + paceOrSpeedFormatted(typeId, parentTypeId, a['maxSpeed']) + '",'
+		csv_record += empty_record if absentOrNull('maxSpeed', a) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, a['maxSpeed'])) + '",'
 		csv_record += empty_record if absentOrNull('calories', a) else '"' + "{0:.0f}".format(a['calories']).replace('"', '""') + '",'
 		csv_record += empty_record # no raw calories
 		csv_record += empty_record if absentOrNull('duration', a) else hhmmssFromSeconds(a['duration']).replace('"', '""') + ','
-		csv_record += empty_record if absentOrNull('duration', a) else str(a['duration']).replace('"', '""') + ','
+		csv_record += empty_record if absentOrNull('duration', a) else str(round(a['duration'], 3)).replace('"', '""') + ','
 		csv_record += empty_record if absentOrNull('movingDuration', a) else hhmmssFromSeconds(a['movingDuration']).replace('"', '""') + ','
 		csv_record += empty_record if absentOrNull('movingDuration', a) else str(a['movingDuration']).replace('"', '""') + ','
-		csv_record += empty_record # no average speed with unit
-		csv_record += empty_record if absentOrNull('averageSpeed', a) else '"' + str(a['averageSpeed']*3.6).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('averageSpeed', a) else '"' + paceOrSpeedFormatted(typeId, parentTypeId, a['averageSpeed']) + '",'
+		csv_record += empty_record if absentOrNull('averageSpeed', a) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, a['averageSpeed'])) + '",'
 		csv_record += empty_record # no distance with unit
 		csv_record += empty_record if absentOrNull('distance', a) else '"' + "{0:.5f}".format(a['distance']/1000).replace('"', '""') + '",'
 		csv_record += empty_record # no duplicate for max bpm
