@@ -19,6 +19,11 @@ Description:	Use this script to export your fitness data from Garmin Connect.
 # some shortcomings of the old endpoint are reproduced, e.g. that the
 # endTimestamp is calculated based on the duration and not the elapsed
 # duration (and truncated, not rounded)
+#
+# Remaining differences:
+# - the old version has wrong time zone offsets (no summertime in summer...)
+# - for some activities, e.g. 86497297, the data in activities.json and activity_86497297.json differ.
+#   TODO: must use the data from activity_xxx.json
 
 from math import floor
 from sets import Set
@@ -437,12 +442,10 @@ while total_downloaded < total_to_download:
 		print a['activityName']
 		startTimeWithOffset = offsetDateTime(a['startTimeLocal'], a['startTimeGMT'])
 		# the endTimeLocal provided by the old activity-search-service-1.0 endpoint
-		# ignored breaks in the activity (duration instead of elapsed duration) and
-		# didn't round the seconds, but truncate them
+		# ignored breaks in the activity (duration instead of elapsed duration)
 		duration = a['duration']
-		durationSeconds = int(floor(duration))
 		# duration = a['elapsedDuration']/1000 if a['elapsedDuration'] else a['duration']
-		# durationSeconds = int(round(duration))
+		durationSeconds = int(round(duration))
 		endTimeWithOffset = startTimeWithOffset + timedelta(seconds=durationSeconds) if duration else None
 		print '\t' + startTimeWithOffset.isoformat() + ',',
 		if 'duration' in a:
