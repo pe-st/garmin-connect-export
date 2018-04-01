@@ -22,8 +22,14 @@ Description:	Use this script to export your fitness data from Garmin Connect.
 #
 # Remaining differences:
 # - the old version has wrong time zone offsets (no summertime in summer...)
+# - the old version sometimes (or always?) used elapsedDuration for duration
+# - the old script filled the maxElevation into the minElevation column
+# - the old CSV output has some inexplainable differences (e.g. end timestamp of 87966658,
+#   because the old JSON outputs were not kept
 # - for some activities, e.g. 86497297, the data in activities.json and activity_86497297.json differ.
 #   TODO: must use the data from activity_xxx.json
+#   - differences observed in these fields: elevationGain, elevationLoss, maxSpeed
+#   - fields sometimes missing from details even though present in summary: startLatitude, startLongitude
 
 from math import floor
 from sets import Set
@@ -453,9 +459,9 @@ while total_downloaded < total_to_download:
 		startTimeWithOffset = offsetDateTime(a['startTimeLocal'], a['startTimeGMT'])
 		# the endTimeLocal provided by the old activity-search-service-1.0 endpoint
 		# ignored breaks in the activity (duration instead of elapsed duration)
-		duration = a['duration']
-		elapsedDuration = details['summaryDTO']['elapsedDuration'] if details['summaryDTO'] else a['elapsedDuration']
-		# duration = elapsedDuration/1000 if elapsedDuration else a['duration']
+		# duration = a['duration']
+		elapsedDuration = details['summaryDTO']['elapsedDuration'] if details['summaryDTO'] else None # else a['elapsedDuration']/1000
+		duration = elapsedDuration if elapsedDuration else a['duration']
 		durationSeconds = int(round(duration))
 		endTimeWithOffset = startTimeWithOffset + timedelta(seconds=durationSeconds) if duration else None
 		print '\t' + startTimeWithOffset.isoformat() + ',',
@@ -563,22 +569,23 @@ while total_downloaded < total_to_download:
 		csv_record += '"' + startTimeWithOffset.isoformat()[-6:].replace('"', '""') + '",'
 		csv_record += empty_record # no max Elevation with unit
 		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('maxElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['maxElevation'], 2)) + '",'
-		csv_record += empty_record if absentOrNull('startLatitude', a) else '"' + trunc6(a['startLatitude']) + '",'
-		csv_record += empty_record if absentOrNull('startLongitude', a) else '"' + trunc6(a['startLongitude']) + '",'
-		csv_record += empty_record if absentOrNull('endLatitude', a) else '"' + trunc6(a['endLatitude']) + '",'
-		csv_record += empty_record if absentOrNull('endLongitude', a) else '"' + trunc6(a['endLongitude']) + '",'
+		# TODO start latitude/longitude sometimes only in summary
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('startLatitude', details['summaryDTO']) else '"' + trunc6(details['summaryDTO']['startLatitude']) + '",'
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('startLongitude', details['summaryDTO']) else '"' + trunc6(details['summaryDTO']['startLongitude']) + '",'
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('endLatitude', details['summaryDTO']) else '"' + trunc6(details['summaryDTO']['endLatitude']) + '",'
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('endLongitude', details['summaryDTO']) else '"' + trunc6(details['summaryDTO']['endLongitude']) + '",'
 		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('averageMovingSpeed', details['summaryDTO']) else '"' + paceOrSpeedFormatted(typeId, parentTypeId, details['summaryDTO']['averageMovingSpeed']) + '",'
 		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('averageMovingSpeed', details['summaryDTO']) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, details['summaryDTO']['averageMovingSpeed'])) + '",'
 		csv_record += empty_record if absentOrNull('maxHR', a) else '"' + str(a['maxHR']).replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('averageHR', a) else '"' + str(a['averageHR']).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('maxSpeed', a) else '"' + paceOrSpeedFormatted(typeId, parentTypeId, a['maxSpeed']) + '",'
-		csv_record += empty_record if absentOrNull('maxSpeed', a) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, a['maxSpeed'])) + '",'
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('maxSpeed', details['summaryDTO']) else '"' + paceOrSpeedFormatted(typeId, parentTypeId, details['summaryDTO']['maxSpeed']) + '",'
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('maxSpeed', details['summaryDTO']) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, details['summaryDTO']['maxSpeed'])) + '",'
 		csv_record += empty_record if absentOrNull('calories', a) else '"' + "{0:.0f}".format(a['calories']).replace('"', '""') + '",'
 		csv_record += empty_record # no raw calories
-		csv_record += empty_record if absentOrNull('duration', a) else hhmmssFromSeconds(round(a['duration'])) + ','
-		csv_record += empty_record if absentOrNull('duration', a) else str(round(a['duration'], 3)).replace('"', '""') + ','
-		csv_record += empty_record if absentOrNull('movingDuration', a) else hhmmssFromSeconds(a['movingDuration']).replace('"', '""') + ','
-		csv_record += empty_record if absentOrNull('movingDuration', a) else str(a['movingDuration']).replace('"', '""') + ','
+		csv_record += empty_record if not duration else hhmmssFromSeconds(round(duration)) + ','
+		csv_record += empty_record if not duration else str(round(duration, 3)).replace('"', '""') + ','
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('movingDuration', details['summaryDTO']) else hhmmssFromSeconds(details['summaryDTO']['movingDuration']).replace('"', '""') + ','
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('movingDuration', details['summaryDTO']) else str(details['summaryDTO']['movingDuration']).replace('"', '""') + ','
 		csv_record += empty_record if absentOrNull('averageSpeed', a) else '"' + paceOrSpeedFormatted(typeId, parentTypeId, a['averageSpeed']) + '",'
 		csv_record += empty_record if absentOrNull('averageSpeed', a) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, a['averageSpeed'])) + '",'
 		csv_record += empty_record # no distance with unit
