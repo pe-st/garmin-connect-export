@@ -440,11 +440,22 @@ while total_downloaded < total_to_download:
 		# Display which entry we're working on.
 		print 'Garmin Connect activity: [' + str(a['activityId']) + ']',
 		print a['activityName']
+
+		# Retrieve also the detail data from the activity (the one displayed on
+		# the https://connect.garmin.com/modern/activity/xxx page), because some
+		# data are missing from 'a' (or are even different, e.g. for my activities
+		# 86497297 or 86516281)
+		activity_details = http_req(url_gc_activity + str(a['activityId']))
+		details = json.loads(activity_details)  # TODO: Catch possible exceptions here.
+		parentTypeId = 4 if absentOrNull('activityType', a) else a['activityType']['parentTypeId']
+		typeId = 4 if absentOrNull('activityType', a) else a['activityType']['typeId']
+
 		startTimeWithOffset = offsetDateTime(a['startTimeLocal'], a['startTimeGMT'])
 		# the endTimeLocal provided by the old activity-search-service-1.0 endpoint
 		# ignored breaks in the activity (duration instead of elapsed duration)
 		duration = a['duration']
-		# duration = a['elapsedDuration']/1000 if a['elapsedDuration'] else a['duration']
+		elapsedDuration = details['summaryDTO']['elapsedDuration'] if details['summaryDTO'] else a['elapsedDuration']
+		# duration = elapsedDuration/1000 if elapsedDuration else a['duration']
 		durationSeconds = int(round(duration))
 		endTimeWithOffset = startTimeWithOffset + timedelta(seconds=durationSeconds) if duration else None
 		print '\t' + startTimeWithOffset.isoformat() + ',',
@@ -456,11 +467,6 @@ while total_downloaded < total_to_download:
 			print "{0:.3f}".format(a['distance']/1000)
 		else:
 			print '0.000 km'
-
-		activity_details = http_req(url_gc_activity + str(a['activityId']))
-		details = json.loads(activity_details)  # TODO: Catch possible exceptions here.
-		parentTypeId = 4 if absentOrNull('activityType', a) else a['activityType']['parentTypeId']
-		typeId = 4 if absentOrNull('activityType', a) else a['activityType']['typeId']
 
 		# try to get the device details (and cache them, as they're used for multiple activities)
 		device = None
@@ -556,7 +562,7 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if absentOrNull('eventType', a) else '"' + a['eventType']['typeKey'].replace('"', '""') + '",'
 		csv_record += '"' + startTimeWithOffset.isoformat()[-6:].replace('"', '""') + '",'
 		csv_record += empty_record # no max Elevation with unit
-		csv_record += empty_record if absentOrNull('maxElevation', a) else '"' + str(round(a['maxElevation']/100, 2)) + '",'
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('maxElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['maxElevation'], 2)) + '",'
 		csv_record += empty_record if absentOrNull('startLatitude', a) else '"' + trunc6(a['startLatitude']) + '",'
 		csv_record += empty_record if absentOrNull('startLongitude', a) else '"' + trunc6(a['startLongitude']) + '",'
 		csv_record += empty_record if absentOrNull('endLatitude', a) else '"' + trunc6(a['endLatitude']) + '",'
@@ -579,11 +585,11 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if absentOrNull('distance', a) else '"' + "{0:.5f}".format(a['distance']/1000).replace('"', '""') + '",'
 		csv_record += empty_record # no duplicate for max bpm
 		csv_record += empty_record # no min Elevation with unit
-		csv_record += empty_record if absentOrNull('minElevation', a) else '"' + str(round(a['minElevation']/100, 2)) + '",'
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('minElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['minElevation'], 2)) + '",'
 		csv_record += empty_record # no Elevation Gain with unit
-		csv_record += empty_record if absentOrNull('elevationGain', a) else '"' + str(round(a['elevationGain'], 2)) + '",'
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('elevationGain', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationGain'], 2)) + '",'
 		csv_record += empty_record # no Elevation Loss with unit
-		csv_record += empty_record if absentOrNull('elevationLoss', a) else '"' + str(round(a['elevationLoss'], 2)) + '",'
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('elevationLoss', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationLoss'], 2)) + '",'
 		csv_record += '\n'
 
 		# csv_record += empty_record if a['elevationCorrected'] or absentOrNull('minElevation', a) else '"' + str(round(a['minElevation']/100, 1)) + '",'
