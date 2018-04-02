@@ -583,7 +583,7 @@ while total_downloaded < total_to_download:
 		csv_record = ''
 
 		csv_record += '"' + str(a['activityId']).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('activityName', a) else '"' + a['activityName'].replace('"', '""') + '",'
+		csv_record += '"Untitled",'  if absentOrNull('activityName', a) else '"' + a['activityName'].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('description', a) else '"' + a['description'].replace('"', '""') + '",'
 		csv_record += '"' + startTimeWithOffset.strftime(ALMOST_RFC_1123).replace('"', '""') + '",'
 		# csv_record += '"' + startTimeWithOffset.isoformat().replace('"', '""') + '",'
@@ -591,7 +591,7 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.strftime(ALMOST_RFC_1123).replace('"', '""') + '",'
 		# csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.isoformat().replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+durationSeconds*1000).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('productDisplayName', device) else '"' + device['productDisplayName'].replace('"', '""') + ' ' + device['versionString'] + '",'
+		csv_record += '"Unknown 0.0.0.0",' if absentOrNull('productDisplayName', device) else '"' + device['productDisplayName'].replace('"', '""') + ' ' + device['versionString'] + '",'
 		csv_record += empty_record if absentOrNull('activityType', a) else '"' + parent_type_id[parentTypeId].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('activityType', a) else '"' + a['activityType']['typeKey'].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('eventType', a) else '"' + a['eventType']['typeKey'].replace('"', '""') + '",'
