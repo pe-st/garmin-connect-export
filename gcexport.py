@@ -571,8 +571,8 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if absentOrNull('averageHR', a) else '"' + "{0:.0f}".format(a['averageHR']) + '",'
 		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('maxSpeed', details['summaryDTO']) else '"' + paceOrSpeedFormatted(typeId, parentTypeId, details['summaryDTO']['maxSpeed']) + '",'
 		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('maxSpeed', details['summaryDTO']) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, details['summaryDTO']['maxSpeed'])) + '",'
-		csv_record += empty_record if absentOrNull('calories', a) else '"' + "{0:.0f}".format(a['calories']) + '",'
-		csv_record += empty_record # no raw calories
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('calories', details['summaryDTO']) else '"' + "{0:.0f}".format(details['summaryDTO']['calories']) + '",'
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('calories', details['summaryDTO']) else '"' + str(details['summaryDTO']['calories']) + '",'
 		csv_record += empty_record if not duration else hhmmssFromSeconds(round(duration)) + ','
 		csv_record += empty_record if not duration else str(round(duration, 3)) + ','
 		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('movingDuration', details['summaryDTO']) else hhmmssFromSeconds(details['summaryDTO']['movingDuration']) + ','
