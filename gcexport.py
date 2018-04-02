@@ -27,6 +27,7 @@ Description:	Use this script to export your fitness data from Garmin Connect.
 # - the old script filled the maxElevation into the minElevation column
 # - the old CSV output has some inexplainable differences (e.g. end timestamp of 87966658,
 #   because the old JSON outputs were not kept
+# - the new endpoint fails to deliver a complete JSON output in about 0.5% of the calls
 # - elevationGain/elevationLoss of null may mean 0 (in particular of the other value is non-null)
 # - for some activities, e.g. 86497297, the data in activities.json and activity_86497297.json differ.
 #   - differences observed in these fields: elevationGain, elevationLoss, maxSpeed, movingDuration
@@ -200,7 +201,7 @@ def paceOrSpeedFormatted(typeId, parentTypeId, mps):
 		# format seconds per kilometer as MM:SS, see https://stackoverflow.com/a/27751293
 		return '{0:02d}:{1:02d}'.format(*divmod(int(round(3600 / kmh)), 60))
 	else:
-		return "{0:.1f}".format(kmh)
+		return "{0:.1f}".format(round(kmh, 1))
 
 
 print 'Welcome to Garmin Connect Exporter!'
@@ -216,6 +217,8 @@ password = args.password if args.password else getpass()
 # Used to be 100 and enforced by Garmin for older endpoints; for the current endpoint 'url_gc_search'
 # the limit is not known (I have less than 1000 activities and could get them all in one go)
 limit_maximum = 1000
+
+max_tries = 3
 
 hostname_url = http_req('http://connect.garmin.com/gauth/hostname')
 # print hostname_url
@@ -459,8 +462,22 @@ while total_downloaded < total_to_download:
 		# the https://connect.garmin.com/modern/activity/xxx page), because some
 		# data are missing from 'a' (or are even different, e.g. for my activities
 		# 86497297 or 86516281)
-		activity_details = http_req(url_gc_activity + str(a['activityId']))
-		details = json.loads(activity_details)  # TODO: Catch possible exceptions here.
+		activity_details = None
+		details = None
+		tries = max_tries
+		while tries > 0:
+			activity_details = http_req(url_gc_activity + str(a['activityId']))
+			details = json.loads(activity_details)
+			# I observed a failure to get a complete JSON detail in about 5-10 calls out of 1000
+			# retrying then statistically gets a better JSON ;-)
+			if len(details['summaryDTO']) > 0:
+				tries = 0
+			else:
+				print 'retrying for ' + str(a['activityId'])
+				tries -= 1
+				if tries == 0:
+					raise Exception('Didn\'t get "summaryDTO" after ' + str(max_tries) + ' tries for ' + str(a['activityId']))
+
 		parentTypeId = 4 if absentOrNull('activityType', a) else a['activityType']['parentTypeId']
 		typeId = 4 if absentOrNull('activityType', a) else a['activityType']['typeId']
 
