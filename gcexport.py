@@ -13,6 +13,7 @@ Description:	Use this script to export your fitness data from Garmin Connect.
 """
 
 from math import floor
+from sets import Set
 from urllib import urlencode
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
@@ -141,6 +142,40 @@ def hhmmssFromSeconds(sec):
 # JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
 ALMOST_RFC_1123 = "%a, %d %b %Y %H:%M"
 
+# map the numeric parentTypeId to its name for the CSV output
+parent_type_id = {
+	1: 'running',
+	2: 'cycling',
+	3: 'hiking',
+	4: 'other',
+	9: 'walking',
+	17: 'any activity type',
+	26: 'swimming',
+	29: 'fitness equipment',
+	71: 'motorcycling',
+	83: 'transition',
+	144: 'diving',
+	149: 'yoga' }
+
+# typeId values using pace instead of speed
+uses_pace = Set([1, 3, 9]) # running, hiking, walking
+
+def paceOrSpeedRaw(typeId, parentTypeId, mps):
+	kmh = 3.6 * mps
+	if (typeId in uses_pace) or (parentTypeId in uses_pace):
+		return 60 / kmh
+	else:
+		return kmh
+
+def paceOrSpeedFormatted(typeId, parentTypeId, mps):
+	kmh = 3.6 * mps
+	if (typeId in uses_pace) or (parentTypeId in uses_pace):
+		# format seconds per kilometer as MM:SS, see https://stackoverflow.com/a/27751293
+		return '{0:02d}:{1:02d}'.format(*divmod(int(round(3600 / kmh)), 60))
+	else:
+		return "{0:.1f}".format(kmh)
+
+
 print 'Welcome to Garmin Connect Exporter!'
 
 # Create directory for data files.
@@ -260,9 +295,9 @@ Begin timestamp,\
 Duration (h:m:s),\
 Moving duration (h:m:s),\
 Distance (km),\
-Average speed (km/h),\
-Average moving speed (km/h),\
-Max. speed (km/h),\
+Average speed (km/h or min/km),\
+Average moving speed (km/h or min/km),\
+Max. speed (km/h or min/km),\
 Elevation loss uncorrected (m),\
 Elevation gain uncorrected (m),\
 Elevation min. uncorrected (m),\
@@ -390,6 +425,8 @@ while total_downloaded < total_to_download:
 
 		activity_details = http_req(url_gc_activity + str(a['activityId']))
 		details = json.loads(activity_details)  # TODO: Catch possible exceptions here.
+		parentTypeId = 4 if absentOrNull('activityType', a) else a['activityType']['parentTypeId']
+		typeId = 4 if absentOrNull('activityType', a) else a['activityType']['typeId']
 
 		# try to get the device details (and cache them, as they're used for multiple activities)
 		device = None
@@ -477,9 +514,9 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if absentOrNull('duration', a) else hhmmssFromSeconds(a['duration']).replace('"', '""') + ','
 		csv_record += empty_record if absentOrNull('movingDuration', a) else hhmmssFromSeconds(a['movingDuration']).replace('"', '""') + ','
 		csv_record += empty_record if absentOrNull('distance', a) else '"' + "{0:.5f}".format(a['distance']/1000).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('averageSpeed', a) else '"' + str(a['averageSpeed']*3.6).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('distance', a) or absentOrNull('movingDuration', a) else '"' + str(a['distance']/a['movingDuration']*3.6).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('maxSpeed', a) else '"' + str(a['maxSpeed']*3.6).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('averageSpeed', a) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, a['averageSpeed'])) + '",'
+		csv_record += empty_record if absentOrNull('distance', a) or absentOrNull('movingDuration', a) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, a['distance']/a['movingDuration'])) + '",'
+		csv_record += empty_record if absentOrNull('maxSpeed', a) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, a['maxSpeed'])) + '",'
 		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('elevationLoss', a) else '"' + str(round(a['elevationLoss'], 2)) + '",'
 		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('elevationGain', a) else '"' + str(round(a['elevationGain'], 2)) + '",'
 		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('minElevation', a) else '"' + str(round(a['minElevation']/100, 2)) + '",'
