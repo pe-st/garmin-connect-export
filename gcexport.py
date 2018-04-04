@@ -88,7 +88,7 @@ def http_req(url, post=None, headers={}):
 	if response.getcode() == 204:
 		# For activities without GPS coordinates, there is no GPX download (204 = no content).
 		# Write an empty file to prevent redownloading it.
-		print 'Writing empty file since there was no GPX activity data...',
+		print 'Writing empty file since there was no GPX activity data...'
 		return ''
 	elif response.getcode() != 200:
 		raise Exception('Bad return code (' + str(response.getcode()) + ') for: ' + url)
@@ -544,11 +544,11 @@ while total_downloaded < total_to_download:
 
 		csv_record += empty_record if absentOrNull('activityName', a) else '"' + a['activityName'].replace('"', '""') + '",'
 		csv_record += empty_record if absentOrNull('description', a) else '"' + a['description'].replace('"', '""') + '",'
-		csv_record += '"' + startTimeWithOffset.strftime(ALMOST_RFC_1123).replace('"', '""') + '",'
-		# csv_record += '"' + startTimeWithOffset.isoformat().replace('"', '""') + '",'
+		csv_record += '"' + startTimeWithOffset.strftime(ALMOST_RFC_1123) + '",'
+		# csv_record += '"' + startTimeWithOffset.isoformat() + '",'
 		csv_record += empty_record if not duration else hhmmssFromSeconds(round(duration)) + ','
-		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('movingDuration', details['summaryDTO']) else hhmmssFromSeconds(details['summaryDTO']['movingDuration']).replace('"', '""') + ','
-		csv_record += empty_record if absentOrNull('distance', a) else '"' + "{0:.5f}".format(a['distance']/1000).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('movingDuration', details['summaryDTO']) else hhmmssFromSeconds(details['summaryDTO']['movingDuration']) + ','
+		csv_record += empty_record if absentOrNull('distance', a) else '"' + "{0:.5f}".format(a['distance']/1000) + '",'
 		csv_record += empty_record if absentOrNull('averageSpeed', a) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, a['averageSpeed'])) + '",'
 		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('averageMovingSpeed', details['summaryDTO']) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, details['summaryDTO']['averageMovingSpeed'])) + '",'
 		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('maxSpeed', details['summaryDTO']) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, details['summaryDTO']['maxSpeed'])) + '",'
@@ -557,24 +557,24 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('summaryDTO', details) or absentOrNull('minElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['minElevation'], 2)) + '",'
 		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('summaryDTO', details) or absentOrNull('maxElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['maxElevation'], 2)) + '",'
 		csv_record += empty_record # no minimum heart rate in JSON
-		csv_record += empty_record if absentOrNull('maxHR', a) else '"' + str(a['maxHR']).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('averageHR', a) else '"' + str(a['averageHR']).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('calories', a) else '"' + str(a['calories']).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('averageBikingCadenceInRevPerMinute', a) else '"' + str(a['averageBikingCadenceInRevPerMinute']).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('maxBikingCadenceInRevPerMinute', a) else '"' + str(a['maxBikingCadenceInRevPerMinute']).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('strokes', a) else '"' + str(a['strokes']).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('maxHR', a) else '"' + str(a['maxHR']) + '",'
+		csv_record += empty_record if absentOrNull('averageHR', a) else '"' + str(a['averageHR']) + '",'
+		csv_record += empty_record if absentOrNull('calories', a) else '"' + str(a['calories']) + '",'
+		csv_record += empty_record if absentOrNull('averageBikingCadenceInRevPerMinute', a) else '"' + str(a['averageBikingCadenceInRevPerMinute']) + '",'
+		csv_record += empty_record if absentOrNull('maxBikingCadenceInRevPerMinute', a) else '"' + str(a['maxBikingCadenceInRevPerMinute']) + '",'
+		csv_record += empty_record if absentOrNull('strokes', a) else '"' + str(a['strokes']) + '",'
 		csv_record += empty_record # no WeightedMeanAirTemperature in JSON
-		csv_record += empty_record if absentOrNull('minTemperature', a) else '"' + str(a['minTemperature']).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('maxTemperature', a) else '"' + str(a['maxTemperature']).replace('"', '""') + '",'
-		csv_record += '"https://connect.garmin.com/modern/activity/' + str(a['activityId']).replace('"', '""') + '",'
-		csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.strftime(ALMOST_RFC_1123).replace('"', '""') + '",'
-		# csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.isoformat().replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']).replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+durationSeconds*1000).replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('minTemperature', a) else '"' + str(a['minTemperature']) + '",'
+		csv_record += empty_record if absentOrNull('maxTemperature', a) else '"' + str(a['maxTemperature']) + '",'
+		csv_record += '"https://connect.garmin.com/modern/activity/' + str(a['activityId']) + '",'
+		csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.strftime(ALMOST_RFC_1123) + '",'
+		# csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.isoformat() + '",'
+		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']) + '",'
+		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+durationSeconds*1000) + '",'
 		csv_record += empty_record if absentOrNull('productDisplayName', device) else '"' + device['productDisplayName'].replace('"', '""') + ' ' + device['versionString'] + '",'
-		csv_record += empty_record if absentOrNull('activityType', a) else '"' + a['activityType']['typeKey'].replace('"', '""') + '",'
-		csv_record += empty_record if absentOrNull('eventType', a) else '"' + a['eventType']['typeKey'].replace('"', '""') + '",'
-		csv_record += '"' + startTimeWithOffset.isoformat()[-6:].replace('"', '""') + '",'
+		csv_record += empty_record if absentOrNull('activityType', a) else '"' + a['activityType']['typeKey'] + '",'
+		csv_record += empty_record if absentOrNull('eventType', a) else '"' + a['eventType']['typeKey'] + '",'
+		csv_record += '"' + startTimeWithOffset.isoformat()[-6:] + '",'
 		csv_record += empty_record if not startLatitude else '"' + trunc6(startLatitude) + '",'
 		csv_record += empty_record if not startLongitude else '"' + trunc6(startLongitude) + '",'
 		csv_record += empty_record if not endLatitude else '"' + trunc6(endLatitude) + '",'
@@ -583,7 +583,7 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if not a['elevationCorrected'] or absentOrNull('summaryDTO', details) or absentOrNull('elevationLoss', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationLoss'], 2)) + '",'
 		csv_record += empty_record if not a['elevationCorrected'] or absentOrNull('summaryDTO', details) or absentOrNull('maxElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['maxElevation'], 2)) + '",'
 		csv_record += empty_record if not a['elevationCorrected'] or absentOrNull('summaryDTO', details) or absentOrNull('minElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['minElevation'], 2)) + '",'
-		csv_record += empty_record # no Sample Count in JSON
+		csv_record += '""'         # no Sample Count in JSON
 		csv_record += '\n'
 
 #		csv_record += empty_record if absentOrNull('gainElevation', a) else '"' + a['gainElevation']['value'].replace('"', '""') + '",'
