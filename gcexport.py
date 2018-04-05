@@ -557,9 +557,9 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('summaryDTO', details) or absentOrNull('minElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['minElevation'], 2)) + '",'
 		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('summaryDTO', details) or absentOrNull('maxElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['maxElevation'], 2)) + '",'
 		csv_record += empty_record # no minimum heart rate in JSON
-		csv_record += empty_record if absentOrNull('maxHR', a) else '"' + str(a['maxHR']) + '",'
-		csv_record += empty_record if absentOrNull('averageHR', a) else '"' + str(a['averageHR']) + '",'
-		csv_record += empty_record if absentOrNull('calories', a) else '"' + str(a['calories']) + '",'
+		csv_record += empty_record if absentOrNull('maxHR', a) else '"' + "{0:.0f}".format(a['maxHR']) + '",'
+		csv_record += empty_record if absentOrNull('averageHR', a) else '"' + "{0:.0f}".format(a['averageHR']) + '",'
+		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('calories', details['summaryDTO']) else '"' + "{0:.0f}".format(details['summaryDTO']['calories']) + '",'
 		csv_record += empty_record if absentOrNull('averageBikingCadenceInRevPerMinute', a) else '"' + str(a['averageBikingCadenceInRevPerMinute']) + '",'
 		csv_record += empty_record if absentOrNull('maxBikingCadenceInRevPerMinute', a) else '"' + str(a['maxBikingCadenceInRevPerMinute']) + '",'
 		csv_record += empty_record if absentOrNull('strokes', a) else '"' + str(a['strokes']) + '",'
