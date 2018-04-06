@@ -26,7 +26,7 @@ from os import stat
 from xml.dom.minidom import parseString
 from subprocess import call
 
-import urllib, urllib2, cookielib, json
+import urllib, urllib2, cookielib, json, re
 from fileinput import filename
 
 import argparse
@@ -198,18 +198,15 @@ limit_maximum = 1000
 
 max_tries = 3
 
-hostname_url = http_req('http://connect.garmin.com/gauth/hostname')
-# print hostname_url
-hostname = json.loads(hostname_url)['host']
-
+WEBHOST = "https://connect.garmin.com"
 REDIRECT = "https://connect.garmin.com/post-auth/login"
 BASE_URL = "http://connect.garmin.com/en-US/signin"
 GAUTH = "http://connect.garmin.com/gauth/hostname"
 SSO = "https://sso.garmin.com/sso"
-CSS = "https://static.garmincdn.com/com.garmin.connect/ui/css/gauth-custom-v1.1-min.css"
+CSS = "https://static.garmincdn.com/com.garmin.connect/ui/css/gauth-custom-v1.2-min.css"
 
 data = {'service': REDIRECT,
-    'webhost': hostname,
+    'webhost': WEBHOST,
     'source': BASE_URL,
     'redirectAfterAccountLoginUrl': REDIRECT,
     'redirectAfterAccountCreationUrl': REDIRECT,
@@ -233,7 +230,7 @@ print urllib.urlencode(data)
 
 # URLs for various services.
 url_gc_login     = 'https://sso.garmin.com/sso/login?' + urllib.urlencode(data)
-url_gc_post_auth = 'https://connect.garmin.com/post-auth/login?'
+url_gc_post_auth = 'https://connect.garmin.com/modern/activities?'
 url_gc_summary   = 'http://connect.garmin.com/proxy/activity-search-service-1.2/json/activities?start=0&limit=1'
 url_gc_search    = 'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
 url_gc_activity  = 'https://connect.garmin.com/modern/proxy/activity-service/activity/'
@@ -250,41 +247,22 @@ print 'Finish login page'
 # Now we'll actually login.
 post_data = {'username': username, 'password': password, 'embed': 'true', 'lt': 'e1s1', '_eventId': 'submit', 'displayNameRequired': 'false'}  # Fields that are passed in a typical Garmin login.
 print 'Post login data'
-http_req(url_gc_login, post_data)
+login_response = http_req(url_gc_login, post_data)
 print 'Finish login post'
+# print login_response
 
-# Get the key.
-# TODO: Can we do this without iterating?
-login_ticket = None
-print "-------COOKIE"
-for cookie in cookie_jar:
-	print cookie.name + ": " + cookie.value
-	if cookie.name == 'CASTGC':
-		login_ticket = cookie.value
-		print login_ticket
-		print cookie.value
-		break
-print "-------COOKIE"
-
-if not login_ticket:
-	raise Exception('Did not get a ticket cookie. Cannot log in. Did you enter the correct username and password?')
-
-# Chop of 'TGT-' off the beginning, prepend 'ST-0'.
-login_ticket = 'ST-0' + login_ticket[4:]
-# print login_ticket
+# extract the ticket from the login response
+pattern = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE|re.DOTALL)
+match = pattern.match(login_response)
+if not match:
+	raise Exception('Did not get a ticket in the login response. Cannot log in. Did you enter the correct username and password?')
+login_ticket = match.group(1)
+print 'login ticket=' + login_ticket
 
 print 'Request authentication'
 # print url_gc_post_auth + 'ticket=' + login_ticket
 http_req(url_gc_post_auth + 'ticket=' + login_ticket)
 print 'Finished authentication'
-
-# https://github.com/kjkjava/garmin-connect-export/issues/18#issuecomment-243859319
-print "Call modern"
-http_req("http://connect.garmin.com/modern")
-print "Finish modern"
-print "Call legacy session"
-http_req("https://connect.garmin.com/legacy/session")
-print "Finish legacy session"
 
 # We should be logged in now.
 if not isdir(args.directory):
