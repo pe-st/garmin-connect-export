@@ -540,9 +540,9 @@ while total_downloaded < total_to_download:
 		csv_record += empty_record if absentOrNull('averageBikingCadenceInRevPerMinute', a) else '"' + str(a['averageBikingCadenceInRevPerMinute']) + '",'
 		csv_record += empty_record if absentOrNull('maxBikingCadenceInRevPerMinute', a) else '"' + str(a['maxBikingCadenceInRevPerMinute']) + '",'
 		csv_record += empty_record if absentOrNull('strokes', a) else '"' + str(a['strokes']) + '",'
-		csv_record += empty_record # no WeightedMeanAirTemperature in JSON
-		csv_record += empty_record if absentOrNull('minTemperature', a) else '"' + str(a['minTemperature']) + '",'
-		csv_record += empty_record if absentOrNull('maxTemperature', a) else '"' + str(a['maxTemperature']) + '",'
+		csv_record += empty_record if absentOrNull('averageTemperature', details['summaryDTO']) else '"' + str(details['summaryDTO']['averageTemperature']) + '",'
+		csv_record += empty_record if absentOrNull('minTemperature', details['summaryDTO']) else '"' + str(details['summaryDTO']['minTemperature']) + '",'
+		csv_record += empty_record if absentOrNull('maxTemperature', details['summaryDTO']) else '"' + str(details['summaryDTO']['maxTemperature']) + '",'
 		csv_record += '"https://connect.garmin.com/modern/activity/' + str(a['activityId']) + '",'
 		csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.strftime(ALMOST_RFC_1123) + '",'
 		# csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.isoformat() + '",'
