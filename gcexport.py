@@ -95,6 +95,26 @@ def http_req(url, post=None, headers={}):
 
 	return response.read()
 
+def writeToFile(filename, content):
+	json_file = open(filename, 'a')
+	json_file.write(content)
+	json_file.close()
+
+# idea stolen from https://stackoverflow.com/a/31852401/3686
+def loadProperties(multiline, sep='=', comment_char='#'):
+	props = {}
+	for line in multiline.splitlines():
+		l = line.strip()
+		if l and not l.startswith(comment_char):
+			key_value = l.split(sep)
+			key = key_value[0].strip()
+			value = sep.join(key_value[1:]).strip().strip('"')
+			props[key] = value
+	return props
+
+def valueIfFoundElseKey(dict, key):
+	return dict.get(key, key)
+
 def absentOrNull(element, a):
 	if not a:
 		return True
@@ -235,6 +255,8 @@ url_gc_summary   = 'https://connect.garmin.com/proxy/activity-search-service-1.2
 url_gc_search    = 'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
 url_gc_activity  = 'https://connect.garmin.com/modern/proxy/activity-service/activity/'
 url_gc_device    = 'https://connect.garmin.com/modern/proxy/device-service/deviceservice/app-info/'
+url_gc_act_props = 'https://connect.garmin.com/modern/main/js/properties/activity_types/activity_types.properties'
+url_gc_evt_props = 'https://connect.garmin.com/modern/main/js/properties/event_types/event_types.properties'
 url_gc_gpx_activity = 'https://connect.garmin.com/modern/proxy/download-service/export/gpx/activity/'
 url_gc_tcx_activity = 'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
 url_gc_original_activity = 'http://connect.garmin.com/proxy/download-service/files/activity/'
@@ -346,10 +368,7 @@ if args.count == 'all':
 	print "Finished result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
 	# Persist JSON
-	json_filename = args.directory + '/activities-summary.json'
-	json_file = open(json_filename, 'a')
-	json_file.write(result)
-	json_file.close()
+	writeToFile(args.directory + '/activities-summary.json', result)
 
 	# Modify total_to_download based on how many activities the server reports.
 	json_results = json.loads(result)  # TODO: Catch possible exceptions here.
@@ -359,6 +378,14 @@ else:
 total_downloaded = 0
 
 device_dict = dict()
+
+# load some dictionaries with lookup data from REST services
+activityTypeProps = http_req(url_gc_act_props)
+# writeToFile(args.directory + '/activity_types.properties', activityTypeProps)
+activityTypeName = loadProperties(activityTypeProps)
+eventTypeProps = http_req(url_gc_evt_props)
+# writeToFile(args.directory + '/event_types.properties', eventTypeProps)
+eventTypeName = loadProperties(eventTypeProps)
 
 # This while loop will download data from the server in multiple chunks, if necessary.
 while total_downloaded < total_to_download:
@@ -377,10 +404,7 @@ while total_downloaded < total_to_download:
 	print "Finished activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
 	# Persist JSON
-	json_filename = args.directory + '/activities.json'
-	json_file = open(json_filename, 'a')
-	json_file.write(result)
-	json_file.close()
+	writeToFile(args.directory + '/activities.json', result)
 
 	json_results = json.loads(result)  # TODO: Catch possible exceptions here.
 
@@ -447,10 +471,7 @@ while total_downloaded < total_to_download:
 			if not (device_dict.has_key(device_app_inst_id)):
 				# print '\tGetting device details ' + str(device_app_inst_id)
 				device_details = http_req(url_gc_device + str(device_app_inst_id))
-				device_filename = args.directory + '/device_' + str(device_app_inst_id) + '.json'
-				device_file = open(device_filename, 'a')
-				device_file.write(device_details)
-				device_file.close()
+				writeToFile(args.directory + '/device_' + str(device_app_inst_id) + '.json', device_details)
 				device_dict[device_app_inst_id] = None if not device_details else json.loads(device_details)
 			device = device_dict[device_app_inst_id]
 
@@ -524,42 +545,43 @@ while total_downloaded < total_to_download:
 		csv_record += '"' + startTimeWithOffset.strftime(ALMOST_RFC_1123) + '",'
 		# csv_record += '"' + startTimeWithOffset.isoformat() + '",'
 		csv_record += empty_record if not duration else hhmmssFromSeconds(round(duration)) + ','
-		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('movingDuration', details['summaryDTO']) else hhmmssFromSeconds(details['summaryDTO']['movingDuration']) + ','
+		csv_record += empty_record if absentOrNull('movingDuration', details['summaryDTO']) else hhmmssFromSeconds(details['summaryDTO']['movingDuration']) + ','
 		csv_record += empty_record if absentOrNull('distance', a) else '"' + "{0:.5f}".format(a['distance']/1000) + '",'
 		csv_record += empty_record if absentOrNull('averageSpeed', a) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, a['averageSpeed'])) + '",'
-		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('averageMovingSpeed', details['summaryDTO']) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, details['summaryDTO']['averageMovingSpeed'])) + '",'
-		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('maxSpeed', details['summaryDTO']) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, details['summaryDTO']['maxSpeed'])) + '",'
-		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('summaryDTO', details) or absentOrNull('elevationLoss', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationLoss'], 2)) + '",'
-		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('summaryDTO', details) or absentOrNull('elevationGain', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationGain'], 2)) + '",'
-		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('summaryDTO', details) or absentOrNull('minElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['minElevation'], 2)) + '",'
-		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('summaryDTO', details) or absentOrNull('maxElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['maxElevation'], 2)) + '",'
+		csv_record += empty_record if absentOrNull('averageMovingSpeed', details['summaryDTO']) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, details['summaryDTO']['averageMovingSpeed'])) + '",'
+		csv_record += empty_record if absentOrNull('maxSpeed', details['summaryDTO']) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, details['summaryDTO']['maxSpeed'])) + '",'
+		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('elevationLoss', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationLoss'], 2)) + '",'
+		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('elevationGain', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationGain'], 2)) + '",'
+		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('minElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['minElevation'], 2)) + '",'
+		csv_record += empty_record if a['elevationCorrected'] or absentOrNull('maxElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['maxElevation'], 2)) + '",'
 		csv_record += empty_record # no minimum heart rate in JSON
 		csv_record += empty_record if absentOrNull('maxHR', a) else '"' + "{0:.0f}".format(a['maxHR']) + '",'
 		csv_record += empty_record if absentOrNull('averageHR', a) else '"' + "{0:.0f}".format(a['averageHR']) + '",'
-		csv_record += empty_record if absentOrNull('summaryDTO', details) or absentOrNull('calories', details['summaryDTO']) else '"' + "{0:.0f}".format(details['summaryDTO']['calories']) + '",'
+		csv_record += empty_record if absentOrNull('calories', details['summaryDTO']) else '"' + str(details['summaryDTO']['calories']) + '",'
 		csv_record += empty_record if absentOrNull('averageBikingCadenceInRevPerMinute', a) else '"' + str(a['averageBikingCadenceInRevPerMinute']) + '",'
 		csv_record += empty_record if absentOrNull('maxBikingCadenceInRevPerMinute', a) else '"' + str(a['maxBikingCadenceInRevPerMinute']) + '",'
 		csv_record += empty_record if absentOrNull('strokes', a) else '"' + str(a['strokes']) + '",'
-		csv_record += empty_record # no WeightedMeanAirTemperature in JSON
-		csv_record += empty_record if absentOrNull('minTemperature', a) else '"' + str(a['minTemperature']) + '",'
-		csv_record += empty_record if absentOrNull('maxTemperature', a) else '"' + str(a['maxTemperature']) + '",'
+		csv_record += empty_record if absentOrNull('averageTemperature', details['summaryDTO']) else '"' + str(details['summaryDTO']['averageTemperature']) + '",'
+		csv_record += empty_record if absentOrNull('minTemperature', details['summaryDTO']) else '"' + str(details['summaryDTO']['minTemperature']) + '",'
+		csv_record += empty_record if absentOrNull('maxTemperature', details['summaryDTO']) else '"' + str(details['summaryDTO']['maxTemperature']) + '",'
 		csv_record += '"https://connect.garmin.com/modern/activity/' + str(a['activityId']) + '",'
 		csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.strftime(ALMOST_RFC_1123) + '",'
-		# csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.isoformat() + '",'
-		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']) + '",'
-		csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+durationSeconds*1000) + '",'
+		csv_record += empty_record if not startTimeWithOffset else '"' + startTimeWithOffset.isoformat() + '",'
+		# csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']) + '",'
+		csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.isoformat() + '",'
+		# csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+durationSeconds*1000) + '",'
 		csv_record += empty_record if absentOrNull('productDisplayName', device) else '"' + device['productDisplayName'].replace('"', '""') + ' ' + device['versionString'] + '",'
-		csv_record += empty_record if absentOrNull('activityType', a) else '"' + a['activityType']['typeKey'] + '",'
-		csv_record += empty_record if absentOrNull('eventType', a) else '"' + a['eventType']['typeKey'] + '",'
+		csv_record += empty_record if absentOrNull('activityType', a) else '"' + valueIfFoundElseKey(activityTypeName, 'activity_type_' + a['activityType']['typeKey']) + '",'
+		csv_record += empty_record if absentOrNull('eventType', a) else '"' + valueIfFoundElseKey(eventTypeName, a['eventType']['typeKey']) + '",'
 		csv_record += '"' + startTimeWithOffset.isoformat()[-6:] + '",'
 		csv_record += empty_record if not startLatitude else '"' + trunc6(startLatitude) + '",'
 		csv_record += empty_record if not startLongitude else '"' + trunc6(startLongitude) + '",'
 		csv_record += empty_record if not endLatitude else '"' + trunc6(endLatitude) + '",'
 		csv_record += empty_record if not endLongitude else '"' + trunc6(endLongitude) + '",'
-		csv_record += empty_record if not a['elevationCorrected'] or absentOrNull('summaryDTO', details) or absentOrNull('elevationGain', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationGain'], 2)) + '",'
-		csv_record += empty_record if not a['elevationCorrected'] or absentOrNull('summaryDTO', details) or absentOrNull('elevationLoss', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationLoss'], 2)) + '",'
-		csv_record += empty_record if not a['elevationCorrected'] or absentOrNull('summaryDTO', details) or absentOrNull('maxElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['maxElevation'], 2)) + '",'
-		csv_record += empty_record if not a['elevationCorrected'] or absentOrNull('summaryDTO', details) or absentOrNull('minElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['minElevation'], 2)) + '",'
+		csv_record += empty_record if not a['elevationCorrected'] or absentOrNull('elevationGain', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationGain'], 2)) + '",'
+		csv_record += empty_record if not a['elevationCorrected'] or absentOrNull('elevationLoss', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationLoss'], 2)) + '",'
+		csv_record += empty_record if not a['elevationCorrected'] or absentOrNull('maxElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['maxElevation'], 2)) + '",'
+		csv_record += empty_record if not a['elevationCorrected'] or absentOrNull('minElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['minElevation'], 2)) + '",'
 		csv_record += '""'         # no Sample Count in JSON
 		csv_record += '\n'
 
