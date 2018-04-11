@@ -76,7 +76,8 @@ Small history of the endpoint used by `gcexport.py` to get a list of activities:
     - it is concise and offers no redundant information (e.g. only speed, not speed and pace)
     - the units are not explicitly given and must be deducted (e.g. the speed unit is m/s)
     - there is less information, e.g. there is only one set of elevation values (not both corrected and uncorrected), and other values like minimum heart rate are missing.
-    - some other information is available only as an ID (e.g. `timeZoneId` or `deviceId`), and complete information might be available by another REST call (I didn't reverse further for the time being)
+    - some other information is available only as an ID (e.g. `timeZoneId` or `deviceId`), and more complete information
+      is available by further REST calls (one for each activity and additional ones for device information)
 
 
 History
