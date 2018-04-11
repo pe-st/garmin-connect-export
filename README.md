@@ -79,6 +79,13 @@ Small history of the endpoint used by `gcexport.py` to get a list of activities:
     - some other information is available only as an ID (e.g. `timeZoneId` or `deviceId`), and more complete information
       is available by further REST calls (one for each activity and additional ones for device information)
 
+### Limitations of Data Provided by Current Endpoints and Choices Made
+
+- The timezones provided are just the names (e.g. for Central European Time CET you can get either "Europe/Paris" or "(GMT+01:00) Central European Time"), but not the exact offset. Note that the "GMT+01:00" part of the name is hardcoded, so in summer (daylight savings time) Garmin Connect still uses +01:00 in the name even if the offset then is +02:00. To get the offset you need to calculate the difference between the startTimeLocal and the startTimeGMT. The current script writes the calculate offset into the CSV file.
+- The elevation is either uncorrected or corrected, with a flag telling which. The current endpoints don't provide both sets of elevations anymore (older endpoints did provide them both, but these endpoints don't work anymore)
+- The speed written to the CSV file is the speed in km/h for most activities and the pace (min/km) for pedestrial activities (running, walking, hiking). This is easy to change though.
+
+
 
 History
 -------
