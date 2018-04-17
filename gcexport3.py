@@ -32,7 +32,7 @@ import urllib.parse
 import urllib.request
 import zipfile
 
-SCRIPT_VERSION = '1.0.0'
+SCRIPT_VERSION = '2.0.0'
 CURRENT_DATE = datetime.now().strftime('%Y-%m-%d')
 ACTIVITIES_DIRECTORY = './' + CURRENT_DATE + '_garmin_connect_export'
 
@@ -45,16 +45,12 @@ PARSER.add_argument('--username', help="your Garmin Connect username (otherwise,
     prompted)", nargs='?')
 PARSER.add_argument('--password', help="your Garmin Connect password (otherwise, you will be \
     prompted)", nargs='?')
-
 PARSER.add_argument('-c', '--count', nargs='?', default="1", help="number of recent activities to \
     download, or 'all' (default: 1)")
-
 PARSER.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original'], default="gpx",
-                    help="export format; can be 'gpx', 'tcx', or 'original' (default: 'gpx')")
-
+    help="export format; can be 'gpx', 'tcx', or 'original' (default: 'gpx')")
 PARSER.add_argument('-d', '--directory', nargs='?', default=ACTIVITIES_DIRECTORY, help="the \
     directory to export to (default: './YYYY-MM-DD_garmin_connect_export')")
-
 PARSER.add_argument('-u', '--unzip', help="if downloading ZIP files (format: 'original'), unzip \
     the file and removes the ZIP file", action="store_true")
 
@@ -93,7 +89,6 @@ def http_req(url, post=None, headers=None):
         for header_key, header_value in headers.items():
             request.add_header(header_key, header_value)
     if post:
-        # print('POSTING')
         post = urllib.parse.urlencode(post)
         post = post.encode('utf-8')  # Convert dictionary to POST parameter string.
     # print(request.headers)
