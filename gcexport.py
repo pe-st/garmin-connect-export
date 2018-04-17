@@ -443,7 +443,7 @@ while total_downloaded < total_to_download:
 		typeId = 4 if absentOrNull('activityType', a) else a['activityType']['typeId']
 
 		startTimeWithOffset = offsetDateTime(a['startTimeLocal'], a['startTimeGMT'])
-		elapsedDuration = details['summaryDTO']['elapsedDuration'] if details['summaryDTO'] else None
+		elapsedDuration = details['summaryDTO']['elapsedDuration'] if 'summaryDTO' in details and 'elapsedDuration' in details['summaryDTO'] else None
 		duration = elapsedDuration if elapsedDuration else a['duration']
 		durationSeconds = int(round(duration))
 		endTimeWithOffset = startTimeWithOffset + timedelta(seconds=durationSeconds) if duration else None
@@ -459,8 +459,8 @@ while total_downloaded < total_to_download:
 			print hhmmssFromSeconds(a['duration']) + ',',
 		else:
 			print '??:??:??,',
-		if 'distance' in a:
-			print "{0:.3f}".format(a['distance']/1000)
+		if 'distance' in a and isinstance(a['distance'], (float)):
+			print "{0:.3f}".format(a['distance']/1000) + 'km'
 		else:
 			print '0.000 km'
 
