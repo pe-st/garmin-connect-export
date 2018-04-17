@@ -98,7 +98,7 @@ username = args.username if args.username else raw_input('Username: ')
 password = args.password if args.password else getpass()
 
 # Maximum number of activities you can request at once.  Set and enforced by Garmin.
-limit_maximum = 19
+limit_maximum = 100
 
 hostname_url = http_req('http://connect.garmin.com/gauth/hostname')
 # print hostname_url
@@ -271,10 +271,9 @@ total_downloaded = 0
 
 # This while loop will download data from the server in multiple chunks, if necessary.
 while total_downloaded < total_to_download:
-	# Maximum chunk size 'limit_maximum' ... 400 return status if over maximum.  So download maximum or whatever remains if less than maximum.
-	# As of 2018-03-06 I get return status 500 if over maximum
-	if total_to_download - total_downloaded > limit_maximum:
-		num_to_download = limit_maximum
+	# Maximum of 100... 400 return status if over 100.  So download 100 or whatever remains if less than 100.
+	if total_to_download - total_downloaded > 100:
+		num_to_download = 100
 	else:
 		num_to_download = total_to_download - total_downloaded
 

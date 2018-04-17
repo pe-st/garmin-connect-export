@@ -16,7 +16,7 @@ Usage
 You will need a little experience running things from the command line to use this script. That said, here are the usage details from the `--help` flag:
 
 ```
-usage: gcexport.py [-h] [--version] [--username [USERNAME]]
+usage: gcexport3.py [-h] [--version] [--username [USERNAME]]
                    [--password [PASSWORD]] [-c [COUNT]]
                    [-f [{gpx,tcx,original}]] [-d [DIRECTORY]] [-u]
 
@@ -43,11 +43,11 @@ optional arguments:
 ```
 
 Examples:
-`python gcexport.py --count all` will download all of your data to a dated directory.
+`python gcexport3.py --count all` will download all of your data to a dated directory.
 
-`python gcexport.py -d ~/MyActivities -c 3 -f original -u --username bobbyjoe --password bestpasswordever1` will download your three most recent activities in the FIT file format (or whatever they were uploaded as) into the `~/MyActivities` directory (unless they already exist). Using the `--username` and `--password` flags are not recommended because your password will be stored in your command line history. Instead, omit them to be prompted (and note that nothing will be displayed when you type your password).
+`python gcexport3.py -d ~/MyActivities -c 3 -f original -u --username bobbyjoe --password bestpasswordever1` will download your three most recent activities in the FIT file format (or whatever they were uploaded as) into the `~/MyActivities` directory (unless they already exist). Using the `--username` and `--password` flags are not recommended because your password will be stored in your command line history. Instead, omit them to be prompted (and note that nothing will be displayed when you type your password).
 
-Alternatively, you may run it with `./gcexport.py` if you set the file as executable (i.e., `chmod u+x gcexport.py`).
+Alternatively, you may run it with `./gcexport3.py` if you set the file as executable (i.e., `chmod u+x gcexport3.py`).
 
 Of course, you must have Python installed to run this. Most Mac and Linux users should already have it. Also, as stated above, you should have some basic command line experience.
 
@@ -63,9 +63,25 @@ Garmin Connect API
 ------------------
 This script is for personal use only. It simulates a standard user session (i.e., in the browser), logging in using cookies and an authorization ticket. This makes the script pretty brittle. If you're looking for a more reliable option, particularly if you wish to use this for some production service, Garmin does offer a paid API service.
 
+### REST endpoints
+
+As this script doesn't use the paid API, the endpoints to use are known by reverse engineering browser sessions. And as the Garmin Connect website changes over time, chances are that this script gets broken.
+
+Small history of the endpoint used by `gcexport3.py` to get a list of activities:
+
+- [activity-search-service-1.0](https://connect.garmin.com/proxy/activity-search-service-1.0/json/activities): initial endpoint used since 2015, worked at least until January 2018
+- [activity-search-service-1.2](https://connect.garmin.com/proxy/activity-search-service-1.2/json/activities): endpoint introduced in `gcexport.py` in August 2016. In March 2018 this still works, but doesn't allow you to fetch more than 20 activities, even split over multiple calls (when doing three consecutive calls with 1,19,19 as `limit` parameter, the third one fails with HTTP error 500). The JSON returned by this endpoint however is quite rich (see example in the `json` folder).
+- [activitylist-service](https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities): endpoint introduced in `gcexport.py` in March 2018. The JSON returned by this endpoint is very different from the activity-search-service-1.2 one (also here see the example in the `json` folder), e.g.
+    - it is concise and offers no redundant information (e.g. only speed, not speed and pace)
+    - the units are not explicitly given and must be deducted (e.g. the speed unit is m/s)
+    - there is less information, e.g. there is only one set of elevation values (not both corrected and uncorrected), and other values like minimum heart rate are missing.
+    - some other information is available only as an ID (e.g. `timeZoneId` or `deviceId`), and complete information might be available by another REST call (I didn't reverse further for the time being)
+
 History
 -------
-The original project was written in PHP (now in the `old` directory), based on "Garmin Connect export to Dailymile" code at http://www.ciscomonkey.net/gc-to-dm-export/ (link has been down for a while). It no longer works due to the way Garmin handles logins. It could be updated, but I decided to rewrite everything in Python for the latest version.
+The original project was written in PHP (formerly in the `old` directory, now deleted), based on "Garmin Connect export to Dailymile" code at http://www.ciscomonkey.net/gc-to-dm-export/ (link has been down for a while). It no longer works due to the way Garmin handles logins. It could be updated, but I decided to rewrite everything in Python for the latest version.
+
+@moderation forked the original from @kjkjava when the various endpoints stopped working and the original repo wasn't been updated. This fork is primarily designed for my use which is cycling. It has not well been tested against other activity types. In the latest updates (April 2018) I've deprecated the Python 2 version (renamed to gcexport2.py) and this script now requires Python 3. The code has been linted using [pylint3](https://packages.debian.org/sid/pylint3).
 
 Contributions
 -------------
