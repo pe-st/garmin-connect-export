@@ -47,8 +47,8 @@ PARSER.add_argument('--password', help="your Garmin Connect password (otherwise,
     prompted)", nargs='?')
 PARSER.add_argument('-c', '--count', nargs='?', default="1", help="number of recent activities to \
     download, or 'all' (default: 1)")
-PARSER.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original'], default="gpx",
-    help="export format; can be 'gpx', 'tcx', or 'original' (default: 'gpx')")
+PARSER.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original'], \
+    default="gpx", help="export format; can be 'gpx', 'tcx', or 'original' (default: 'gpx')")
 PARSER.add_argument('-d', '--directory', nargs='?', default=ACTIVITIES_DIRECTORY, help="the \
     directory to export to (default: './YYYY-MM-DD_garmin_connect_export')")
 PARSER.add_argument('-u', '--unzip', help="if downloading ZIP files (format: 'original'), unzip \
@@ -66,7 +66,11 @@ OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_J
 
 def hhmmss_from_seconds(sec):
     """Helper function that converts seconds to HH:MM:SS time format."""
-    return str(timedelta(seconds=int(sec))).zfill(8)
+    if isinstance(sec, (float)):
+        formatted_time = str(timedelta(seconds=int(sec))).zfill(8)
+    else:
+        formatted_time = "0.000"
+    return formatted_time
 
 def kmh_from_mps(mps):
     """Helper function that converts meters per second (mps) to km/h."""
@@ -121,7 +125,6 @@ LIMIT_MAXIMUM = 1000
 WEBHOST = "https://connect.garmin.com"
 REDIRECT = "https://connect.garmin.com/post-auth/login"
 BASE_URL = "http://connect.garmin.com/en-US/signin"
-GAUTH = "http://connect.garmin.com/gauth/hostname"
 SSO = "https://sso.garmin.com/sso"
 CSS = "https://static.garmincdn.com/com.garmin.connect/ui/css/gauth-custom-v1.2-min.css"
 
@@ -392,7 +395,7 @@ while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
         # print(JSON_DETAIL)
 
         # Write stats to CSV.
-        empty_record = '"",'
+        empty_record = ','
         csv_record = ''
 
         csv_record += empty_record if 'activityName' not in a['activity'] else '"' + \
