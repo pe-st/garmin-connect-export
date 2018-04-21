@@ -96,17 +96,13 @@ def http_req(url, post=None, headers=None):
     if post:
         post = urllib.parse.urlencode(post)
         post = post.encode('utf-8')  # Convert dictionary to POST parameter string.
-    # print(request.headers)
-    # print(COOKIE_JAR)
-    # print(post)
-    # print(request)
-    response = OPENER.open(request, data=post)  # This line may throw a urllib2.HTTPError.
+    # print("request.headers: " + str(request.headers) + " COOKIE_JAR: " + str(COOKIE_JAR))
+    # print("post: " + str(post) + "request: " + str(request))
+    response = OPENER.open((request), data=post)
 
-    # N.B. urllib2 will follow any 302 redirects. Also, the "open" call above may throw a
-    # urllib2.HTTPError which is checked for below.
-    # print(response.getcode())
     if response.getcode() != 200:
         raise Exception('Bad return code (' + str(response.getcode()) + ') for: ' + url)
+    # print(response.getcode())
 
     return response.read()
 
@@ -115,7 +111,7 @@ print('Welcome to Garmin Connect Exporter!')
 # Create directory for data files.
 if isdir(ARGS.directory):
     print('Warning: Output directory already exists. Will skip already-downloaded files and \
-        append to the CSV file.')
+append to the CSV file.')
 
 USERNAME = ARGS.username if ARGS.username else input('Username: ')
 PASSWORD = ARGS.password if ARGS.password else getpass()
@@ -194,7 +190,7 @@ PATTERN = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE|re.DOTALL)
 MATCH = PATTERN.match(LOGIN_RESPONSE)
 if not MATCH:
     raise Exception('Did not get a ticket in the login response. Cannot log in. Did \
-        you enter the correct username and password?')
+you enter the correct username and password?')
 LOGIN_TICKET = MATCH.group(1)
 print('login ticket=' + LOGIN_TICKET)
 
@@ -355,7 +351,7 @@ while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
                 # format if you want actual data in every file, as I believe Garmin provides a GPX
                 # file for every activity.
                 print('Writing empty file since Garmin did not generate a TCX file for this \
-                    activity...', end=' ')
+activity...', end=' ')
                 data = ''
             elif errs.code == 404 and ARGS.format == 'original':
                 # For manual activities (i.e., entered in online without a file upload), there is
