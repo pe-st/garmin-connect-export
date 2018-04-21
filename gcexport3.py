@@ -27,6 +27,7 @@ from xml.dom.minidom import parseString
 import argparse
 import http.cookiejar
 import json
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -185,30 +186,18 @@ POST_DATA = {
     }
 
 print('Post login data')
-http_req(URL_GC_LOGIN, POST_DATA)
+LOGIN_RESPONSE = http_req(URL_GC_LOGIN, POST_DATA).decode()
 print('Finish login post')
 
-# Get the key.
-# TODO: Can we do this without iterating?
-LOGIN_TICKET = None
-print("-------COOKIE")
-for cookie in COOKIE_JAR:
-    if cookie.name == 'CASTGC':
-        print(cookie.name + ": " + cookie.value)
-        LOGIN_TICKET = cookie.value
-        break
-print("-------COOKIE")
+# extract the ticket from the login response
+PATTERN = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE|re.DOTALL)
+MATCH = PATTERN.match(LOGIN_RESPONSE)
+if not MATCH:
+    raise Exception('Did not get a ticket in the login response. Cannot log in. Did \
+        you enter the correct username and password?')
+LOGIN_TICKET = MATCH.group(1)
+print('login ticket=' + LOGIN_TICKET)
 
-if not LOGIN_TICKET:
-    raise Exception('Did not get a ticket cookie. Cannot log in. Did you enter the correct \
-        username and password?')
-
-# Chop of 'TGT-' off the beginning, prepend 'ST-0'.
-LOGIN_TICKET = 'ST-0' + LOGIN_TICKET[4:]
-# print(LOGIN_TICKET)
-
-print('Request authentication')
-# print(URL_GC_POST_AUTH + 'ticket=' + LOGIN_TICKET)
 print("Request authentication URL: " + URL_GC_POST_AUTH + 'ticket=' + LOGIN_TICKET)
 http_req(URL_GC_POST_AUTH + 'ticket=' + LOGIN_TICKET)
 print('Finished authentication')
