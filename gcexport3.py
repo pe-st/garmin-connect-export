@@ -27,6 +27,7 @@ from xml.dom.minidom import parseString
 import argparse
 import http.cookiejar
 import json
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -47,8 +48,8 @@ PARSER.add_argument('--password', help="your Garmin Connect password (otherwise,
     prompted)", nargs='?')
 PARSER.add_argument('-c', '--count', nargs='?', default="1", help="number of recent activities to \
     download, or 'all' (default: 1)")
-PARSER.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original'], default="gpx",
-    help="export format; can be 'gpx', 'tcx', or 'original' (default: 'gpx')")
+PARSER.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original'], \
+    default="gpx", help="export format; can be 'gpx', 'tcx', or 'original' (default: 'gpx')")
 PARSER.add_argument('-d', '--directory', nargs='?', default=ACTIVITIES_DIRECTORY, help="the \
     directory to export to (default: './YYYY-MM-DD_garmin_connect_export')")
 PARSER.add_argument('-u', '--unzip', help="if downloading ZIP files (format: 'original'), unzip \
@@ -66,7 +67,11 @@ OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_J
 
 def hhmmss_from_seconds(sec):
     """Helper function that converts seconds to HH:MM:SS time format."""
-    return str(timedelta(seconds=int(sec))).zfill(8)
+    if isinstance(sec, (float)):
+        formatted_time = str(timedelta(seconds=int(sec))).zfill(8)
+    else:
+        formatted_time = "0.000"
+    return formatted_time
 
 def kmh_from_mps(mps):
     """Helper function that converts meters per second (mps) to km/h."""
@@ -91,17 +96,13 @@ def http_req(url, post=None, headers=None):
     if post:
         post = urllib.parse.urlencode(post)
         post = post.encode('utf-8')  # Convert dictionary to POST parameter string.
-    # print(request.headers)
-    # print(COOKIE_JAR)
-    # print(post)
-    # print(request)
-    response = OPENER.open(request, data=post)  # This line may throw a urllib2.HTTPError.
+    # print("request.headers: " + str(request.headers) + " COOKIE_JAR: " + str(COOKIE_JAR))
+    # print("post: " + str(post) + "request: " + str(request))
+    response = OPENER.open((request), data=post)
 
-    # N.B. urllib2 will follow any 302 redirects. Also, the "open" call above may throw a
-    # urllib2.HTTPError which is checked for below.
-    # print(response.getcode())
     if response.getcode() != 200:
         raise Exception('Bad return code (' + str(response.getcode()) + ') for: ' + url)
+    # print(response.getcode())
 
     return response.read()
 
@@ -110,7 +111,7 @@ print('Welcome to Garmin Connect Exporter!')
 # Create directory for data files.
 if isdir(ARGS.directory):
     print('Warning: Output directory already exists. Will skip already-downloaded files and \
-        append to the CSV file.')
+append to the CSV file.')
 
 USERNAME = ARGS.username if ARGS.username else input('Username: ')
 PASSWORD = ARGS.password if ARGS.password else getpass()
@@ -121,7 +122,6 @@ LIMIT_MAXIMUM = 1000
 WEBHOST = "https://connect.garmin.com"
 REDIRECT = "https://connect.garmin.com/post-auth/login"
 BASE_URL = "http://connect.garmin.com/en-US/signin"
-GAUTH = "http://connect.garmin.com/gauth/hostname"
 SSO = "https://sso.garmin.com/sso"
 CSS = "https://static.garmincdn.com/com.garmin.connect/ui/css/gauth-custom-v1.2-min.css"
 
@@ -182,30 +182,18 @@ POST_DATA = {
     }
 
 print('Post login data')
-http_req(URL_GC_LOGIN, POST_DATA)
+LOGIN_RESPONSE = http_req(URL_GC_LOGIN, POST_DATA).decode()
 print('Finish login post')
 
-# Get the key.
-# TODO: Can we do this without iterating?
-LOGIN_TICKET = None
-print("-------COOKIE")
-for cookie in COOKIE_JAR:
-    if cookie.name == 'CASTGC':
-        print(cookie.name + ": " + cookie.value)
-        LOGIN_TICKET = cookie.value
-        break
-print("-------COOKIE")
+# extract the ticket from the login response
+PATTERN = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE|re.DOTALL)
+MATCH = PATTERN.match(LOGIN_RESPONSE)
+if not MATCH:
+    raise Exception('Did not get a ticket in the login response. Cannot log in. Did \
+you enter the correct username and password?')
+LOGIN_TICKET = MATCH.group(1)
+print('login ticket=' + LOGIN_TICKET)
 
-if not LOGIN_TICKET:
-    raise Exception('Did not get a ticket cookie. Cannot log in. Did you enter the correct \
-        username and password?')
-
-# Chop of 'TGT-' off the beginning, prepend 'ST-0'.
-LOGIN_TICKET = 'ST-0' + LOGIN_TICKET[4:]
-# print(LOGIN_TICKET)
-
-print('Request authentication')
-# print(URL_GC_POST_AUTH + 'ticket=' + LOGIN_TICKET)
 print("Request authentication URL: " + URL_GC_POST_AUTH + 'ticket=' + LOGIN_TICKET)
 http_req(URL_GC_POST_AUTH + 'ticket=' + LOGIN_TICKET)
 print('Finished authentication')
@@ -363,7 +351,7 @@ while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
                 # format if you want actual data in every file, as I believe Garmin provides a GPX
                 # file for every activity.
                 print('Writing empty file since Garmin did not generate a TCX file for this \
-                    activity...', end=' ')
+activity...', end=' ')
                 data = ''
             elif errs.code == 404 and ARGS.format == 'original':
                 # For manual activities (i.e., entered in online without a file upload), there is
@@ -392,7 +380,7 @@ while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
         # print(JSON_DETAIL)
 
         # Write stats to CSV.
-        empty_record = '"",'
+        empty_record = ','
         csv_record = ''
 
         csv_record += empty_record if 'activityName' not in a['activity'] else '"' + \
