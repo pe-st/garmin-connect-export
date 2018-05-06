@@ -71,11 +71,19 @@ OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
 
 def hhmmss_from_seconds(sec):
     """Helper function that converts seconds to HH:MM:SS time format."""
-    return str(timedelta(seconds=int(sec))).zfill(8)
+    if isinstance(sec, (float)):
+        formatted_time = str(timedelta(seconds=int(sec))).zfill(8)
+    else:
+        formatted_time = "0.000"
+    return formatted_time
 
-def write_to_file(filename, content):
+def kmh_from_mps(mps):
+    """Helper function that converts meters per second (mps) to km/h."""
+    return str(mps * 3.6)
+
+def write_to_file(filename, content, mode):
     """Helper function that persists content to file."""
-    write_file = open(filename, 'a')
+    write_file = open(filename, mode)
     write_file.write(content)
     write_file.close()
 
@@ -291,19 +299,19 @@ POST_DATA = {
     }
 
 print('Post login data')
-login_response = http_req(URL_GC_LOGIN, POST_DATA)
+LOGIN_RESPONSE = http_req(URL_GC_LOGIN, POST_DATA)
 print('Finish login post')
 
 # extract the ticket from the login response
-pattern = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE|re.DOTALL)
-match = pattern.match(login_response)
-if not match:
-    raise Exception('Did not get a ticket in the login response. Cannot log in. Did you enter the correct username and password?')
-LOGIN_TICKET = match.group(1)
-print 'login ticket=' + LOGIN_TICKET
+PATTERN = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE|re.DOTALL)
+MATCH = PATTERN.match(LOGIN_RESPONSE)
+if not MATCH:
+    raise Exception('Did not get a ticket in the login response. Cannot log in. Did \
+you enter the correct username and password?')
+LOGIN_TICKET = MATCH.group(1)
+print('login ticket=' + LOGIN_TICKET)
 
-print('Request authentication')
-# print(URL_GC_POST_AUTH + 'ticket=' + LOGIN_TICKET)
+print("Request authentication URL: " + URL_GC_POST_AUTH + 'ticket=' + LOGIN_TICKET)
 http_req(URL_GC_POST_AUTH + 'ticket=' + LOGIN_TICKET)
 print('Finished authentication')
 
@@ -370,7 +378,7 @@ if ARGS.count == 'all':
     print "Finished result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
     # Persist JSON
-    write_to_file(ARGS.directory + '/activities-summary.json', result)
+    write_to_file(ARGS.directory + '/activities-summary.json', result, 'a')
 
     # Modify TOTAL_TO_DOWNLOAD based on how many activities the server reports.
     json_results = json.loads(result)  # TODO: Catch possible exceptions here.
@@ -383,10 +391,10 @@ device_dict = dict()
 
 # load some dictionaries with lookup data from REST services
 activityTypeProps = http_req(url_gc_act_props)
-# write_to_file(ARGS.directory + '/activity_types.properties', activityTypeProps)
+# write_to_file(ARGS.directory + '/activity_types.properties', activityTypeProps, 'a')
 activityTypeName = loadProperties(activityTypeProps)
 eventTypeProps = http_req(url_gc_evt_props)
-# write_to_file(ARGS.directory + '/event_types.properties', eventTypeProps)
+# write_to_file(ARGS.directory + '/event_types.properties', eventTypeProps, 'a')
 eventTypeName = loadProperties(eventTypeProps)
 
 # This while loop will download data from the server in multiple chunks, if necessary.
@@ -407,7 +415,7 @@ while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
     print("Finished activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
     # Persist JSON
-    write_to_file(ARGS.directory + '/activities.json', RESULT)
+    write_to_file(ARGS.directory + '/activities.json', RESULT, 'a')
 
     JSON_RESULTS = json.loads(RESULT)  # TODO: Catch possible exceptions here.
 
@@ -474,7 +482,7 @@ while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
             if not (device_dict.has_key(device_app_inst_id)):
                 # print '\tGetting device details ' + str(device_app_inst_id)
                 device_details = http_req(url_gc_device + str(device_app_inst_id))
-                write_to_file(ARGS.directory + '/device_' + str(device_app_inst_id) + '.json', device_details)
+                write_to_file(ARGS.directory + '/device_' + str(device_app_inst_id) + '.json', device_details, 'a')
                 device_dict[device_app_inst_id] = None if not device_details else json.loads(device_details)
             device = device_dict[device_app_inst_id]
 
@@ -537,9 +545,8 @@ while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
         else:
             data = activity_details
 
-        save_file = open(data_filename, file_mode)
-        save_file.write(data)
-        save_file.close()
+        # Persist file
+        write_to_file(data_filename, data, file_mode)
 
         # Write stats to CSV.
         empty_record = '"",'
