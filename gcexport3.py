@@ -100,7 +100,12 @@ def http_req(url, post=None, headers=None):
     # print("post: " + str(post) + "request: " + str(request))
     response = OPENER.open((request), data=post)
 
-    if response.getcode() != 200:
+    if response.getcode() == 204:
+        # For activities without GPS coordinates, there is no GPX download (204 = no content).
+        # Write an empty file to prevent redownloading it.
+        print('Writing empty file since there was no GPX activity data...')
+        return ''
+    elif response.getcode() != 200:
         raise Exception('Bad return code (' + str(response.getcode()) + ') for: ' + url)
     # print(response.getcode())
 
@@ -469,11 +474,11 @@ activity...', end=' ')
 
         CSV_FILE.write(csv_record)
 
-        if ARGS.format == 'gpx':
+        if ARGS.format == 'gpx' and data:
             # Validate GPX data. If we have an activity without GPS data (e.g., running on a
-            # treadmill), Garmin Connect still kicks out a GPX, but there is only activity
-            # information, no GPS data. N.B. You can omit the XML parse (and the associated log
-            # messages) to speed things up.
+            # treadmill), Garmin Connect still kicks out a GPX (sometimes), but there is only
+            # activity information, no GPS data. N.B. You can omit the XML parse (and the
+            # associated log messages) to speed things up.
             gpx = parseString(data)
             if gpx.getElementsByTagName('trkpt'):
                 print('Done. GPX data saved.')
