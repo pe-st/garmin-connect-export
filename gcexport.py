@@ -16,6 +16,9 @@ Activity & event types:
     https://connect.garmin.com/modern/main/js/properties/activity_types/activity_types.properties
 """
 
+# this avoids different pylint behaviour for python 2 and 3
+from __future__ import print_function
+
 from math import floor
 from sets import Set
 from urllib import urlencode
@@ -23,17 +26,13 @@ from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from os import mkdir, remove, stat
 from os.path import isdir, isfile
-from subprocess import call
 from sys import argv
 from xml.dom.minidom import parseString
-
-from fileinput import filename
 
 import argparse
 import cookielib
 import json
 import re
-import urllib
 import urllib2
 import zipfile
 
@@ -111,7 +110,7 @@ def http_req(url, post=None, headers={}):
     if response.getcode() == 204:
         # For activities without GPS coordinates, there is no GPX download (204 = no content).
         # Write an empty file to prevent redownloading it.
-        print 'Writing empty file since there was no GPX activity data...'
+        print('Writing empty file since there was no GPX activity data...')
         return ''
     elif response.getcode() != 200:
         raise Exception('Bad return code (' + str(response.getcode()) + ') for: ' + url)
@@ -119,7 +118,7 @@ def http_req(url, post=None, headers={}):
     return response.read()
 
 # idea stolen from https://stackoverflow.com/a/31852401/3686
-def loadProperties(multiline, sep='=', comment_char='#'):
+def load_properties(multiline, sep='=', comment_char='#'):
     props = {}
     for line in multiline.splitlines():
         l = line.strip()
@@ -130,7 +129,7 @@ def loadProperties(multiline, sep='=', comment_char='#'):
             props[key] = value
     return props
 
-def valueIfFoundElseKey(dict, key):
+def value_if_found_else_key(dict, key):
     return dict.get(key, key)
 
 def absentOrNull(element, a):
@@ -264,10 +263,10 @@ DATA = {
     'generateExtraServiceTicket': 'false'
     }
 
-print urllib.urlencode(DATA)
+print(urlencode(DATA))
 
 # URLs for various services.
-URL_GC_LOGIN     = 'https://sso.garmin.com/sso/login?' + urllib.urlencode(DATA)
+URL_GC_LOGIN     = 'https://sso.garmin.com/sso/login?' + urlencode(DATA)
 URL_GC_POST_AUTH = 'https://connect.garmin.com/modern/activities?'
 URL_GC_SEARCH = 'https://connect.garmin.com/proxy/activity-search-service-1.2/json/activities?start=0&limit=1'
 URL_GC_LIST = \
@@ -372,10 +371,10 @@ if ARGS.count == 'all':
     # If the user wants to download all activities, first download one,
     # then the result of that request will tell us how many are available
     # so we will modify the variables then.
-    print "Making result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    print URL_GC_SEARCH
+    print("Making result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print(URL_GC_SEARCH)
     result = http_req(URL_GC_SEARCH)
-    print "Finished result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    print("Finished result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
     # Persist JSON
     write_to_file(ARGS.directory + '/activities-summary.json', result, 'a')
@@ -392,10 +391,10 @@ device_dict = dict()
 # load some dictionaries with lookup data from REST services
 activityTypeProps = http_req(url_gc_act_props)
 # write_to_file(ARGS.directory + '/activity_types.properties', activityTypeProps, 'a')
-activityTypeName = loadProperties(activityTypeProps)
+activityTypeName = load_properties(activityTypeProps)
 eventTypeProps = http_req(url_gc_evt_props)
 # write_to_file(ARGS.directory + '/event_types.properties', eventTypeProps, 'a')
-eventTypeName = loadProperties(eventTypeProps)
+eventTypeName = load_properties(eventTypeProps)
 
 # This while loop will download data from the server in multiple chunks, if necessary.
 while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
@@ -427,8 +426,8 @@ while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
     # Process each activity.
     for a in ACTIVITIES:
         # Display which entry we're working on.
-        print 'Garmin Connect activity: [' + str(a['activityId']) + ']',
-        print a['activityName']
+        print('Garmin Connect activity: [' + str(a['activityId']) + '] ', end='')
+        print(a['activityName'])
 
         # Retrieve also the detail data from the activity (the one displayed on
         # the https://connect.garmin.com/modern/activity/xxx page), because some
@@ -445,7 +444,7 @@ while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
             if len(details['summaryDTO']) > 0:
                 tries = 0
             else:
-                print 'retrying for ' + str(a['activityId'])
+                print('retrying for ' + str(a['activityId']))
                 tries -= 1
                 if tries == 0:
                     raise Exception('Didn\'t get "summaryDTO" after ' + str(MAX_TRIES) + ' tries for ' + str(a['activityId']))
@@ -465,15 +464,15 @@ while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
         endLatitude = fromActivitiesOrDetail('endLatitude', a, details, 'summaryDTO')
         endLongitude = fromActivitiesOrDetail('endLongitude', a, details, 'summaryDTO')
 
-        print '\t' + startTimeWithOffset.isoformat() + ',',
+        print('\t' + startTimeWithOffset.isoformat() + ', ', end='')
         if 'duration' in a:
-            print hhmmss_from_seconds(a['duration']) + ',',
+            print(hhmmss_from_seconds(a['duration']) + ', ', end='')
         else:
-            print '??:??:??,',
+            print('??:??:??, ', end='')
         if 'distance' in a and isinstance(a['distance'], (float)):
-            print "{0:.3f}".format(a['distance']/1000) + 'km'
+            print("{0:.3f}".format(a['distance']/1000) + 'km')
         else:
-            print '0.000 km'
+            print('0.000 km')
 
         # try to get the device details (and cache them, as they're used for multiple activities)
         device = None
@@ -490,7 +489,7 @@ while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
             data_filename = ARGS.directory + '/activity_' + str(a['activityId']) + '.gpx'
             download_url = URL_GC_GPX_ACTIVITY + str(a['activityId']) + '?full=true'
             # download_url = URL_GC_GPX_ACTIVITY + str(a['activityId']) + '?full=true' + '&original=true'
-            print download_url
+            print(download_url)
             file_mode = 'w'
         elif ARGS.format == 'tcx':
             data_filename = ARGS.directory + '/activity_' + str(a['activityId']) + '.tcx'
@@ -583,8 +582,8 @@ while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
         csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.isoformat() + '",'
         # csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+durationSeconds*1000) + '",'
         csv_record += empty_record if absentOrNull('productDisplayName', device) else '"' + device['productDisplayName'].replace('"', '""') + ' ' + device['versionString'] + '",'
-        csv_record += empty_record if absentOrNull('activityType', a) else '"' + valueIfFoundElseKey(activityTypeName, 'activity_type_' + a['activityType']['typeKey']) + '",'
-        csv_record += empty_record if absentOrNull('eventType', a) else '"' + valueIfFoundElseKey(eventTypeName, a['eventType']['typeKey']) + '",'
+        csv_record += empty_record if absentOrNull('activityType', a) else '"' + value_if_found_else_key(activityTypeName, 'activity_type_' + a['activityType']['typeKey']) + '",'
+        csv_record += empty_record if absentOrNull('eventType', a) else '"' + value_if_found_else_key(eventTypeName, a['eventType']['typeKey']) + '",'
         csv_record += '"' + startTimeWithOffset.isoformat()[-6:] + '",'
         csv_record += empty_record if not startLatitude else '"' + trunc6(startLatitude) + '",'
         csv_record += empty_record if not startLongitude else '"' + trunc6(startLongitude) + '",'
