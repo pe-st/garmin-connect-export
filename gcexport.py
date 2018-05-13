@@ -16,6 +16,9 @@ Activity & event types:
     https://connect.garmin.com/modern/main/js/properties/activity_types/activity_types.properties
 """
 
+# this avoids different pylint behaviour for python 2 and 3
+from __future__ import print_function
+
 from math import floor
 from sets import Set
 from urllib import urlencode
@@ -23,18 +26,14 @@ from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from os import mkdir, remove, stat
 from os.path import isdir, isfile
-from subprocess import call
 from sys import argv
 from xml.dom.minidom import parseString
-
-from fileinput import filename
 
 import argparse
 import cookielib
 import json
 import re
 import sys
-import urllib
 import urllib2
 import zipfile
 
@@ -42,17 +41,30 @@ SCRIPT_VERSION = '2.0.0'
 
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
+
+
 # print cookie_jar
 
 def hhmmss_from_seconds(sec):
     """Helper function that converts seconds to HH:MM:SS time format."""
-    return str(timedelta(seconds=int(sec))).zfill(8)
+    if isinstance(sec, (float)):
+        formatted_time = str(timedelta(seconds=int(sec))).zfill(8)
+    else:
+        formatted_time = "0.000"
+    return formatted_time
 
-def write_to_file(filename, content):
+
+def kmh_from_mps(mps):
+    """Helper function that converts meters per second (mps) to km/h."""
+    return str(mps * 3.6)
+
+
+def write_to_file(filename, content, mode):
     """Helper function that persists content to file."""
-    write_file = open(filename, 'a')
+    write_file = open(filename, mode)
     write_file.write(content)
     write_file.close()
+
 
 # url is a string, post is a dictionary of POST parameters, headers is a dictionary of headers.
 def http_req(url, post=None, headers={}):
@@ -78,15 +90,24 @@ def http_req(url, post=None, headers={}):
     if response.getcode() == 204:
         # For activities without GPS coordinates, there is no GPX download (204 = no content).
         # Write an empty file to prevent redownloading it.
-        print 'Writing empty file since there was no GPX activity data...'
+        print('Writing empty file since there was no GPX activity data...')
         return ''
     elif response.getcode() != 200:
         raise Exception('Bad return code (' + str(response.getcode()) + ') for: ' + url)
 
     return response.read()
 
+
 # idea stolen from https://stackoverflow.com/a/31852401/3686
-def loadProperties(multiline, sep='=', comment_char='#'):
+def load_properties(multiline, sep='=', comment_char='#'):
+    """
+    Read a multiline string of properties (key/value pair separated by *sep*) into a dict
+
+    :param multiline: input string of properties
+    :param sep:       separator between key and value
+    :param comment_char: lines starting with this chara are considered comments, not key/value pairs
+    :return:
+    """
     props = {}
     for line in multiline.splitlines():
         l = line.strip()
@@ -97,10 +118,14 @@ def loadProperties(multiline, sep='=', comment_char='#'):
             props[key] = value
     return props
 
-def valueIfFoundElseKey(dict, key):
+
+def value_if_found_else_key(dict, key):
+    """Lookup a value in dict and use the key itself as fallback"""
     return dict.get(key, key)
 
+
 def absentOrNull(element, a):
+    """Return False only if a[element] is valid and not None"""
     if not a:
         return True
     elif element not in a:
@@ -110,14 +135,18 @@ def absentOrNull(element, a):
     else:
         return True
 
-def fromActivitiesOrDetail(element, a, detail, detailContainer, details):
+
+def fromActivitiesOrDetail(element, a, detail, detailContainer):
+    """Return detail[detailContainer][element] if valid and a[element] (or None) otherwise"""
     if absentOrNull(detailContainer, detail) or absentOrNull(element, detail[detailContainer]):
         return None if absentOrNull(element, a) else a[element]
     else:
-        return details[detailContainer][element]
+        return detail[detailContainer][element]
+
 
 def trunc6(f):
-    return "{0:12.6f}".format(floor(f*1000000)/1000000).lstrip()
+    return "{0:12.6f}".format(floor(f * 1000000) / 1000000).lstrip()
+
 
 # A class building tzinfo objects for fixed-offset time zones.
 # (copied from https://docs.python.org/2/library/datetime.html)
@@ -125,7 +154,7 @@ class FixedOffset(tzinfo):
     """Fixed offset in minutes east from UTC."""
 
     def __init__(self, offset, name):
-        self.__offset = timedelta(minutes = offset)
+        self.__offset = timedelta(minutes=offset)
         self.__name = name
 
     def utcoffset(self, dt):
@@ -137,14 +166,16 @@ class FixedOffset(tzinfo):
     def dst(self, dt):
         return timedelta(0)
 
+
 # build an 'aware' datetime from two 'naive' datetime objects (that is timestamps
 # as present in the activities.json), using the time difference as offset
 def offsetDateTime(timeLocal, timeGMT):
     localDT = datetime.strptime(timeLocal, "%Y-%m-%d %H:%M:%S")
     gmtDT = datetime.strptime(timeGMT, "%Y-%m-%d %H:%M:%S")
     offset = localDT - gmtDT
-    offsetTz = FixedOffset(offset.seconds/60, "LCL")
+    offsetTz = FixedOffset(offset.seconds / 60, "LCL")
     return localDT.replace(tzinfo=offsetTz)
+
 
 # this is almost the datetime format Garmin used in the activity-search-service
 # JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
@@ -163,10 +194,12 @@ parent_type_id = {
     71: 'motorcycling',
     83: 'transition',
     144: 'diving',
-    149: 'yoga' }
+    149: 'yoga'
+}
 
 # typeId values using pace instead of speed
-uses_pace = Set([1, 3, 9]) # running, hiking, walking
+uses_pace = Set([1, 3, 9])  # running, hiking, walking
+
 
 def paceOrSpeedRaw(typeId, parentTypeId, mps):
     kmh = 3.6 * mps
@@ -175,6 +208,7 @@ def paceOrSpeedRaw(typeId, parentTypeId, mps):
     else:
         return kmh
 
+
 def paceOrSpeedFormatted(typeId, parentTypeId, mps):
     kmh = 3.6 * mps
     if (typeId in uses_pace) or (parentTypeId in uses_pace):
@@ -182,6 +216,7 @@ def paceOrSpeedFormatted(typeId, parentTypeId, mps):
         return '{0:02d}:{1:02d}'.format(*divmod(int(round(3600 / kmh)), 60))
     else:
         return "{0:.1f}".format(round(kmh, 1))
+
 
 def main(argv):
     CURRENT_DATE = datetime.now().strftime('%Y-%m-%d')
@@ -256,18 +291,18 @@ def main(argv):
         'initialFocus': 'true',
         'embedWidget': 'false',
         'generateExtraServiceTicket': 'false'
-        }
+    }
 
-    print urllib.urlencode(DATA)
+    print(urlencode(DATA))
 
     # URLs for various services.
-    URL_GC_LOGIN     = 'https://sso.garmin.com/sso/login?' + urllib.urlencode(DATA)
+    URL_GC_LOGIN = 'https://sso.garmin.com/sso/login?' + urlencode(DATA)
     URL_GC_POST_AUTH = 'https://connect.garmin.com/modern/activities?'
     URL_GC_SEARCH = 'https://connect.garmin.com/proxy/activity-search-service-1.2/json/activities?start=0&limit=1'
     URL_GC_LIST = \
         'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
     URL_GC_ACTIVITY = 'https://connect.garmin.com/modern/proxy/activity-service/activity/'
-    url_gc_device    = 'https://connect.garmin.com/modern/proxy/device-service/deviceservice/app-info/'
+    url_gc_device = 'https://connect.garmin.com/modern/proxy/device-service/deviceservice/app-info/'
     url_gc_act_props = 'https://connect.garmin.com/modern/main/js/properties/activity_types/activity_types.properties'
     url_gc_evt_props = 'https://connect.garmin.com/modern/main/js/properties/event_types/event_types.properties'
     URL_GC_GPX_ACTIVITY = \
@@ -290,22 +325,22 @@ def main(argv):
         'lt': 'e1s1',
         '_eventId': 'submit',
         'displayNameRequired': 'false'
-        }
+    }
 
     print('Post login data')
-    login_response = http_req(URL_GC_LOGIN, POST_DATA)
+    LOGIN_RESPONSE = http_req(URL_GC_LOGIN, POST_DATA)
     print('Finish login post')
 
     # extract the ticket from the login response
-    pattern = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE|re.DOTALL)
-    match = pattern.match(login_response)
-    if not match:
-        raise Exception('Did not get a ticket in the login response. Cannot log in. Did you enter the correct username and password?')
-    LOGIN_TICKET = match.group(1)
-    print 'login ticket=' + LOGIN_TICKET
+    PATTERN = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE | re.DOTALL)
+    MATCH = PATTERN.match(LOGIN_RESPONSE)
+    if not MATCH:
+        raise Exception('Did not get a ticket in the login response. Cannot log in. Did \
+    you enter the correct username and password?')
+    LOGIN_TICKET = MATCH.group(1)
+    print('login ticket=' + LOGIN_TICKET)
 
-    print('Request authentication')
-    # print(URL_GC_POST_AUTH + 'ticket=' + LOGIN_TICKET)
+    print("Request authentication URL: " + URL_GC_POST_AUTH + 'ticket=' + LOGIN_TICKET)
     http_req(URL_GC_POST_AUTH + 'ticket=' + LOGIN_TICKET)
     print('Finished authentication')
 
@@ -361,18 +396,17 @@ def main(argv):
     Elevation min. corrected (m),\
     Sample count\n')
 
-
     if ARGS.count == 'all':
         # If the user wants to download all activities, first download one,
         # then the result of that request will tell us how many are available
         # so we will modify the variables then.
-        print "Making result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        print URL_GC_SEARCH
+        print("Making result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print(URL_GC_SEARCH)
         result = http_req(URL_GC_SEARCH)
-        print "Finished result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        print("Finished result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
         # Persist JSON
-        write_to_file(ARGS.directory + '/activities-summary.json', result)
+        write_to_file(ARGS.directory + '/activities-summary.json', result, 'a')
 
         # Modify TOTAL_TO_DOWNLOAD based on how many activities the server reports.
         json_results = json.loads(result)  # TODO: Catch possible exceptions here.
@@ -385,11 +419,11 @@ def main(argv):
 
     # load some dictionaries with lookup data from REST services
     activityTypeProps = http_req(url_gc_act_props)
-    # write_to_file(ARGS.directory + '/activity_types.properties', activityTypeProps)
-    activityTypeName = loadProperties(activityTypeProps)
+    # write_to_file(ARGS.directory + '/activity_types.properties', activityTypeProps, 'a')
+    activityTypeName = load_properties(activityTypeProps)
     eventTypeProps = http_req(url_gc_evt_props)
-    # write_to_file(ARGS.directory + '/event_types.properties', eventTypeProps)
-    eventTypeName = loadProperties(eventTypeProps)
+    # write_to_file(ARGS.directory + '/event_types.properties', eventTypeProps, 'a')
+    eventTypeName = load_properties(eventTypeProps)
 
     # This while loop will download data from the server in multiple chunks, if necessary.
     while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
@@ -409,7 +443,7 @@ def main(argv):
         print("Finished activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
         # Persist JSON
-        write_to_file(ARGS.directory + '/activities.json', RESULT)
+        write_to_file(ARGS.directory + '/activities.json', RESULT, 'a')
 
         JSON_RESULTS = json.loads(RESULT)  # TODO: Catch possible exceptions here.
 
@@ -421,8 +455,8 @@ def main(argv):
         # Process each activity.
         for a in ACTIVITIES:
             # Display which entry we're working on.
-            print 'Garmin Connect activity: [' + str(a['activityId']) + ']',
-            print a['activityName']
+            print('Garmin Connect activity: [' + str(a['activityId']) + '] ', end='')
+            print(a['activityName'])
 
             # Retrieve also the detail data from the activity (the one displayed on
             # the https://connect.garmin.com/modern/activity/xxx page), because some
@@ -439,7 +473,7 @@ def main(argv):
                 if len(details['summaryDTO']) > 0:
                     tries = 0
                 else:
-                    print 'retrying for ' + str(a['activityId'])
+                    print('retrying for ' + str(a['activityId']))
                     tries -= 1
                     if tries == 0:
                         raise Exception('Didn\'t get "summaryDTO" after ' + str(MAX_TRIES) + ' tries for ' + str(a['activityId']))
@@ -454,29 +488,29 @@ def main(argv):
             endTimeWithOffset = startTimeWithOffset + timedelta(seconds=durationSeconds) if duration else None
 
             # get some values from detail if present, from a otherwise
-            startLatitude = fromActivitiesOrDetail('startLatitude', a, details, 'summaryDTO', details)
-            startLongitude = fromActivitiesOrDetail('startLongitude', a, details, 'summaryDTO', details)
-            endLatitude = fromActivitiesOrDetail('endLatitude', a, details, 'summaryDTO', details)
-            endLongitude = fromActivitiesOrDetail('endLongitude', a, details, 'summaryDTO', details)
+            startLatitude = fromActivitiesOrDetail('startLatitude', a, details, 'summaryDTO')
+            startLongitude = fromActivitiesOrDetail('startLongitude', a, details, 'summaryDTO')
+            endLatitude = fromActivitiesOrDetail('endLatitude', a, details, 'summaryDTO')
+            endLongitude = fromActivitiesOrDetail('endLongitude', a, details, 'summaryDTO')
 
-            print '\t' + startTimeWithOffset.isoformat() + ',',
+            print('\t' + startTimeWithOffset.isoformat() + ', ', end='')
             if 'duration' in a:
-                print hhmmss_from_seconds(a['duration']) + ',',
+                print(hhmmss_from_seconds(a['duration']) + ', ', end='')
             else:
-                print '??:??:??,',
+                print('??:??:??, ', end='')
             if 'distance' in a and isinstance(a['distance'], (float)):
-                print "{0:.3f}".format(a['distance']/1000) + 'km'
+                print("{0:.3f}".format(a['distance'] / 1000) + 'km')
             else:
-                print '0.000 km'
+                print('0.000 km')
 
             # try to get the device details (and cache them, as they're used for multiple activities)
             device = None
             device_app_inst_id = None if absentOrNull('metadataDTO', details) else details['metadataDTO']['deviceApplicationInstallationId']
             if device_app_inst_id:
-                if not (device_dict.has_key(device_app_inst_id)):
+                if not device_dict.has_key(device_app_inst_id):
                     # print '\tGetting device details ' + str(device_app_inst_id)
                     device_details = http_req(url_gc_device + str(device_app_inst_id))
-                    write_to_file(ARGS.directory + '/device_' + str(device_app_inst_id) + '.json', device_details)
+                    write_to_file(ARGS.directory + '/device_' + str(device_app_inst_id) + '.json', device_details, 'a')
                     device_dict[device_app_inst_id] = None if not device_details else json.loads(device_details)
                 device = device_dict[device_app_inst_id]
 
@@ -484,7 +518,7 @@ def main(argv):
                 data_filename = ARGS.directory + '/activity_' + str(a['activityId']) + '.gpx'
                 download_url = URL_GC_GPX_ACTIVITY + str(a['activityId']) + '?full=true'
                 # download_url = URL_GC_GPX_ACTIVITY + str(a['activityId']) + '?full=true' + '&original=true'
-                print download_url
+                print(download_url)
                 file_mode = 'w'
             elif ARGS.format == 'tcx':
                 data_filename = ARGS.directory + '/activity_' + str(a['activityId']) + '.tcx'
@@ -535,13 +569,12 @@ def main(argv):
                         print('Writing empty file since there was no original activity data...')
                         data = ''
                     else:
-                        raise Exception('Failed. Got an unexpected HTTP error (' + str(e.code) + download_url +').')
+                        raise Exception('Failed. Got an unexpected HTTP error (' + str(e.code) + download_url + ').')
             else:
                 data = activity_details
 
-            save_file = open(data_filename, file_mode)
-            save_file.write(data)
-            save_file.close()
+            # Persist file
+            write_to_file(data_filename, data, file_mode)
 
             # Write stats to CSV.
             empty_record = '"",'
@@ -561,7 +594,7 @@ def main(argv):
             csv_record += empty_record if a['elevationCorrected'] or absentOrNull('elevationGain', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationGain'], 2)) + '",'
             csv_record += empty_record if a['elevationCorrected'] or absentOrNull('minElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['minElevation'], 2)) + '",'
             csv_record += empty_record if a['elevationCorrected'] or absentOrNull('maxElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['maxElevation'], 2)) + '",'
-            csv_record += empty_record # no minimum heart rate in JSON
+            csv_record += empty_record  # no minimum heart rate in JSON
             csv_record += empty_record if absentOrNull('maxHR', a) else '"' + "{0:.0f}".format(a['maxHR']) + '",'
             csv_record += empty_record if absentOrNull('averageHR', a) else '"' + "{0:.0f}".format(a['averageHR']) + '",'
             csv_record += empty_record if absentOrNull('calories', details['summaryDTO']) else '"' + str(details['summaryDTO']['calories']) + '",'
@@ -578,8 +611,8 @@ def main(argv):
             csv_record += empty_record if not endTimeWithOffset else '"' + endTimeWithOffset.isoformat() + '",'
             # csv_record += empty_record if absentOrNull('beginTimestamp', a) else '"' + str(a['beginTimestamp']+durationSeconds*1000) + '",'
             csv_record += empty_record if absentOrNull('productDisplayName', device) else '"' + device['productDisplayName'].replace('"', '""') + ' ' + device['versionString'] + '",'
-            csv_record += empty_record if absentOrNull('activityType', a) else '"' + valueIfFoundElseKey(activityTypeName, 'activity_type_' + a['activityType']['typeKey']) + '",'
-            csv_record += empty_record if absentOrNull('eventType', a) else '"' + valueIfFoundElseKey(eventTypeName, a['eventType']['typeKey']) + '",'
+            csv_record += empty_record if absentOrNull('activityType', a) else '"' + value_if_found_else_key(activityTypeName, 'activity_type_' + a['activityType']['typeKey']) + '",'
+            csv_record += empty_record if absentOrNull('eventType', a) else '"' + value_if_found_else_key(eventTypeName, a['eventType']['typeKey']) + '",'
             csv_record += '"' + startTimeWithOffset.isoformat()[-6:] + '",'
             csv_record += empty_record if not startLatitude else '"' + trunc6(startLatitude) + '",'
             csv_record += empty_record if not startLongitude else '"' + trunc6(startLongitude) + '",'
@@ -589,7 +622,7 @@ def main(argv):
             csv_record += empty_record if not a['elevationCorrected'] or absentOrNull('elevationLoss', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationLoss'], 2)) + '",'
             csv_record += empty_record if not a['elevationCorrected'] or absentOrNull('maxElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['maxElevation'], 2)) + '",'
             csv_record += empty_record if not a['elevationCorrected'] or absentOrNull('minElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['minElevation'], 2)) + '",'
-            csv_record += '""'         # no Sample Count in JSON
+            csv_record += '""'  # no Sample Count in JSON
             csv_record += '\n'
 
             CSV_FILE.write(csv_record.encode('utf8'))
