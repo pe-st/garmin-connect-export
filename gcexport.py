@@ -37,32 +37,6 @@ import urllib2
 import zipfile
 
 SCRIPT_VERSION = '2.0.0'
-CURRENT_DATE = datetime.now().strftime('%Y-%m-%d')
-ACTIVITIES_DIRECTORY = './' + CURRENT_DATE + '_garmin_connect_export'
-
-PARSER = argparse.ArgumentParser()
-
-# TODO: Implement verbose and/or quiet options.
-# PARSER.add_argument('-v', '--verbose', help="increase output verbosity", action="store_true")
-PARSER.add_argument('--version', help="print version and exit", action="store_true")
-PARSER.add_argument('--username', help="your Garmin Connect username (otherwise, you will be \
-    prompted)", nargs='?')
-PARSER.add_argument('--password', help="your Garmin Connect password (otherwise, you will be \
-    prompted)", nargs='?')
-PARSER.add_argument('-c', '--count', nargs='?', default="1", help="number of recent activities to \
-    download, or 'all' (default: 1)")
-PARSER.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original', 'json'], default="gpx",
-    help="export format; can be 'gpx', 'tcx', 'original' or 'json' (default: 'gpx')")
-PARSER.add_argument('-d', '--directory', nargs='?', default=ACTIVITIES_DIRECTORY, help="the \
-    directory to export to (default: './YYYY-MM-DD_garmin_connect_export')")
-PARSER.add_argument('-u', '--unzip', help="if downloading ZIP files (format: 'original'), unzip \
-    the file and removes the ZIP file", action="store_true")
-
-ARGS = PARSER.parse_args()
-
-if ARGS.version:
-    print(argv[0] + ", version " + SCRIPT_VERSION)
-    exit(0)
 
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
@@ -162,11 +136,11 @@ def absentOrNull(element, a):
 
 
 def fromActivitiesOrDetail(element, a, detail, detailContainer):
-    """Return details[detailContainer][element] if valid and a[element] (or None) otherwise"""
+    """Return detail[detailContainer][element] if valid and a[element] (or None) otherwise"""
     if absentOrNull(detailContainer, detail) or absentOrNull(element, detail[detailContainer]):
         return None if absentOrNull(element, a) else a[element]
     else:
-        return details[detailContainer][element]
+        return detail[detailContainer][element]
 
 
 def trunc6(f):
@@ -242,6 +216,33 @@ def paceOrSpeedFormatted(typeId, parentTypeId, mps):
     else:
         return "{0:.1f}".format(round(kmh, 1))
 
+
+CURRENT_DATE = datetime.now().strftime('%Y-%m-%d')
+ACTIVITIES_DIRECTORY = './' + CURRENT_DATE + '_garmin_connect_export'
+
+PARSER = argparse.ArgumentParser()
+
+# TODO: Implement verbose and/or quiet options.
+# PARSER.add_argument('-v', '--verbose', help="increase output verbosity", action="store_true")
+PARSER.add_argument('--version', help="print version and exit", action="store_true")
+PARSER.add_argument('--username', help="your Garmin Connect username (otherwise, you will be \
+    prompted)", nargs='?')
+PARSER.add_argument('--password', help="your Garmin Connect password (otherwise, you will be \
+    prompted)", nargs='?')
+PARSER.add_argument('-c', '--count', nargs='?', default="1", help="number of recent activities to \
+    download, or 'all' (default: 1)")
+PARSER.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original', 'json'], default="gpx",
+    help="export format; can be 'gpx', 'tcx', 'original' or 'json' (default: 'gpx')")
+PARSER.add_argument('-d', '--directory', nargs='?', default=ACTIVITIES_DIRECTORY, help="the \
+    directory to export to (default: './YYYY-MM-DD_garmin_connect_export')")
+PARSER.add_argument('-u', '--unzip', help="if downloading ZIP files (format: 'original'), unzip \
+    the file and removes the ZIP file", action="store_true")
+
+ARGS = PARSER.parse_args()
+
+if ARGS.version:
+    print(argv[0] + ", version " + SCRIPT_VERSION)
+    exit(0)
 
 print('Welcome to Garmin Connect Exporter!')
 
