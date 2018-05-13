@@ -145,6 +145,7 @@ def fromActivitiesOrDetail(element, a, detail, detailContainer):
 
 
 def trunc6(f):
+    """Return the given float as string formatted with six digit precision"""
     return "{0:12.6f}".format(floor(f * 1000000) / 1000000).lstrip()
 
 
