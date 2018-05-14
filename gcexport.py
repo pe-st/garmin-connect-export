@@ -26,7 +26,6 @@ from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from os import mkdir, remove, stat
 from os.path import isdir, isfile
-from sys import argv
 from xml.dom.minidom import parseString
 
 import argparse
@@ -110,43 +109,43 @@ def load_properties(multiline, sep='=', comment_char='#'):
     """
     props = {}
     for line in multiline.splitlines():
-        l = line.strip()
-        if l and not l.startswith(comment_char):
-            key_value = l.split(sep)
+        stripped_line = line.strip()
+        if stripped_line and not stripped_line.startswith(comment_char):
+            key_value = stripped_line.split(sep)
             key = key_value[0].strip()
             value = sep.join(key_value[1:]).strip().strip('"')
             props[key] = value
     return props
 
 
-def value_if_found_else_key(dict, key):
-    """Lookup a value in dict and use the key itself as fallback"""
-    return dict.get(key, key)
+def value_if_found_else_key(some_dict, key):
+    """Lookup a value in some_dict and use the key itself as fallback"""
+    return some_dict.get(key, key)
 
 
-def absentOrNull(element, a):
-    """Return False only if a[element] is valid and not None"""
-    if not a:
+def absentOrNull(element, act):
+    """Return False only if act[element] is valid and not None"""
+    if not act:
         return True
-    elif element not in a:
+    elif element not in act:
         return True
-    elif a[element]:
+    elif act[element]:
         return False
     else:
         return True
 
 
-def fromActivitiesOrDetail(element, a, detail, detailContainer):
-    """Return detail[detailContainer][element] if valid and a[element] (or None) otherwise"""
-    if absentOrNull(detailContainer, detail) or absentOrNull(element, detail[detailContainer]):
-        return None if absentOrNull(element, a) else a[element]
+def from_activities_or_detail(element, act, detail, detail_container):
+    """Return detail[detail_container][element] if valid and act[element] (or None) otherwise"""
+    if absentOrNull(detail_container, detail) or absentOrNull(element, detail[detail_container]):
+        return None if absentOrNull(element, act) else act[element]
     else:
-        return detail[detailContainer][element]
+        return detail[detail_container][element]
 
 
-def trunc6(f):
+def trunc6(some_float):
     """Return the given float as string formatted with six digit precision"""
-    return "{0:12.6f}".format(floor(f * 1000000) / 1000000).lstrip()
+    return "{0:12.6f}".format(floor(some_float * 1000000) / 1000000).lstrip()
 
 
 # A class building tzinfo objects for fixed-offset time zones.
@@ -168,14 +167,16 @@ class FixedOffset(tzinfo):
         return timedelta(0)
 
 
-# build an 'aware' datetime from two 'naive' datetime objects (that is timestamps
-# as present in the activities.json), using the time difference as offset
-def offsetDateTime(timeLocal, timeGMT):
-    localDT = datetime.strptime(timeLocal, "%Y-%m-%d %H:%M:%S")
-    gmtDT = datetime.strptime(timeGMT, "%Y-%m-%d %H:%M:%S")
-    offset = localDT - gmtDT
-    offsetTz = FixedOffset(offset.seconds / 60, "LCL")
-    return localDT.replace(tzinfo=offsetTz)
+def offset_date_time(time_local, time_gmt):
+    """
+    Build an 'aware' datetime from two 'naive' datetime objects (that is timestamps
+    as present in the activitylist-service.json), using the time difference as offset.
+    """
+    local_dt = datetime.strptime(time_local, "%Y-%m-%d %H:%M:%S")
+    gmt_dt = datetime.strptime(time_gmt, "%Y-%m-%d %H:%M:%S")
+    offset = local_dt - gmt_dt
+    offset_tz = FixedOffset(offset.seconds / 60, "LCL")
+    return local_dt.replace(tzinfo=offset_tz)
 
 
 # this is almost the datetime format Garmin used in the activity-search-service
@@ -482,17 +483,17 @@ def main(argv):
             parentTypeId = 4 if absentOrNull('activityType', a) else a['activityType']['parentTypeId']
             typeId = 4 if absentOrNull('activityType', a) else a['activityType']['typeId']
 
-            startTimeWithOffset = offsetDateTime(a['startTimeLocal'], a['startTimeGMT'])
+            startTimeWithOffset = offset_date_time(a['startTimeLocal'], a['startTimeGMT'])
             elapsedDuration = details['summaryDTO']['elapsedDuration'] if 'summaryDTO' in details and 'elapsedDuration' in details['summaryDTO'] else None
             duration = elapsedDuration if elapsedDuration else a['duration']
             durationSeconds = int(round(duration))
             endTimeWithOffset = startTimeWithOffset + timedelta(seconds=durationSeconds) if duration else None
 
             # get some values from detail if present, from a otherwise
-            startLatitude = fromActivitiesOrDetail('startLatitude', a, details, 'summaryDTO')
-            startLongitude = fromActivitiesOrDetail('startLongitude', a, details, 'summaryDTO')
-            endLatitude = fromActivitiesOrDetail('endLatitude', a, details, 'summaryDTO')
-            endLongitude = fromActivitiesOrDetail('endLongitude', a, details, 'summaryDTO')
+            startLatitude = from_activities_or_detail('startLatitude', a, details, 'summaryDTO')
+            startLongitude = from_activities_or_detail('startLongitude', a, details, 'summaryDTO')
+            endLatitude = from_activities_or_detail('endLatitude', a, details, 'summaryDTO')
+            endLongitude = from_activities_or_detail('endLongitude', a, details, 'summaryDTO')
 
             print('\t' + startTimeWithOffset.isoformat() + ', ', end='')
             if 'duration' in a:
