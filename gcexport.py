@@ -184,7 +184,7 @@ def offset_date_time(time_local, time_gmt):
 ALMOST_RFC_1123 = "%a, %d %b %Y %H:%M"
 
 # map the numeric parentTypeId to its name for the CSV output
-parent_type_id = {
+PARENT_TYPE_ID = {
     1: 'running',
     2: 'cycling',
     3: 'hiking',
@@ -200,20 +200,20 @@ parent_type_id = {
 }
 
 # typeId values using pace instead of speed
-uses_pace = Set([1, 3, 9])  # running, hiking, walking
+USES_PACE = Set([1, 3, 9])  # running, hiking, walking
 
 
-def paceOrSpeedRaw(typeId, parentTypeId, mps):
+def pace_or_speed_raw(type_id, parent_type_id, mps):
     kmh = 3.6 * mps
-    if (typeId in uses_pace) or (parentTypeId in uses_pace):
+    if (type_id in USES_PACE) or (parent_type_id in USES_PACE):
         return 60 / kmh
     else:
         return kmh
 
 
-def paceOrSpeedFormatted(typeId, parentTypeId, mps):
+def pace_or_speed_formatted(type_id, parent_type_id, mps):
     kmh = 3.6 * mps
-    if (typeId in uses_pace) or (parentTypeId in uses_pace):
+    if (type_id in USES_PACE) or (parent_type_id in USES_PACE):
         # format seconds per kilometer as MM:SS, see https://stackoverflow.com/a/27751293
         return '{0:02d}:{1:02d}'.format(*divmod(int(round(3600 / kmh)), 60))
     else:
@@ -589,9 +589,9 @@ def main(argv):
             csv_record += empty_record if not duration else hhmmss_from_seconds(round(duration)) + ','
             csv_record += empty_record if absentOrNull('movingDuration', details['summaryDTO']) else hhmmss_from_seconds(details['summaryDTO']['movingDuration']) + ','
             csv_record += empty_record if absentOrNull('distance', a) else '"' + "{0:.5f}".format(a['distance']/1000) + '",'
-            csv_record += empty_record if absentOrNull('averageSpeed', a) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, a['averageSpeed'])) + '",'
-            csv_record += empty_record if absentOrNull('averageMovingSpeed', details['summaryDTO']) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, details['summaryDTO']['averageMovingSpeed'])) + '",'
-            csv_record += empty_record if absentOrNull('maxSpeed', details['summaryDTO']) else '"' + trunc6(paceOrSpeedRaw(typeId, parentTypeId, details['summaryDTO']['maxSpeed'])) + '",'
+            csv_record += empty_record if absentOrNull('averageSpeed', a) else '"' + trunc6(pace_or_speed_raw(typeId, parentTypeId, a['averageSpeed'])) + '",'
+            csv_record += empty_record if absentOrNull('averageMovingSpeed', details['summaryDTO']) else '"' + trunc6(pace_or_speed_raw(typeId, parentTypeId, details['summaryDTO']['averageMovingSpeed'])) + '",'
+            csv_record += empty_record if absentOrNull('maxSpeed', details['summaryDTO']) else '"' + trunc6(pace_or_speed_raw(typeId, parentTypeId, details['summaryDTO']['maxSpeed'])) + '",'
             csv_record += empty_record if a['elevationCorrected'] or absentOrNull('elevationLoss', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationLoss'], 2)) + '",'
             csv_record += empty_record if a['elevationCorrected'] or absentOrNull('elevationGain', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationGain'], 2)) + '",'
             csv_record += empty_record if a['elevationCorrected'] or absentOrNull('minElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['minElevation'], 2)) + '",'
