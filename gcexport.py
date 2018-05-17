@@ -41,8 +41,82 @@ SCRIPT_VERSION = '2.0.0'
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
 
+# this is almost the datetime format Garmin used in the activity-search-service
+# JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
+ALMOST_RFC_1123 = "%a, %d %b %Y %H:%M"
 
-# print cookie_jar
+# map the numeric parentTypeId to its name for the CSV output
+PARENT_TYPE_ID = {
+    1: 'running',
+    2: 'cycling',
+    3: 'hiking',
+    4: 'other',
+    9: 'walking',
+    17: 'any activity type',
+    26: 'swimming',
+    29: 'fitness equipment',
+    71: 'motorcycling',
+    83: 'transition',
+    144: 'diving',
+    149: 'yoga'
+}
+
+# typeId values using pace instead of speed
+USES_PACE = Set([1, 3, 9])  # running, hiking, walking
+
+# Maximum number of activities you can request at once.
+# Used to be 100 and enforced by Garmin for older endpoints; for the current endpoint 'URL_GC_LIST'
+# the limit is not known (I have less than 1000 activities and could get them all in one go)
+LIMIT_MAXIMUM = 1000
+
+MAX_TRIES = 3
+
+WEBHOST = "https://connect.garmin.com"
+REDIRECT = "https://connect.garmin.com/post-auth/login"
+BASE_URL = "http://connect.garmin.com/en-US/signin"
+SSO = "https://sso.garmin.com/sso"
+CSS = "https://static.garmincdn.com/com.garmin.connect/ui/css/gauth-custom-v1.2-min.css"
+
+DATA = {
+    'service': REDIRECT,
+    'webhost': WEBHOST,
+    'source': BASE_URL,
+    'redirectAfterAccountLoginUrl': REDIRECT,
+    'redirectAfterAccountCreationUrl': REDIRECT,
+    'gauthHost': SSO,
+    'locale': 'en_US',
+    'id': 'gauth-widget',
+    'cssUrl': CSS,
+    'clientId': 'GarminConnect',
+    'rememberMeShown': 'true',
+    'rememberMeChecked': 'false',
+    'createAccountShown': 'true',
+    'openCreateAccount': 'false',
+    'usernameShown': 'false',
+    'displayNameShown': 'false',
+    'consumeServiceTicket': 'false',
+    'initialFocus': 'true',
+    'embedWidget': 'false',
+    'generateExtraServiceTicket': 'false'
+}
+
+# URLs for various services.
+URL_GC_LOGIN = 'https://sso.garmin.com/sso/login?' + urlencode(DATA)
+URL_GC_POST_AUTH = 'https://connect.garmin.com/modern/activities?'
+URL_GC_SEARCH = 'https://connect.garmin.com/proxy/activity-search-service-1.2/json/activities?start=0&limit=1'
+URL_GC_LIST = \
+    'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
+URL_GC_ACTIVITY = 'https://connect.garmin.com/modern/proxy/activity-service/activity/'
+URL_GC_DEVICE = 'https://connect.garmin.com/modern/proxy/device-service/deviceservice/app-info/'
+URL_GC_ACT_PROPS = 'https://connect.garmin.com/modern/main/js/properties/activity_types/activity_types.properties'
+URL_GC_EVT_PROPS = 'https://connect.garmin.com/modern/main/js/properties/event_types/event_types.properties'
+URL_GC_GPX_ACTIVITY = \
+    'https://connect.garmin.com/modern/proxy/download-service/export/gpx/activity/'
+URL_GC_TCX_ACTIVITY = \
+    'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
+URL_GC_ORIGINAL_ACTIVITY = 'http://connect.garmin.com/proxy/download-service/files/activity/'
+
+
 
 def hhmmss_from_seconds(sec):
     """Helper function that converts seconds to HH:MM:SS time format."""
@@ -179,30 +253,6 @@ def offset_date_time(time_local, time_gmt):
     return local_dt.replace(tzinfo=offset_tz)
 
 
-# this is almost the datetime format Garmin used in the activity-search-service
-# JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
-ALMOST_RFC_1123 = "%a, %d %b %Y %H:%M"
-
-# map the numeric parentTypeId to its name for the CSV output
-PARENT_TYPE_ID = {
-    1: 'running',
-    2: 'cycling',
-    3: 'hiking',
-    4: 'other',
-    9: 'walking',
-    17: 'any activity type',
-    26: 'swimming',
-    29: 'fitness equipment',
-    71: 'motorcycling',
-    83: 'transition',
-    144: 'diving',
-    149: 'yoga'
-}
-
-# typeId values using pace instead of speed
-USES_PACE = Set([1, 3, 9])  # running, hiking, walking
-
-
 def pace_or_speed_raw(type_id, parent_type_id, mps):
     kmh = 3.6 * mps
     if (type_id in USES_PACE) or (parent_type_id in USES_PACE):
@@ -258,60 +308,7 @@ def main(argv):
     username = args.username if args.username else input('Username: ')
     password = args.password if args.password else getpass()
 
-    # Maximum number of activities you can request at once.
-    # Used to be 100 and enforced by Garmin for older endpoints; for the current endpoint 'URL_GC_LIST'
-    # the limit is not known (I have less than 1000 activities and could get them all in one go)
-    LIMIT_MAXIMUM = 1000
-
-    MAX_TRIES = 3
-
-    WEBHOST = "https://connect.garmin.com"
-    REDIRECT = "https://connect.garmin.com/post-auth/login"
-    BASE_URL = "http://connect.garmin.com/en-US/signin"
-    GAUTH = "http://connect.garmin.com/gauth/hostname"
-    SSO = "https://sso.garmin.com/sso"
-    CSS = "https://static.garmincdn.com/com.garmin.connect/ui/css/gauth-custom-v1.2-min.css"
-
-    DATA = {
-        'service': REDIRECT,
-        'webhost': WEBHOST,
-        'source': BASE_URL,
-        'redirectAfterAccountLoginUrl': REDIRECT,
-        'redirectAfterAccountCreationUrl': REDIRECT,
-        'gauthHost': SSO,
-        'locale': 'en_US',
-        'id': 'gauth-widget',
-        'cssUrl': CSS,
-        'clientId': 'GarminConnect',
-        'rememberMeShown': 'true',
-        'rememberMeChecked': 'false',
-        'createAccountShown': 'true',
-        'openCreateAccount': 'false',
-        'usernameShown': 'false',
-        'displayNameShown': 'false',
-        'consumeServiceTicket': 'false',
-        'initialFocus': 'true',
-        'embedWidget': 'false',
-        'generateExtraServiceTicket': 'false'
-    }
-
     print(urlencode(DATA))
-
-    # URLs for various services.
-    URL_GC_LOGIN = 'https://sso.garmin.com/sso/login?' + urlencode(DATA)
-    URL_GC_POST_AUTH = 'https://connect.garmin.com/modern/activities?'
-    URL_GC_SEARCH = 'https://connect.garmin.com/proxy/activity-search-service-1.2/json/activities?start=0&limit=1'
-    URL_GC_LIST = \
-        'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
-    URL_GC_ACTIVITY = 'https://connect.garmin.com/modern/proxy/activity-service/activity/'
-    url_gc_device = 'https://connect.garmin.com/modern/proxy/device-service/deviceservice/app-info/'
-    url_gc_act_props = 'https://connect.garmin.com/modern/main/js/properties/activity_types/activity_types.properties'
-    url_gc_evt_props = 'https://connect.garmin.com/modern/main/js/properties/event_types/event_types.properties'
-    URL_GC_GPX_ACTIVITY = \
-        'https://connect.garmin.com/modern/proxy/download-service/export/gpx/activity/'
-    URL_GC_TCX_ACTIVITY = \
-        'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
-    URL_GC_ORIGINAL_ACTIVITY = 'http://connect.garmin.com/proxy/download-service/files/activity/'
 
     # Initially, we need to get a valid session cookie, so we pull the login page.
     print('Request login page')
@@ -420,10 +417,10 @@ def main(argv):
     device_dict = dict()
 
     # load some dictionaries with lookup data from REST services
-    activityTypeProps = http_req(url_gc_act_props)
+    activityTypeProps = http_req(URL_GC_ACT_PROPS)
     # write_to_file(args.directory + '/activity_types.properties', activityTypeProps, 'a')
     activityTypeName = load_properties(activityTypeProps)
-    eventTypeProps = http_req(url_gc_evt_props)
+    eventTypeProps = http_req(URL_GC_EVT_PROPS)
     # write_to_file(args.directory + '/event_types.properties', eventTypeProps, 'a')
     eventTypeName = load_properties(eventTypeProps)
 
@@ -511,7 +508,7 @@ def main(argv):
             if device_app_inst_id:
                 if not device_dict.has_key(device_app_inst_id):
                     # print '\tGetting device details ' + str(device_app_inst_id)
-                    device_details = http_req(url_gc_device + str(device_app_inst_id))
+                    device_details = http_req(URL_GC_DEVICE + str(device_app_inst_id))
                     write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json', device_details, 'a')
                     device_dict[device_app_inst_id] = None if not device_details else json.loads(device_details)
                 device = device_dict[device_app_inst_id]
