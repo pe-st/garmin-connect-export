@@ -221,42 +221,42 @@ def pace_or_speed_formatted(type_id, parent_type_id, mps):
 
 
 def main(argv):
-    CURRENT_DATE = datetime.now().strftime('%Y-%m-%d')
-    ACTIVITIES_DIRECTORY = './' + CURRENT_DATE + '_garmin_connect_export'
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    activities_directory = './' + current_date + '_garmin_connect_export'
 
-    PARSER = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
 
     # TODO: Implement verbose and/or quiet options.
-    # PARSER.add_argument('-v', '--verbose', help="increase output verbosity", action="store_true")
-    PARSER.add_argument('--version', help="print version and exit", action="store_true")
-    PARSER.add_argument('--username', help="your Garmin Connect username (otherwise, you will be \
+    # parser.add_argument('-v', '--verbose', help="increase output verbosity", action="store_true")
+    parser.add_argument('--version', help="print version and exit", action="store_true")
+    parser.add_argument('--username', help="your Garmin Connect username (otherwise, you will be \
         prompted)", nargs='?')
-    PARSER.add_argument('--password', help="your Garmin Connect password (otherwise, you will be \
+    parser.add_argument('--password', help="your Garmin Connect password (otherwise, you will be \
         prompted)", nargs='?')
-    PARSER.add_argument('-c', '--count', nargs='?', default="1", help="number of recent activities to \
+    parser.add_argument('-c', '--count', nargs='?', default="1", help="number of recent activities to \
         download, or 'all' (default: 1)")
-    PARSER.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original', 'json'], default="gpx",
+    parser.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original', 'json'], default="gpx",
         help="export format; can be 'gpx', 'tcx', 'original' or 'json' (default: 'gpx')")
-    PARSER.add_argument('-d', '--directory', nargs='?', default=ACTIVITIES_DIRECTORY, help="the \
+    parser.add_argument('-d', '--directory', nargs='?', default=activities_directory, help="the \
         directory to export to (default: './YYYY-MM-DD_garmin_connect_export')")
-    PARSER.add_argument('-u', '--unzip', help="if downloading ZIP files (format: 'original'), unzip \
+    parser.add_argument('-u', '--unzip', help="if downloading ZIP files (format: 'original'), unzip \
         the file and removes the ZIP file", action="store_true")
 
-    ARGS = PARSER.parse_args(argv[1:])
+    args = parser.parse_args(argv[1:])
 
-    if ARGS.version:
+    if args.version:
         print(argv[0] + ", version " + SCRIPT_VERSION)
         exit(0)
 
     print('Welcome to Garmin Connect Exporter!')
 
     # Create directory for data files.
-    if isdir(ARGS.directory):
+    if isdir(args.directory):
         print('Warning: Output directory already exists. Will skip already-downloaded files and \
             append to the CSV file.')
 
-    USERNAME = ARGS.username if ARGS.username else input('Username: ')
-    PASSWORD = ARGS.password if ARGS.password else getpass()
+    username = args.username if args.username else input('Username: ')
+    password = args.password if args.password else getpass()
 
     # Maximum number of activities you can request at once.
     # Used to be 100 and enforced by Garmin for older endpoints; for the current endpoint 'URL_GC_LIST'
@@ -320,9 +320,9 @@ def main(argv):
 
     # Now we'll actually login.
     # Fields that are passed in a typical Garmin login.
-    POST_DATA = {
-        'username': USERNAME,
-        'password': PASSWORD,
+    post_data = {
+        'username': username,
+        'password': password,
         'embed': 'true',
         'lt': 'e1s1',
         '_eventId': 'submit',
@@ -330,34 +330,34 @@ def main(argv):
     }
 
     print('Post login data')
-    LOGIN_RESPONSE = http_req(URL_GC_LOGIN, POST_DATA)
+    login_response = http_req(URL_GC_LOGIN, post_data)
     print('Finish login post')
 
     # extract the ticket from the login response
-    PATTERN = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE | re.DOTALL)
-    MATCH = PATTERN.match(LOGIN_RESPONSE)
-    if not MATCH:
+    pattern = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE | re.DOTALL)
+    match = pattern.match(login_response)
+    if not match:
         raise Exception('Did not get a ticket in the login response. Cannot log in. Did \
     you enter the correct username and password?')
-    LOGIN_TICKET = MATCH.group(1)
-    print('login ticket=' + LOGIN_TICKET)
+    login_ticket = match.group(1)
+    print('login ticket=' + login_ticket)
 
-    print("Request authentication URL: " + URL_GC_POST_AUTH + 'ticket=' + LOGIN_TICKET)
-    http_req(URL_GC_POST_AUTH + 'ticket=' + LOGIN_TICKET)
+    print("Request authentication URL: " + URL_GC_POST_AUTH + 'ticket=' + login_ticket)
+    http_req(URL_GC_POST_AUTH + 'ticket=' + login_ticket)
     print('Finished authentication')
 
     # We should be logged in now.
-    if not isdir(ARGS.directory):
-        mkdir(ARGS.directory)
+    if not isdir(args.directory):
+        mkdir(args.directory)
 
-    CSV_FILENAME = ARGS.directory + '/activities.csv'
-    CSV_EXISTED = isfile(CSV_FILENAME)
+    csv_filename = args.directory + '/activities.csv'
+    csv_existed = isfile(csv_filename)
 
-    CSV_FILE = open(CSV_FILENAME, 'a')
+    csv_file = open(csv_filename, 'a')
 
     # Write header to CSV file
-    if not CSV_EXISTED:
-        CSV_FILE.write('Activity name,\
+    if not csv_existed:
+        csv_file.write('Activity name,\
     Description,\
     Begin timestamp,\
     Duration (h:m:s),\
@@ -398,7 +398,7 @@ def main(argv):
     Elevation min. corrected (m),\
     Sample count\n')
 
-    if ARGS.count == 'all':
+    if args.count == 'all':
         # If the user wants to download all activities, first download one,
         # then the result of that request will tell us how many are available
         # so we will modify the variables then.
@@ -408,54 +408,54 @@ def main(argv):
         print("Finished result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
         # Persist JSON
-        write_to_file(ARGS.directory + '/activities-summary.json', result, 'a')
+        write_to_file(args.directory + '/activities-summary.json', result, 'a')
 
-        # Modify TOTAL_TO_DOWNLOAD based on how many activities the server reports.
+        # Modify total_to_download based on how many activities the server reports.
         json_results = json.loads(result)  # TODO: Catch possible exceptions here.
-        TOTAL_TO_DOWNLOAD = int(json_results['results']['totalFound'])
+        total_to_download = int(json_results['results']['totalFound'])
     else:
-        TOTAL_TO_DOWNLOAD = int(ARGS.count)
-    TOTAL_DOWNLOADED = 0
+        total_to_download = int(args.count)
+    total_downloaded = 0
 
     device_dict = dict()
 
     # load some dictionaries with lookup data from REST services
     activityTypeProps = http_req(url_gc_act_props)
-    # write_to_file(ARGS.directory + '/activity_types.properties', activityTypeProps, 'a')
+    # write_to_file(args.directory + '/activity_types.properties', activityTypeProps, 'a')
     activityTypeName = load_properties(activityTypeProps)
     eventTypeProps = http_req(url_gc_evt_props)
-    # write_to_file(ARGS.directory + '/event_types.properties', eventTypeProps, 'a')
+    # write_to_file(args.directory + '/event_types.properties', eventTypeProps, 'a')
     eventTypeName = load_properties(eventTypeProps)
 
     # This while loop will download data from the server in multiple chunks, if necessary.
-    while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
+    while total_downloaded < total_to_download:
         # Maximum chunk size 'LIMIT_MAXIMUM' ... 400 return status if over maximum.  So download
         # maximum or whatever remains if less than maximum.
         # As of 2018-03-06 I get return status 500 if over maximum
-        if TOTAL_TO_DOWNLOAD - TOTAL_DOWNLOADED > LIMIT_MAXIMUM:
-            NUM_TO_DOWNLOAD = LIMIT_MAXIMUM
+        if total_to_download - total_downloaded > LIMIT_MAXIMUM:
+            num_to_download = LIMIT_MAXIMUM
         else:
-            NUM_TO_DOWNLOAD = TOTAL_TO_DOWNLOAD - TOTAL_DOWNLOADED
+            num_to_download = total_to_download - total_downloaded
 
-        SEARCH_PARAMS = {'start': TOTAL_DOWNLOADED, 'limit': NUM_TO_DOWNLOAD}
+        search_params = {'start': total_downloaded, 'limit': num_to_download}
         # Query Garmin Connect
         print("Making activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        print(URL_GC_LIST + urlencode(SEARCH_PARAMS))
-        RESULT = http_req(URL_GC_LIST + urlencode(SEARCH_PARAMS))
+        print(URL_GC_LIST + urlencode(search_params))
+        result = http_req(URL_GC_LIST + urlencode(search_params))
         print("Finished activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
         # Persist JSON
-        write_to_file(ARGS.directory + '/activities.json', RESULT, 'a')
+        write_to_file(args.directory + '/activities.json', result, 'a')
 
-        JSON_RESULTS = json.loads(RESULT)  # TODO: Catch possible exceptions here.
+        json_results = json.loads(result)  # TODO: Catch possible exceptions here.
 
-        # search = JSON_RESULTS['results']['search']
+        # search = json_results['results']['search']
 
         # Pull out just the list of activities.
-        ACTIVITIES = JSON_RESULTS
+        activities = json_results
 
         # Process each activity.
-        for a in ACTIVITIES:
+        for a in activities:
             # Display which entry we're working on.
             print('Garmin Connect activity: [' + str(a['activityId']) + '] ', end='')
             print(a['activityName'])
@@ -512,27 +512,27 @@ def main(argv):
                 if not device_dict.has_key(device_app_inst_id):
                     # print '\tGetting device details ' + str(device_app_inst_id)
                     device_details = http_req(url_gc_device + str(device_app_inst_id))
-                    write_to_file(ARGS.directory + '/device_' + str(device_app_inst_id) + '.json', device_details, 'a')
+                    write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json', device_details, 'a')
                     device_dict[device_app_inst_id] = None if not device_details else json.loads(device_details)
                 device = device_dict[device_app_inst_id]
 
-            if ARGS.format == 'gpx':
-                data_filename = ARGS.directory + '/activity_' + str(a['activityId']) + '.gpx'
+            if args.format == 'gpx':
+                data_filename = args.directory + '/activity_' + str(a['activityId']) + '.gpx'
                 download_url = URL_GC_GPX_ACTIVITY + str(a['activityId']) + '?full=true'
                 # download_url = URL_GC_GPX_ACTIVITY + str(a['activityId']) + '?full=true' + '&original=true'
                 print(download_url)
                 file_mode = 'w'
-            elif ARGS.format == 'tcx':
-                data_filename = ARGS.directory + '/activity_' + str(a['activityId']) + '.tcx'
+            elif args.format == 'tcx':
+                data_filename = args.directory + '/activity_' + str(a['activityId']) + '.tcx'
                 download_url = URL_GC_TCX_ACTIVITY + str(a['activityId']) + '?full=true'
                 file_mode = 'w'
-            elif ARGS.format == 'original':
-                data_filename = ARGS.directory + '/activity_' + str(a['activityId']) + '.zip'
-                fit_filename = ARGS.directory + '/' + str(a['activityId']) + '.fit'
+            elif args.format == 'original':
+                data_filename = args.directory + '/activity_' + str(a['activityId']) + '.zip'
+                fit_filename = args.directory + '/' + str(a['activityId']) + '.fit'
                 download_url = URL_GC_ORIGINAL_ACTIVITY + str(a['activityId'])
                 file_mode = 'wb'
-            elif ARGS.format == 'json':
-                data_filename = ARGS.directory + '/activity_' + str(a['activityId']) + '.json'
+            elif args.format == 'json':
+                data_filename = args.directory + '/activity_' + str(a['activityId']) + '.json'
                 file_mode = 'w'
             else:
                 raise Exception('Unrecognized format.')
@@ -541,11 +541,11 @@ def main(argv):
                 print('\tData file already exists; skipping...')
                 continue
             # Regardless of unzip setting, don't redownload if the ZIP or FIT file exists.
-            if ARGS.format == 'original' and isfile(fit_filename):
+            if args.format == 'original' and isfile(fit_filename):
                 print('\tFIT data file already exists; skipping...')
                 continue
 
-            if ARGS.format != 'json':
+            if args.format != 'json':
                 # Download the data file from Garmin Connect. If the download fails (e.g., due to timeout),
                 # this script will die, but nothing will have been written to disk about this activity, so
                 # just running it again should pick up where it left off.
@@ -555,7 +555,7 @@ def main(argv):
                     data = http_req(download_url)
                 except urllib2.HTTPError as e:
                     # Handle expected (though unfortunate) error codes; die on unexpected ones.
-                    if e.code == 500 and ARGS.format == 'tcx':
+                    if e.code == 500 and args.format == 'tcx':
                         # Garmin will give an internal server error (HTTP 500) when downloading TCX files
                         # if the original was a manual GPX upload. Writing an empty file prevents this file
                         # from being redownloaded, similar to the way GPX files are saved even when there
@@ -565,7 +565,7 @@ def main(argv):
                         print('Writing empty file since Garmin did not generate a TCX file for this \
                             activity...')
                         data = ''
-                    elif e.code == 404 and ARGS.format == 'original':
+                    elif e.code == 404 and args.format == 'original':
                         # For manual activities (i.e., entered in online without a file upload), there is
                         # no original file. # Write an empty file to prevent redownloading it.
                         print('Writing empty file since there was no original activity data...')
@@ -627,9 +627,9 @@ def main(argv):
             csv_record += '""'  # no Sample Count in JSON
             csv_record += '\n'
 
-            CSV_FILE.write(csv_record.encode('utf8'))
+            csv_file.write(csv_record.encode('utf8'))
 
-            if ARGS.format == 'gpx' and data:
+            if args.format == 'gpx' and data:
                 # Validate GPX data. If we have an activity without GPS data (e.g., running on a
                 # treadmill). Garmin Connect still kicks out a GPX (sometimes), but there is only activity
                 # information, no GPS data. N.B. You can omit the XML parse (and the associated log
@@ -641,36 +641,36 @@ def main(argv):
                     print('Done. GPX data saved.')
                 else:
                     print('Done. No track points found.')
-            elif ARGS.format == 'original':
+            elif args.format == 'original':
                 # Even manual upload of a GPX file is zipped, but we'll validate the extension.
-                if ARGS.unzip and data_filename[-3:].lower() == 'zip':
+                if args.unzip and data_filename[-3:].lower() == 'zip':
                     print("Unzipping and removing original files...")
                     print('Filesize is: ' + str(stat(data_filename).st_size))
                     if stat(data_filename).st_size > 0:
                         zip_file = open(data_filename, 'rb')
                         z = zipfile.ZipFile(zip_file)
                         for name in z.namelist():
-                            z.extract(name, ARGS.directory)
+                            z.extract(name, args.directory)
                         zip_file.close()
                     else:
                         print('Skipping 0Kb zip file.')
                     remove(data_filename)
                 print('Done.')
-            elif ARGS.format == 'json':
+            elif args.format == 'json':
                 # print nothing here
                 pass
             else:
                 # TODO: Consider validating other formats.
                 print('Done.')
-        TOTAL_DOWNLOADED += NUM_TO_DOWNLOAD
+        total_downloaded += num_to_download
     # End while loop for multiple chunks.
 
-    CSV_FILE.close()
+    csv_file.close()
 
     print('Open CSV output.')
-    print(CSV_FILENAME)
+    print(csv_filename)
     # open CSV file. Comment this line out if you don't want this behavior
-    # call(["/usr/bin/libreoffice6.0", "--calc", CSV_FILENAME])
+    # call(["/usr/bin/libreoffice6.0", "--calc", csv_filename])
 
     print('Done!')
 
