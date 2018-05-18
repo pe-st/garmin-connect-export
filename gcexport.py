@@ -342,6 +342,9 @@ def login_to_garmin_connect(args):
 
 
 def main(argv):
+    """
+    Main entry point for gcexport.py
+    """
     args = parse_arguments(argv)
     if args.version:
         print(argv[0] + ", version " + SCRIPT_VERSION)
@@ -526,68 +529,6 @@ def main(argv):
                     device_dict[device_app_inst_id] = None if not device_details else json.loads(device_details)
                 device = device_dict[device_app_inst_id]
 
-            if args.format == 'gpx':
-                data_filename = args.directory + '/activity_' + str(a['activityId']) + '.gpx'
-                download_url = URL_GC_GPX_ACTIVITY + str(a['activityId']) + '?full=true'
-                # download_url = URL_GC_GPX_ACTIVITY + str(a['activityId']) + '?full=true' + '&original=true'
-                print(download_url)
-                file_mode = 'w'
-            elif args.format == 'tcx':
-                data_filename = args.directory + '/activity_' + str(a['activityId']) + '.tcx'
-                download_url = URL_GC_TCX_ACTIVITY + str(a['activityId']) + '?full=true'
-                file_mode = 'w'
-            elif args.format == 'original':
-                data_filename = args.directory + '/activity_' + str(a['activityId']) + '.zip'
-                fit_filename = args.directory + '/' + str(a['activityId']) + '.fit'
-                download_url = URL_GC_ORIGINAL_ACTIVITY + str(a['activityId'])
-                file_mode = 'wb'
-            elif args.format == 'json':
-                data_filename = args.directory + '/activity_' + str(a['activityId']) + '.json'
-                file_mode = 'w'
-            else:
-                raise Exception('Unrecognized format.')
-
-            if isfile(data_filename):
-                print('\tData file already exists; skipping...')
-                continue
-            # Regardless of unzip setting, don't redownload if the ZIP or FIT file exists.
-            if args.format == 'original' and isfile(fit_filename):
-                print('\tFIT data file already exists; skipping...')
-                continue
-
-            if args.format != 'json':
-                # Download the data file from Garmin Connect. If the download fails (e.g., due to timeout),
-                # this script will die, but nothing will have been written to disk about this activity, so
-                # just running it again should pick up where it left off.
-                print('\tDownloading file...')
-
-                try:
-                    data = http_req(download_url)
-                except urllib2.HTTPError as e:
-                    # Handle expected (though unfortunate) error codes; die on unexpected ones.
-                    if e.code == 500 and args.format == 'tcx':
-                        # Garmin will give an internal server error (HTTP 500) when downloading TCX files
-                        # if the original was a manual GPX upload. Writing an empty file prevents this file
-                        # from being redownloaded, similar to the way GPX files are saved even when there
-                        # are no tracks. One could be generated here, but that's a bit much. Use the GPX
-                        # format if you want actual data in every file, as I believe Garmin provides a GPX
-                        # file for every activity.
-                        print('Writing empty file since Garmin did not generate a TCX file for this \
-                            activity...')
-                        data = ''
-                    elif e.code == 404 and args.format == 'original':
-                        # For manual activities (i.e., entered in online without a file upload), there is
-                        # no original file. # Write an empty file to prevent redownloading it.
-                        print('Writing empty file since there was no original activity data...')
-                        data = ''
-                    else:
-                        raise Exception('Failed. Got an unexpected HTTP error (' + str(e.code) + download_url + ').')
-            else:
-                data = activity_details
-
-            # Persist file
-            write_to_file(data_filename, data, file_mode)
-
             # Write stats to CSV.
             empty_record = '"",'
             csv_record = ''
@@ -639,39 +580,8 @@ def main(argv):
 
             csv_file.write(csv_record.encode('utf8'))
 
-            if args.format == 'gpx' and data:
-                # Validate GPX data. If we have an activity without GPS data (e.g., running on a
-                # treadmill). Garmin Connect still kicks out a GPX (sometimes), but there is only activity
-                # information, no GPS data. N.B. You can omit the XML parse (and the associated log
-                # messages) to speed things up.
-                gpx = parseString(data)
-                gpx_data_exists = len(gpx.getElementsByTagName('trkpt')) > 0
+            export_data_file(str(a['activityId']), activity_details, args)
 
-                if gpx_data_exists:
-                    print('Done. GPX data saved.')
-                else:
-                    print('Done. No track points found.')
-            elif args.format == 'original':
-                # Even manual upload of a GPX file is zipped, but we'll validate the extension.
-                if args.unzip and data_filename[-3:].lower() == 'zip':
-                    print("Unzipping and removing original files...")
-                    print('Filesize is: ' + str(stat(data_filename).st_size))
-                    if stat(data_filename).st_size > 0:
-                        zip_file = open(data_filename, 'rb')
-                        z = zipfile.ZipFile(zip_file)
-                        for name in z.namelist():
-                            z.extract(name, args.directory)
-                        zip_file.close()
-                    else:
-                        print('Skipping 0Kb zip file.')
-                    remove(data_filename)
-                print('Done.')
-            elif args.format == 'json':
-                # print nothing here
-                pass
-            else:
-                # TODO: Consider validating other formats.
-                print('Done.')
         total_downloaded += num_to_download
     # End while loop for multiple chunks.
 
@@ -683,6 +593,104 @@ def main(argv):
     # call(["/usr/bin/libreoffice6.0", "--calc", csv_filename])
 
     print('Done!')
+
+
+def export_data_file(activity_id, activity_details, args):
+    if args.format == 'gpx':
+        data_filename = args.directory + '/activity_' + activity_id + '.gpx'
+        download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
+        # download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true' + '&original=true'
+        print(download_url)
+        file_mode = 'w'
+    elif args.format == 'tcx':
+        data_filename = args.directory + '/activity_' + activity_id + '.tcx'
+        download_url = URL_GC_TCX_ACTIVITY + activity_id + '?full=true'
+        file_mode = 'w'
+    elif args.format == 'original':
+        data_filename = args.directory + '/activity_' + activity_id + '.zip'
+        fit_filename = args.directory + '/' + activity_id + '.fit'
+        download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
+        file_mode = 'wb'
+    elif args.format == 'json':
+        data_filename = args.directory + '/activity_' + activity_id + '.json'
+        file_mode = 'w'
+    else:
+        raise Exception('Unrecognized format.')
+
+    if isfile(data_filename):
+        print('\tData file already exists; skipping...')
+        return
+
+    # Regardless of unzip setting, don't redownload if the ZIP or FIT file exists.
+    if args.format == 'original' and isfile(fit_filename):
+        print('\tFIT data file already exists; skipping...')
+        return
+
+    if args.format != 'json':
+        # Download the data file from Garmin Connect. If the download fails (e.g., due to timeout),
+        # this script will die, but nothing will have been written to disk about this activity, so
+        # just running it again should pick up where it left off.
+        print('\tDownloading file...')
+
+        try:
+            data = http_req(download_url)
+        except urllib2.HTTPError as e:
+            # Handle expected (though unfortunate) error codes; die on unexpected ones.
+            if e.code == 500 and args.format == 'tcx':
+                # Garmin will give an internal server error (HTTP 500) when downloading TCX files
+                # if the original was a manual GPX upload. Writing an empty file prevents this file
+                # from being redownloaded, similar to the way GPX files are saved even when there
+                # are no tracks. One could be generated here, but that's a bit much. Use the GPX
+                # format if you want actual data in every file, as I believe Garmin provides a GPX
+                # file for every activity.
+                print('Writing empty file since Garmin did not generate a TCX file for this \
+                            activity...')
+                data = ''
+            elif e.code == 404 and args.format == 'original':
+                # For manual activities (i.e., entered in online without a file upload), there is
+                # no original file. # Write an empty file to prevent redownloading it.
+                print('Writing empty file since there was no original activity data...')
+                data = ''
+            else:
+                raise Exception('Failed. Got an unexpected HTTP error (' + str(e.code) + download_url + ').')
+    else:
+        data = activity_details
+
+    # Persist file
+    write_to_file(data_filename, data, file_mode)
+    if args.format == 'gpx' and data:
+        # Validate GPX data. If we have an activity without GPS data (e.g., running on a
+        # treadmill). Garmin Connect still kicks out a GPX (sometimes), but there is only activity
+        # information, no GPS data. N.B. You can omit the XML parse (and the associated log
+        # messages) to speed things up.
+        gpx = parseString(data)
+        gpx_data_exists = len(gpx.getElementsByTagName('trkpt')) > 0
+
+        if gpx_data_exists:
+            print('Done. GPX data saved.')
+        else:
+            print('Done. No track points found.')
+    elif args.format == 'original':
+        # Even manual upload of a GPX file is zipped, but we'll validate the extension.
+        if args.unzip and data_filename[-3:].lower() == 'zip':
+            print("Unzipping and removing original files...")
+            print('Filesize is: ' + str(stat(data_filename).st_size))
+            if stat(data_filename).st_size > 0:
+                zip_file = open(data_filename, 'rb')
+                z = zipfile.ZipFile(zip_file)
+                for name in z.namelist():
+                    z.extract(name, args.directory)
+                zip_file.close()
+            else:
+                print('Skipping 0Kb zip file.')
+            remove(data_filename)
+        print('Done.')
+    elif args.format == 'json':
+        # print nothing here
+        pass
+    else:
+        # TODO: Consider validating other formats.
+        print('Done.')
 
 
 if __name__ == "__main__":
