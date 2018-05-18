@@ -270,7 +270,10 @@ def pace_or_speed_formatted(type_id, parent_type_id, mps):
         return "{0:.1f}".format(round(kmh, 1))
 
 
-def main(argv):
+def parse_arguments(argv):
+    """
+    Setup the argument parser and parse the command line arguments.
+    """
     current_date = datetime.now().strftime('%Y-%m-%d')
     activities_directory = './' + current_date + '_garmin_connect_export'
 
@@ -292,19 +295,13 @@ def main(argv):
     parser.add_argument('-u', '--unzip', help="if downloading ZIP files (format: 'original'), unzip \
         the file and removes the ZIP file", action="store_true")
 
-    args = parser.parse_args(argv[1:])
+    return parser.parse_args(argv[1:])
 
-    if args.version:
-        print(argv[0] + ", version " + SCRIPT_VERSION)
-        exit(0)
 
-    print('Welcome to Garmin Connect Exporter!')
-
-    # Create directory for data files.
-    if isdir(args.directory):
-        print('Warning: Output directory already exists. Will skip already-downloaded files and \
-            append to the CSV file.')
-
+def login_to_garmin_connect(args):
+    """
+    Perform all HTTP requests to login to Garmin Connect.
+    """
     username = args.username if args.username else input('Username: ')
     password = args.password if args.password else getpass()
 
@@ -342,6 +339,22 @@ def main(argv):
     print("Request authentication URL: " + URL_GC_POST_AUTH + 'ticket=' + login_ticket)
     http_req(URL_GC_POST_AUTH + 'ticket=' + login_ticket)
     print('Finished authentication')
+
+
+def main(argv):
+    args = parse_arguments(argv)
+    if args.version:
+        print(argv[0] + ", version " + SCRIPT_VERSION)
+        exit(0)
+
+    print('Welcome to Garmin Connect Exporter!')
+
+    # Create directory for data files.
+    if isdir(args.directory):
+        print('Warning: Output directory already exists. Will skip already-downloaded files and \
+            append to the CSV file.')
+
+    login_to_garmin_connect(args)
 
     # We should be logged in now.
     if not isdir(args.directory):
@@ -670,6 +683,7 @@ def main(argv):
     # call(["/usr/bin/libreoffice6.0", "--calc", csv_filename])
 
     print('Done!')
+
 
 if __name__ == "__main__":
     main(sys.argv)
