@@ -341,175 +341,6 @@ def login_to_garmin_connect(args):
     print('Finished authentication')
 
 
-def main(argv):
-    """
-    Main entry point for gcexport.py
-    """
-    args = parse_arguments(argv)
-    if args.version:
-        print(argv[0] + ", version " + SCRIPT_VERSION)
-        exit(0)
-
-    print('Welcome to Garmin Connect Exporter!')
-
-    # Create directory for data files.
-    if isdir(args.directory):
-        print('Warning: Output directory already exists. Will skip already-downloaded files and \
-            append to the CSV file.')
-
-    login_to_garmin_connect(args)
-
-    # We should be logged in now.
-    if not isdir(args.directory):
-        mkdir(args.directory)
-
-    csv_filename = args.directory + '/activities.csv'
-    csv_existed = isfile(csv_filename)
-
-    csv_file = open(csv_filename, 'a')
-
-    # Write header to CSV file
-    if not csv_existed:
-        csv_write_header(csv_file)
-
-    if args.count == 'all':
-        # If the user wants to download all activities, first download one,
-        # then the result of that request will tell us how many are available
-        # so we will modify the variables then.
-        print("Making result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        print(URL_GC_SEARCH)
-        result = http_req(URL_GC_SEARCH)
-        print("Finished result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-
-        # Persist JSON
-        write_to_file(args.directory + '/activities-summary.json', result, 'a')
-
-        # Modify total_to_download based on how many activities the server reports.
-        json_results = json.loads(result)  # TODO: Catch possible exceptions here.
-        total_to_download = int(json_results['results']['totalFound'])
-    else:
-        total_to_download = int(args.count)
-    total_downloaded = 0
-
-    device_dict = dict()
-
-    # load some dictionaries with lookup data from REST services
-    activity_type_props = http_req(URL_GC_ACT_PROPS)
-    # write_to_file(args.directory + '/activity_types.properties', activity_type_props, 'a')
-    activity_type_name = load_properties(activity_type_props)
-    event_type_props = http_req(URL_GC_EVT_PROPS)
-    # write_to_file(args.directory + '/event_types.properties', event_type_props, 'a')
-    event_type_name = load_properties(event_type_props)
-
-    # This while loop will download data from the server in multiple chunks, if necessary.
-    while total_downloaded < total_to_download:
-        # Maximum chunk size 'LIMIT_MAXIMUM' ... 400 return status if over maximum.  So download
-        # maximum or whatever remains if less than maximum.
-        # As of 2018-03-06 I get return status 500 if over maximum
-        if total_to_download - total_downloaded > LIMIT_MAXIMUM:
-            num_to_download = LIMIT_MAXIMUM
-        else:
-            num_to_download = total_to_download - total_downloaded
-
-        search_params = {'start': total_downloaded, 'limit': num_to_download}
-        # Query Garmin Connect
-        print("Making activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        print(URL_GC_LIST + urlencode(search_params))
-        result = http_req(URL_GC_LIST + urlencode(search_params))
-        print("Finished activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-
-        # Persist JSON
-        write_to_file(args.directory + '/activities.json', result, 'a')
-
-        json_results = json.loads(result)  # TODO: Catch possible exceptions here.
-
-        # search = json_results['results']['search']
-
-        # Pull out just the list of activities.
-        activities = json_results
-
-        # Process each activity.
-        for a in activities:
-            # Display which entry we're working on.
-            print('Garmin Connect activity: [' + str(a['activityId']) + '] ', end='')
-            print(a['activityName'])
-
-            # Retrieve also the detail data from the activity (the one displayed on
-            # the https://connect.garmin.com/modern/activity/xxx page), because some
-            # data are missing from 'a' (or are even different, e.g. for my activities
-            # 86497297 or 86516281)
-            activity_details = None
-            details = None
-            tries = MAX_TRIES
-            while tries > 0:
-                activity_details = http_req(URL_GC_ACTIVITY + str(a['activityId']))
-                details = json.loads(activity_details)
-                # I observed a failure to get a complete JSON detail in about 5-10 calls out of 1000
-                # retrying then statistically gets a better JSON ;-)
-                if len(details['summaryDTO']) > 0:
-                    tries = 0
-                else:
-                    print('retrying for ' + str(a['activityId']))
-                    tries -= 1
-                    if tries == 0:
-                        raise Exception('Didn\'t get "summaryDTO" after ' + str(MAX_TRIES) + ' tries for ' + str(a['activityId']))
-
-            parent_type_id = 4 if absent_or_null('activityType', a) else a['activityType']['parentTypeId']
-            type_id = 4 if absent_or_null('activityType', a) else a['activityType']['typeId']
-
-            start_time_with_offset = offset_date_time(a['startTimeLocal'], a['startTimeGMT'])
-            elapsed_duration = details['summaryDTO']['elapsedDuration'] if 'summaryDTO' in details and 'elapsedDuration' in details['summaryDTO'] else None
-            duration = elapsed_duration if elapsed_duration else a['duration']
-            duration_seconds = int(round(duration))
-            end_time_with_offset = start_time_with_offset + timedelta(seconds=duration_seconds) if duration else None
-
-            # get some values from detail if present, from a otherwise
-            start_latitude = from_activities_or_detail('startLatitude', a, details, 'summaryDTO')
-            start_longitude = from_activities_or_detail('startLongitude', a, details, 'summaryDTO')
-            end_latitude = from_activities_or_detail('endLatitude', a, details, 'summaryDTO')
-            end_longitude = from_activities_or_detail('endLongitude', a, details, 'summaryDTO')
-
-            print('\t' + start_time_with_offset.isoformat() + ', ', end='')
-            if 'duration' in a:
-                print(hhmmss_from_seconds(a['duration']) + ', ', end='')
-            else:
-                print('??:??:??, ', end='')
-            if 'distance' in a and isinstance(a['distance'], (float)):
-                print("{0:.3f}".format(a['distance'] / 1000) + 'km')
-            else:
-                print('0.000 km')
-
-            # try to get the device details (and cache them, as they're used for multiple activities)
-            device = None
-            device_app_inst_id = None if absent_or_null('metadataDTO', details) else details['metadataDTO']['deviceApplicationInstallationId']
-            if device_app_inst_id:
-                if not device_dict.has_key(device_app_inst_id):
-                    # print '\tGetting device details ' + str(device_app_inst_id)
-                    device_details = http_req(URL_GC_DEVICE + str(device_app_inst_id))
-                    write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json', device_details, 'a')
-                    device_dict[device_app_inst_id] = None if not device_details else json.loads(device_details)
-                device = device_dict[device_app_inst_id]
-
-            # Write stats to CSV.
-            csv_write_record(csv_file, a, details, type_id, parent_type_id, activity_type_name, event_type_name, device,
-                             start_time_with_offset, end_time_with_offset, duration, start_latitude, start_longitude,
-                             end_latitude, end_longitude)
-
-            export_data_file(str(a['activityId']), activity_details, args)
-
-        total_downloaded += num_to_download
-    # End while loop for multiple chunks.
-
-    csv_file.close()
-
-    print('Open CSV output.')
-    print(csv_filename)
-    # open CSV file. Comment this line out if you don't want this behavior
-    # call(["/usr/bin/libreoffice6.0", "--calc", csv_filename])
-
-    print('Done!')
-
-
 def csv_write_header(csv_file):
     csv_file.write('Activity name,\
     Description,\
@@ -704,6 +535,175 @@ def export_data_file(activity_id, activity_details, args):
     else:
         # TODO: Consider validating other formats.
         print('Done.')
+
+
+def main(argv):
+    """
+    Main entry point for gcexport.py
+    """
+    args = parse_arguments(argv)
+    if args.version:
+        print(argv[0] + ", version " + SCRIPT_VERSION)
+        exit(0)
+
+    print('Welcome to Garmin Connect Exporter!')
+
+    # Create directory for data files.
+    if isdir(args.directory):
+        print('Warning: Output directory already exists. Will skip already-downloaded files and \
+            append to the CSV file.')
+
+    login_to_garmin_connect(args)
+
+    # We should be logged in now.
+    if not isdir(args.directory):
+        mkdir(args.directory)
+
+    csv_filename = args.directory + '/activities.csv'
+    csv_existed = isfile(csv_filename)
+
+    csv_file = open(csv_filename, 'a')
+
+    # Write header to CSV file
+    if not csv_existed:
+        csv_write_header(csv_file)
+
+    if args.count == 'all':
+        # If the user wants to download all activities, first download one,
+        # then the result of that request will tell us how many are available
+        # so we will modify the variables then.
+        print("Making result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print(URL_GC_SEARCH)
+        result = http_req(URL_GC_SEARCH)
+        print("Finished result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+        # Persist JSON
+        write_to_file(args.directory + '/activities-summary.json', result, 'a')
+
+        # Modify total_to_download based on how many activities the server reports.
+        json_results = json.loads(result)  # TODO: Catch possible exceptions here.
+        total_to_download = int(json_results['results']['totalFound'])
+    else:
+        total_to_download = int(args.count)
+    total_downloaded = 0
+
+    device_dict = dict()
+
+    # load some dictionaries with lookup data from REST services
+    activity_type_props = http_req(URL_GC_ACT_PROPS)
+    # write_to_file(args.directory + '/activity_types.properties', activity_type_props, 'a')
+    activity_type_name = load_properties(activity_type_props)
+    event_type_props = http_req(URL_GC_EVT_PROPS)
+    # write_to_file(args.directory + '/event_types.properties', event_type_props, 'a')
+    event_type_name = load_properties(event_type_props)
+
+    # This while loop will download data from the server in multiple chunks, if necessary.
+    while total_downloaded < total_to_download:
+        # Maximum chunk size 'LIMIT_MAXIMUM' ... 400 return status if over maximum.  So download
+        # maximum or whatever remains if less than maximum.
+        # As of 2018-03-06 I get return status 500 if over maximum
+        if total_to_download - total_downloaded > LIMIT_MAXIMUM:
+            num_to_download = LIMIT_MAXIMUM
+        else:
+            num_to_download = total_to_download - total_downloaded
+
+        search_params = {'start': total_downloaded, 'limit': num_to_download}
+        # Query Garmin Connect
+        print("Making activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print(URL_GC_LIST + urlencode(search_params))
+        result = http_req(URL_GC_LIST + urlencode(search_params))
+        print("Finished activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+        # Persist JSON
+        write_to_file(args.directory + '/activities.json', result, 'a')
+
+        json_results = json.loads(result)  # TODO: Catch possible exceptions here.
+
+        # search = json_results['results']['search']
+
+        # Pull out just the list of activities.
+        activities = json_results
+
+        # Process each activity.
+        for a in activities:
+            # Display which entry we're working on.
+            print('Garmin Connect activity: [' + str(a['activityId']) + '] ', end='')
+            print(a['activityName'])
+
+            # Retrieve also the detail data from the activity (the one displayed on
+            # the https://connect.garmin.com/modern/activity/xxx page), because some
+            # data are missing from 'a' (or are even different, e.g. for my activities
+            # 86497297 or 86516281)
+            activity_details = None
+            details = None
+            tries = MAX_TRIES
+            while tries > 0:
+                activity_details = http_req(URL_GC_ACTIVITY + str(a['activityId']))
+                details = json.loads(activity_details)
+                # I observed a failure to get a complete JSON detail in about 5-10 calls out of 1000
+                # retrying then statistically gets a better JSON ;-)
+                if len(details['summaryDTO']) > 0:
+                    tries = 0
+                else:
+                    print('retrying for ' + str(a['activityId']))
+                    tries -= 1
+                    if tries == 0:
+                        raise Exception('Didn\'t get "summaryDTO" after ' + str(MAX_TRIES) + ' tries for ' + str(a['activityId']))
+
+            parent_type_id = 4 if absent_or_null('activityType', a) else a['activityType']['parentTypeId']
+            type_id = 4 if absent_or_null('activityType', a) else a['activityType']['typeId']
+
+            start_time_with_offset = offset_date_time(a['startTimeLocal'], a['startTimeGMT'])
+            elapsed_duration = details['summaryDTO']['elapsedDuration'] if 'summaryDTO' in details and 'elapsedDuration' in details['summaryDTO'] else None
+            duration = elapsed_duration if elapsed_duration else a['duration']
+            duration_seconds = int(round(duration))
+            end_time_with_offset = start_time_with_offset + timedelta(seconds=duration_seconds) if duration else None
+
+            # get some values from detail if present, from a otherwise
+            start_latitude = from_activities_or_detail('startLatitude', a, details, 'summaryDTO')
+            start_longitude = from_activities_or_detail('startLongitude', a, details, 'summaryDTO')
+            end_latitude = from_activities_or_detail('endLatitude', a, details, 'summaryDTO')
+            end_longitude = from_activities_or_detail('endLongitude', a, details, 'summaryDTO')
+
+            print('\t' + start_time_with_offset.isoformat() + ', ', end='')
+            if 'duration' in a:
+                print(hhmmss_from_seconds(a['duration']) + ', ', end='')
+            else:
+                print('??:??:??, ', end='')
+            if 'distance' in a and isinstance(a['distance'], (float)):
+                print("{0:.3f}".format(a['distance'] / 1000) + 'km')
+            else:
+                print('0.000 km')
+
+            # try to get the device details (and cache them, as they're used for multiple activities)
+            device = None
+            device_app_inst_id = None if absent_or_null('metadataDTO', details) else details['metadataDTO']['deviceApplicationInstallationId']
+            if device_app_inst_id:
+                if not device_dict.has_key(device_app_inst_id):
+                    # print '\tGetting device details ' + str(device_app_inst_id)
+                    device_details = http_req(URL_GC_DEVICE + str(device_app_inst_id))
+                    write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json', device_details, 'a')
+                    device_dict[device_app_inst_id] = None if not device_details else json.loads(device_details)
+                device = device_dict[device_app_inst_id]
+
+            # Write stats to CSV.
+            csv_write_record(csv_file, a, details, type_id, parent_type_id, activity_type_name, event_type_name, device,
+                             start_time_with_offset, end_time_with_offset, duration, start_latitude, start_longitude,
+                             end_latitude, end_longitude)
+
+            export_data_file(str(a['activityId']), activity_details, args)
+
+        total_downloaded += num_to_download
+    # End while loop for multiple chunks.
+
+    csv_file.close()
+
+    print('Open CSV output.')
+    print(csv_filename)
+    # open CSV file. Comment this line out if you don't want this behavior
+    # call(["/usr/bin/libreoffice6.0", "--calc", csv_filename])
+
+    print('Done!')
 
 
 if __name__ == "__main__":
