@@ -370,46 +370,7 @@ def main(argv):
 
     # Write header to CSV file
     if not csv_existed:
-        csv_file.write('Activity name,\
-    Description,\
-    Begin timestamp,\
-    Duration (h:m:s),\
-    Moving duration (h:m:s),\
-    Distance (km),\
-    Average speed (km/h or min/km),\
-    Average moving speed (km/h or min/km),\
-    Max. speed (km/h or min/km),\
-    Elevation loss uncorrected (m),\
-    Elevation gain uncorrected (m),\
-    Elevation min. uncorrected (m),\
-    Elevation max. uncorrected (m),\
-    Min. heart rate (bpm),\
-    Max. heart rate (bpm),\
-    Average heart rate (bpm),\
-    Calories,\
-    Avg. cadence (rpm),\
-    Max. cadence (rpm),\
-    Strokes,\
-    Avg. temp (°C),\
-    Min. temp (°C),\
-    Max. temp (°C),\
-    Map,\
-    End timestamp,\
-    Begin timestamp (ms),\
-    End timestamp (ms),\
-    Device,\
-    Activity type,\
-    Event type,\
-    Time zone,\
-    Begin latitude (°DD),\
-    Begin longitude (°DD),\
-    End latitude (°DD),\
-    End longitude (°DD),\
-    Elevation gain corrected (m),\
-    Elevation loss corrected (m),\
-    Elevation max. corrected (m),\
-    Elevation min. corrected (m),\
-    Sample count\n')
+        csv_write_header(csv_file)
 
     if args.count == 'all':
         # If the user wants to download all activities, first download one,
@@ -530,55 +491,9 @@ def main(argv):
                 device = device_dict[device_app_inst_id]
 
             # Write stats to CSV.
-            empty_record = '"",'
-            csv_record = ''
-
-            csv_record += empty_record if absent_or_null('activityName', a) else '"' + a['activityName'].replace('"', '""') + '",'
-            csv_record += empty_record if absent_or_null('description', a) else '"' + a['description'].replace('"', '""') + '",'
-            csv_record += '"' + start_time_with_offset.strftime(ALMOST_RFC_1123) + '",'
-            # csv_record += '"' + startTimeWithOffset.isoformat() + '",'
-            csv_record += empty_record if not duration else hhmmss_from_seconds(round(duration)) + ','
-            csv_record += empty_record if absent_or_null('movingDuration', details['summaryDTO']) else hhmmss_from_seconds(details['summaryDTO']['movingDuration']) + ','
-            csv_record += empty_record if absent_or_null('distance', a) else '"' + "{0:.5f}".format(a['distance']/1000) + '",'
-            csv_record += empty_record if absent_or_null('averageSpeed', a) else '"' + trunc6(pace_or_speed_raw(type_id, parent_type_id, a['averageSpeed'])) + '",'
-            csv_record += empty_record if absent_or_null('averageMovingSpeed', details['summaryDTO']) else '"' + trunc6(pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['averageMovingSpeed'])) + '",'
-            csv_record += empty_record if absent_or_null('maxSpeed', details['summaryDTO']) else '"' + trunc6(pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['maxSpeed'])) + '",'
-            csv_record += empty_record if a['elevationCorrected'] or absent_or_null('elevationLoss', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationLoss'], 2)) + '",'
-            csv_record += empty_record if a['elevationCorrected'] or absent_or_null('elevationGain', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationGain'], 2)) + '",'
-            csv_record += empty_record if a['elevationCorrected'] or absent_or_null('minElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['minElevation'], 2)) + '",'
-            csv_record += empty_record if a['elevationCorrected'] or absent_or_null('maxElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['maxElevation'], 2)) + '",'
-            csv_record += empty_record  # no minimum heart rate in JSON
-            csv_record += empty_record if absent_or_null('maxHR', a) else '"' + "{0:.0f}".format(a['maxHR']) + '",'
-            csv_record += empty_record if absent_or_null('averageHR', a) else '"' + "{0:.0f}".format(a['averageHR']) + '",'
-            csv_record += empty_record if absent_or_null('calories', details['summaryDTO']) else '"' + str(details['summaryDTO']['calories']) + '",'
-            csv_record += empty_record if absent_or_null('averageBikingCadenceInRevPerMinute', a) else '"' + str(a['averageBikingCadenceInRevPerMinute']) + '",'
-            csv_record += empty_record if absent_or_null('maxBikingCadenceInRevPerMinute', a) else '"' + str(a['maxBikingCadenceInRevPerMinute']) + '",'
-            csv_record += empty_record if absent_or_null('strokes', a) else '"' + str(a['strokes']) + '",'
-            csv_record += empty_record if absent_or_null('averageTemperature', details['summaryDTO']) else '"' + str(details['summaryDTO']['averageTemperature']) + '",'
-            csv_record += empty_record if absent_or_null('minTemperature', details['summaryDTO']) else '"' + str(details['summaryDTO']['minTemperature']) + '",'
-            csv_record += empty_record if absent_or_null('maxTemperature', details['summaryDTO']) else '"' + str(details['summaryDTO']['maxTemperature']) + '",'
-            csv_record += '"https://connect.garmin.com/modern/activity/' + str(a['activityId']) + '",'
-            csv_record += empty_record if not end_time_with_offset else '"' + end_time_with_offset.strftime(ALMOST_RFC_1123) + '",'
-            csv_record += empty_record if not start_time_with_offset else '"' + start_time_with_offset.isoformat() + '",'
-            # csv_record += empty_record if absent_or_null('beginTimestamp', a) else '"' + str(a['beginTimestamp']) + '",'
-            csv_record += empty_record if not end_time_with_offset else '"' + end_time_with_offset.isoformat() + '",'
-            # csv_record += empty_record if absent_or_null('beginTimestamp', a) else '"' + str(a['beginTimestamp']+durationSeconds*1000) + '",'
-            csv_record += empty_record if absent_or_null('productDisplayName', device) else '"' + device['productDisplayName'].replace('"', '""') + ' ' + device['versionString'] + '",'
-            csv_record += empty_record if absent_or_null('activityType', a) else '"' + value_if_found_else_key(activity_type_name, 'activity_type_' + a['activityType']['typeKey']) + '",'
-            csv_record += empty_record if absent_or_null('eventType', a) else '"' + value_if_found_else_key(event_type_name, a['eventType']['typeKey']) + '",'
-            csv_record += '"' + start_time_with_offset.isoformat()[-6:] + '",'
-            csv_record += empty_record if not start_latitude else '"' + trunc6(start_latitude) + '",'
-            csv_record += empty_record if not start_longitude else '"' + trunc6(start_longitude) + '",'
-            csv_record += empty_record if not end_latitude else '"' + trunc6(end_latitude) + '",'
-            csv_record += empty_record if not end_longitude else '"' + trunc6(end_longitude) + '",'
-            csv_record += empty_record if not a['elevationCorrected'] or absent_or_null('elevationGain', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationGain'], 2)) + '",'
-            csv_record += empty_record if not a['elevationCorrected'] or absent_or_null('elevationLoss', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationLoss'], 2)) + '",'
-            csv_record += empty_record if not a['elevationCorrected'] or absent_or_null('maxElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['maxElevation'], 2)) + '",'
-            csv_record += empty_record if not a['elevationCorrected'] or absent_or_null('minElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['minElevation'], 2)) + '",'
-            csv_record += '""'  # no Sample Count in JSON
-            csv_record += '\n'
-
-            csv_file.write(csv_record.encode('utf8'))
+            csv_write_record(csv_file, a, details, type_id, parent_type_id, activity_type_name, event_type_name, device,
+                             start_time_with_offset, end_time_with_offset, duration, start_latitude, start_longitude,
+                             end_latitude, end_longitude)
 
             export_data_file(str(a['activityId']), activity_details, args)
 
@@ -593,6 +508,104 @@ def main(argv):
     # call(["/usr/bin/libreoffice6.0", "--calc", csv_filename])
 
     print('Done!')
+
+
+def csv_write_header(csv_file):
+    csv_file.write('Activity name,\
+    Description,\
+    Begin timestamp,\
+    Duration (h:m:s),\
+    Moving duration (h:m:s),\
+    Distance (km),\
+    Average speed (km/h or min/km),\
+    Average moving speed (km/h or min/km),\
+    Max. speed (km/h or min/km),\
+    Elevation loss uncorrected (m),\
+    Elevation gain uncorrected (m),\
+    Elevation min. uncorrected (m),\
+    Elevation max. uncorrected (m),\
+    Min. heart rate (bpm),\
+    Max. heart rate (bpm),\
+    Average heart rate (bpm),\
+    Calories,\
+    Avg. cadence (rpm),\
+    Max. cadence (rpm),\
+    Strokes,\
+    Avg. temp (°C),\
+    Min. temp (°C),\
+    Max. temp (°C),\
+    Map,\
+    End timestamp,\
+    Begin timestamp (ms),\
+    End timestamp (ms),\
+    Device,\
+    Activity type,\
+    Event type,\
+    Time zone,\
+    Begin latitude (°DD),\
+    Begin longitude (°DD),\
+    End latitude (°DD),\
+    End longitude (°DD),\
+    Elevation gain corrected (m),\
+    Elevation loss corrected (m),\
+    Elevation max. corrected (m),\
+    Elevation min. corrected (m),\
+    Sample count\n')
+
+
+def csv_write_record(csv_file, a, details, type_id, parent_type_id, activity_type_name, event_type_name, device,
+                     start_time_with_offset, end_time_with_offset, duration, start_latitude, start_longitude,
+                     end_latitude, end_longitude):
+
+    empty_record = '"",'
+    csv_record = ''
+
+    csv_record += empty_record if absent_or_null('activityName', a) else '"' + a['activityName'].replace('"', '""') + '",'
+    csv_record += empty_record if absent_or_null('description', a) else '"' + a['description'].replace('"', '""') + '",'
+    csv_record += '"' + start_time_with_offset.strftime(ALMOST_RFC_1123) + '",'
+    # csv_record += '"' + startTimeWithOffset.isoformat() + '",'
+    csv_record += empty_record if not duration else hhmmss_from_seconds(round(duration)) + ','
+    csv_record += empty_record if absent_or_null('movingDuration', details['summaryDTO']) else hhmmss_from_seconds(details['summaryDTO']['movingDuration']) + ','
+    csv_record += empty_record if absent_or_null('distance', a) else '"' + "{0:.5f}".format(a['distance'] / 1000) + '",'
+    csv_record += empty_record if absent_or_null('averageSpeed', a) else '"' + trunc6(pace_or_speed_raw(type_id, parent_type_id, a['averageSpeed'])) + '",'
+    csv_record += empty_record if absent_or_null('averageMovingSpeed', details['summaryDTO']) else '"' + trunc6(pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['averageMovingSpeed'])) + '",'
+    csv_record += empty_record if absent_or_null('maxSpeed', details['summaryDTO']) else '"' + trunc6(pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['maxSpeed'])) + '",'
+    csv_record += empty_record if a['elevationCorrected'] or absent_or_null('elevationLoss', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationLoss'], 2)) + '",'
+    csv_record += empty_record if a['elevationCorrected'] or absent_or_null('elevationGain', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationGain'], 2)) + '",'
+    csv_record += empty_record if a['elevationCorrected'] or absent_or_null('minElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['minElevation'], 2)) + '",'
+    csv_record += empty_record if a['elevationCorrected'] or absent_or_null('maxElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['maxElevation'], 2)) + '",'
+    csv_record += empty_record  # no minimum heart rate in JSON
+    csv_record += empty_record if absent_or_null('maxHR', a) else '"' + "{0:.0f}".format(a['maxHR']) + '",'
+    csv_record += empty_record if absent_or_null('averageHR', a) else '"' + "{0:.0f}".format(a['averageHR']) + '",'
+    csv_record += empty_record if absent_or_null('calories', details['summaryDTO']) else '"' + str(details['summaryDTO']['calories']) + '",'
+    csv_record += empty_record if absent_or_null('averageBikingCadenceInRevPerMinute', a) else '"' + str(a['averageBikingCadenceInRevPerMinute']) + '",'
+    csv_record += empty_record if absent_or_null('maxBikingCadenceInRevPerMinute', a) else '"' + str(a['maxBikingCadenceInRevPerMinute']) + '",'
+    csv_record += empty_record if absent_or_null('strokes', a) else '"' + str(a['strokes']) + '",'
+    csv_record += empty_record if absent_or_null('averageTemperature', details['summaryDTO']) else '"' + str(details['summaryDTO']['averageTemperature']) + '",'
+    csv_record += empty_record if absent_or_null('minTemperature', details['summaryDTO']) else '"' + str(details['summaryDTO']['minTemperature']) + '",'
+    csv_record += empty_record if absent_or_null('maxTemperature', details['summaryDTO']) else '"' + str(details['summaryDTO']['maxTemperature']) + '",'
+    csv_record += '"https://connect.garmin.com/modern/activity/' + str(a['activityId']) + '",'
+    csv_record += empty_record if not end_time_with_offset else '"' + end_time_with_offset.strftime(ALMOST_RFC_1123) + '",'
+    csv_record += empty_record if not start_time_with_offset else '"' + start_time_with_offset.isoformat() + '",'
+    # csv_record += empty_record if absent_or_null('beginTimestamp', a) else '"' + str(a['beginTimestamp']) + '",'
+    csv_record += empty_record if not end_time_with_offset else '"' + end_time_with_offset.isoformat() + '",'
+    # csv_record += empty_record if absent_or_null('beginTimestamp', a) else '"' + str(a['beginTimestamp']+durationSeconds*1000) + '",'
+    csv_record += empty_record if absent_or_null('productDisplayName', device) else '"' + device['productDisplayName'].replace('"', '""') + ' ' + device['versionString'] + '",'
+    csv_record += empty_record if absent_or_null('activityType', a) else '"' + value_if_found_else_key(activity_type_name, 'activity_type_' + a['activityType']['typeKey']) + '",'
+    csv_record += empty_record if absent_or_null('eventType', a) else '"' + value_if_found_else_key(event_type_name, a['eventType']['typeKey']) + '",'
+    csv_record += '"' + start_time_with_offset.isoformat()[-6:] + '",'
+    csv_record += empty_record if not start_latitude else '"' + trunc6(start_latitude) + '",'
+    csv_record += empty_record if not start_longitude else '"' + trunc6(start_longitude) + '",'
+    csv_record += empty_record if not end_latitude else '"' + trunc6(end_latitude) + '",'
+    csv_record += empty_record if not end_longitude else '"' + trunc6(end_longitude) + '",'
+    csv_record += empty_record if not a['elevationCorrected'] or absent_or_null('elevationGain', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationGain'], 2)) + '",'
+    csv_record += empty_record if not a['elevationCorrected'] or absent_or_null('elevationLoss', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['elevationLoss'], 2)) + '",'
+    csv_record += empty_record if not a['elevationCorrected'] or absent_or_null('maxElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['maxElevation'], 2)) + '",'
+    csv_record += empty_record if not a['elevationCorrected'] or absent_or_null('minElevation', details['summaryDTO']) else '"' + str(round(details['summaryDTO']['minElevation'], 2)) + '",'
+    csv_record += '""'  # no Sample Count in JSON
+    csv_record += '\n'
+
+    csv_file.write(csv_record.encode('utf8'))
 
 
 def export_data_file(activity_id, activity_details, args):
