@@ -36,7 +36,7 @@ import sys
 import urllib2
 import zipfile
 
-SCRIPT_VERSION = '2.0.0'
+SCRIPT_VERSION = '2.0.1'
 
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
@@ -282,8 +282,8 @@ def parse_arguments(argv):
     # TODO: Implement verbose and/or quiet options.
     # parser.add_argument('-v', '--verbose', help="increase output verbosity", action="store_true")
     parser.add_argument('--version', help="print version and exit", action="store_true")
-    parser.add_argument('--username', help="your Garmin Connect username (otherwise, you will be \
-        prompted)", nargs='?')
+    parser.add_argument('--username', help="your Garmin Connect username or email address \
+        (otherwise, you will be prompted)", nargs='?')
     parser.add_argument('--password', help="your Garmin Connect password (otherwise, you will be \
         prompted)", nargs='?')
     parser.add_argument('-c', '--count', nargs='?', default="1", help="number of recent activities to \
@@ -302,7 +302,7 @@ def login_to_garmin_connect(args):
     """
     Perform all HTTP requests to login to Garmin Connect.
     """
-    username = args.username if args.username else input('Username: ')
+    username = args.username if args.username else raw_input('Username: ')
     password = args.password if args.password else getpass()
 
     print(urlencode(DATA))

@@ -16,7 +16,7 @@ Usage
 You will need a little experience running things from the command line to use this script. That said, here are the usage details from the `--help` flag:
 
 ```
-usage: gcexport3.py [-h] [--version] [--username [USERNAME]]
+usage: gcexport.py [-h] [--version] [--username [USERNAME]]
                    [--password [PASSWORD]] [-c [COUNT]]
                    [-f [{gpx,tcx,original}]] [-d [DIRECTORY]] [-u]
 
@@ -24,8 +24,8 @@ optional arguments:
   -h, --help            show this help message and exit
   --version             print version and exit
   --username [USERNAME]
-                        your Garmin Connect username (otherwise, you will be
-                        prompted)
+                        your Garmin Connect username or email address
+                        (otherwise, you will be prompted)
   --password [PASSWORD]
                         your Garmin Connect password (otherwise, you will be
                         prompted)
@@ -44,11 +44,11 @@ optional arguments:
 ```
 
 Examples:
-`python gcexport3.py --count all` will download all of your data to a dated directory.
+`python gcexport.py --count all` will download all of your data to a dated directory.
 
-`python gcexport3.py -d ~/MyActivities -c 3 -f original -u --username bobbyjoe --password bestpasswordever1` will download your three most recent activities in the FIT file format (or whatever they were uploaded as) into the `~/MyActivities` directory (unless they already exist). Using the `--username` and `--password` flags are not recommended because your password will be stored in your command line history. Instead, omit them to be prompted (and note that nothing will be displayed when you type your password).
+`python gcexport.py -d ~/MyActivities -c 3 -f original -u --username bobbyjoe --password bestpasswordever1` will download your three most recent activities in the FIT file format (or whatever they were uploaded as) into the `~/MyActivities` directory (unless they already exist). Using the `--password` flags is not recommended because your password will be stored in your command line history. Instead, omit it to be prompted (and note that nothing will be displayed when you type your password). Equally you might not want to have the username stored in your command line history; in this case avoid also to give the `--username` option, and you'll be prompted for it. Note also that depending on the age of your garmin account your username is the email address (I myself still can login both with username and email address, but I've had a report that for some users the email address is mandatory to login).
 
-Alternatively, you may run it with `./gcexport3.py` if you set the file as executable (i.e., `chmod u+x gcexport3.py`).
+Alternatively, you may run it with `./gcexport.py` if you set the file as executable (i.e., `chmod u+x gcexport.py`).
 
 Of course, you must have Python installed to run this. Most Mac and Linux users should already have it. Also, as stated above, you should have some basic command line experience.
 
@@ -68,7 +68,7 @@ This script is for personal use only. It simulates a standard user session (i.e.
 
 As this script doesn't use the paid API, the endpoints to use are known by reverse engineering browser sessions. And as the Garmin Connect website changes over time, chances are that this script gets broken.
 
-Small history of the endpoint used by `gcexport3.py` to get a list of activities:
+Small history of the endpoint used by `gcexport.py` to get a list of activities:
 
 - [activity-search-service-1.0](https://connect.garmin.com/proxy/activity-search-service-1.0/json/activities): initial endpoint used since 2015, worked at least until January 2018
 - [activity-search-service-1.2](https://connect.garmin.com/proxy/activity-search-service-1.2/json/activities): endpoint introduced in `gcexport.py` in August 2016. In March 2018 this still works, but doesn't allow you to fetch more than 20 activities, even split over multiple calls (when doing three consecutive calls with 1,19,19 as `limit` parameter, the third one fails with HTTP error 500). The JSON returned by this endpoint however is quite rich (see example in the `json` folder).
