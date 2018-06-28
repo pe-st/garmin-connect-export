@@ -3,6 +3,8 @@ garmin-connect-export
 
 Download a copy of your Garmin Connect data, including stats and GPX tracks.
 
+Note that Garmin introduced recently (around May 2018, for GDPR compatibility) a possibility to [download all of your Garmin Connect data](https://www.garmin.com/en-US/account/datamanagement/exportdata/) in one zip file. Depending on your needs this might be enough, but the script here offers additional features like getting GPX tracks instead of the original upload format or limiting the export to just a couple of activities.
+
 Description
 -----------
 This script will backup your personal Garmin Connect data. All downloaded data will go into a directory called `YYYY-MM-DD_garmin_connect_export/` in the current working directory. Activity records and details will go into a CSV file called `activities.csv`. GPX files (or whatever format you specify) containing track data, activity title, and activity descriptions are saved as well, using the Activity ID.
@@ -18,7 +20,7 @@ You will need a little experience running things from the command line to use th
 ```
 usage: gcexport.py [-h] [--version] [--username [USERNAME]]
                    [--password [PASSWORD]] [-c [COUNT]]
-                   [-f [{gpx,tcx,original}]] [-d [DIRECTORY]] [-u]
+                   [-f [{gpx,tcx,original,json}]] [-d [DIRECTORY]] [-u]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -33,9 +35,8 @@ optional arguments:
                         number of recent activities to download, or 'all'
                         (default: 1)
   -f [{gpx,tcx,original,json}], --format [{gpx,tcx,original,json}]
-                        export format; can be 'gpx', 'tcx', 'original' or 'json'
-                        When using `json`, only the activity's metadata is exported.
-                        (default: 'gpx')
+                        export format; can be 'gpx', 'tcx', 'original' or
+                        'json' (default: 'gpx')
   -d [DIRECTORY], --directory [DIRECTORY]
                         the directory to export to (default: './YYYY-MM-
                         DD_garmin_connect_export')
@@ -56,9 +57,9 @@ Data
 ----
 This tool is not guaranteed to get all of your data, or even download it correctly. I have only tested it out on my account and it works fine, but different account settings or different data types could potentially cause problems. Also, because this is not an official feature of Garmin Connect, Garmin may very well make changes that break this utility (and they certainly have since I created this project).
 
-If you want to see all of the raw data that Garmin hands to this script, just print out the contents of the `json_results` variable. I believe most everything that is useful has been included in the CSV file. You will notice some columns have been duplicated: one column geared towards display, and another column fit for number crunching (labeled with "Raw"). I hope this is most useful. Some information is missing, such as "Favorite" or "Avg Strokes."  This is available from the web interface, but is not included in data given to this script.
+If you want to see all of the raw data that Garmin hands to this script, just choose the JSON export format (`-f json`); in this case only metadata is exported, no track data. I believe most everything that is useful has been included in the CSV file. You will notice some columns have been duplicated: one column geared towards display, and another column fit for number crunching (labeled with "Raw"). I hope this is most useful. Some information is missing, such as "Favorite" or "Avg Strokes."  This is available from the web interface, but is not included in data given to this script.
 
-Also, be careful with speed data, because sometimes it is measured as a pace (minutes per mile) and sometimes it is measured as a speed (miles per hour).
+Also, be careful with speed data, because sometimes it is measured as a pace (minutes per kilometer) and sometimes it is measured as a speed (kilometer per hour).
 
 Garmin Connect API
 ------------------
