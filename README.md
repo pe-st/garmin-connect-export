@@ -12,13 +12,25 @@ Before going into the details of this script itself, some meta information.
 There exist many [forks](https://help.github.com/articles/fork-a-repo/) of this script repository:
 
 - [pe-st]()
-  This is my (pe-st) repository, the one you're looking at (or the source of the copy you're looking at)
+  This is my (**pe-st**) repository, the one you're looking at (or the source of the copy you're looking at)
 - [kjkjava](https://github.com/kjkjava/garmin-connect-export)
-  The original repo (mother repo) of my (pe-st) repo. It seems not maintained anymore (last commit in 2015)
+  The original repo (mother repo) of my (**pe-st**) repo. It seems not maintained anymore (last commit in 2015)
 - [moderation](https://github.com/moderation/garmin-connect-export)
-  After some inactivity of the kjkjava fork moderation made some corrections to have a working script again.
-  In March 2018 I integrated moderation's work into my own repo, so logically moderation is now the
-  father repo of my repo. In April 2018 moderation migrated his script to Python 3
+  After some inactivity of the **@kjkjava** repo, **@moderation** made some corrections in his own fork to have a working script again.
+  In March 2018 I integrated **@moderation**'s work into my own repo, so logically **@moderation** is now the
+  father repo of my repo. In April 2018 **@moderation** migrated his script to Python 3. Unfortunately
+  **@moderation**'s script [doesn't work for me](https://github.com/moderation/garmin-connect-export/issues/11),
+  probably because of different Garmin Connect REST endpoints (URLs).
+
+These are the most important [branches](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging) in **pe-st**'s repo:
+
+- [develop](https://github.com/pe-st/garmin-connect-export)
+  The default branch. This is where my tinkering happens, and always contains the lastest version of `gcexport.py`
+- [master](https://github.com/pe-st/garmin-connect-export/tree/master)
+  Copy of the master branch of **@moderation**'s repo, kept for reference and comparison purposes
+- [revert-csv-to-kjkjava](https://github.com/pe-st/garmin-connect-export/tree/feature/revert-csv-to-kjkjava)
+  Backport of **@moderation**'s and my changes to the original repo, using the original CSV format ([PR 42](https://github.com/kjkjava/garmin-connect-export/pull/42))
+
 
 Description
 -----------
