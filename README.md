@@ -5,6 +5,21 @@ Download a copy of your Garmin Connect data, including stats and GPX tracks.
 
 Note that Garmin introduced recently (around May 2018, for GDPR compatibility) a possibility to [download all of your Garmin Connect data](https://www.garmin.com/en-US/account/datamanagement/exportdata/) in one zip file. Depending on your needs this might be enough, but the script here offers additional features like getting GPX tracks instead of the original upload format or limiting the export to just a couple of activities.
 
+Forks and Branches
+------------------
+Before going into the details of this script itself, some meta information.
+
+There exist many [forks](https://help.github.com/articles/fork-a-repo/) of this script repository:
+
+- [pe-st]()
+  This is my (pe-st) repository, the one you're looking at (or the source of the copy you're looking at)
+- [kjkjava](https://github.com/kjkjava/garmin-connect-export)
+  The original repo (mother repo) of my (pe-st) repo. It seems not maintained anymore (last commit in 2015)
+- [moderation](https://github.com/moderation/garmin-connect-export)
+  After some inactivity of the kjkjava fork moderation made some corrections to have a working script again.
+  In March 2018 I integrated moderation's work into my own repo, so logically moderation is now the
+  father repo of my repo. In April 2018 moderation migrated his script to Python 3
+
 Description
 -----------
 This script will backup your personal Garmin Connect data. All downloaded data will go into a directory called `YYYY-MM-DD_garmin_connect_export/` in the current working directory. Activity records and details will go into a CSV file called `activities.csv`. GPX files (or whatever format you specify) containing track data, activity title, and activity descriptions are saved as well, using the Activity ID.
