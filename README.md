@@ -7,7 +7,7 @@ Note that Garmin introduced recently (around May 2018, for GDPR compatibility) a
 
 Forks and Branches
 ------------------
-Before going into the details of this script itself, some meta information.
+Forked from [pe-st]'s repository, [develop] branch.
 
 There exist many [forks](https://help.github.com/articles/fork-a-repo/) of this script repository:
 
