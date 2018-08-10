@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>garmin-connect-export.cron</string>
+    <key>KeepAlive</key>
+    <false/>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>UserName</key>
+    <string>cralvarez</string>
+    <key>Program</key>
+    <string>/Users/cralvarez/Documents/CartoGPS/Data/garmin-connect-export.sh</string>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Minute</key>
+        <integer>12</integer>
+        <key>Hour</key>
+        <integer>20</integer>
+        <key>Weekday</key>
+        <integer>1</integer>
+    </dict>
+</dict>
+</plist>

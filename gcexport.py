@@ -24,7 +24,7 @@ from sets import Set
 from urllib import urlencode
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
-from os import mkdir, remove, stat
+from os import mkdir, remove, stat, rename
 from os.path import isdir, isfile
 from xml.dom.minidom import parseString
 
@@ -149,7 +149,7 @@ def http_req(url, post=None, headers={}):
     for header_key, header_value in headers.iteritems():
         request.add_header(header_key, header_value)
     if post:
-        # print "POSTING"
+        # print("POSTING")
         post = urlencode(post)  # Convert dictionary to POST parameter string.
     # print(request.headers)
     # print(COOKIE_JAR)
@@ -287,7 +287,7 @@ def parse_arguments(argv):
     parser.add_argument('--password', help="your Garmin Connect password (otherwise, you will be \
         prompted)", nargs='?')
     parser.add_argument('-c', '--count', nargs='?', default="1", help="number of recent activities to \
-        download, or 'all' (default: 1)")
+        download, or 'new', or 'all' (default: 1)")
     parser.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original', 'json'], default="gpx",
         help="export format; can be 'gpx', 'tcx', 'original' or 'json' (default: 'gpx')")
     parser.add_argument('-d', '--directory', nargs='?', default=activities_directory, help="the \
@@ -439,12 +439,12 @@ def csv_write_record(csv_file, a, details, type_id, parent_type_id, activity_typ
     csv_file.write(csv_record.encode('utf8'))
 
 
-def export_data_file(activity_id, activity_details, args):
+def export_data_file(activity_id, activity_details, args, a, activity_type_name, start_time_with_offset):
     if args.format == 'gpx':
         data_filename = args.directory + '/activity_' + activity_id + '.gpx'
         download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
         # download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true' + '&original=true'
-        print(download_url)
+        # print(download_url)
         file_mode = 'w'
     elif args.format == 'tcx':
         data_filename = args.directory + '/activity_' + activity_id + '.tcx'
@@ -452,7 +452,12 @@ def export_data_file(activity_id, activity_details, args):
         file_mode = 'w'
     elif args.format == 'original':
         data_filename = args.directory + '/activity_' + activity_id + '.zip'
-        fit_filename = args.directory + '/' + activity_id + '.fit'
+        # Rename fit file as DATE_Activity title_(activity type).fit
+        yearly_folder = args.directory + '/' + start_time_with_offset.strftime('%Y')
+        fit_filename = yearly_folder + '/' + start_time_with_offset.strftime('%Y%m%d') + '_'
+        fit_filename += activity_id if absent_or_null('activityName', a) else a['activityName'].replace('/', '_') + '_'
+        fit_filename += '' if absent_or_null('activityType', a) else '(' + value_if_found_else_key(activity_type_name, 'activity_type_' + a['activityType']['typeKey']).replace('/', '_') + ')'
+        fit_original_filename = args.directory + '/' + activity_id + '.fit'
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
     elif args.format == 'json':
@@ -465,8 +470,8 @@ def export_data_file(activity_id, activity_details, args):
         print('\tData file already exists; skipping...')
         return
 
-    # Regardless of unzip setting, don't redownload if the ZIP or FIT file exists.
-    if args.format == 'original' and isfile(fit_filename):
+    # Regardless of unzip setting, don't redownload if the ZIP, FIT or GPX file exists.
+    if args.format == 'original' and (isfile(fit_filename + '.fit') or isfile(fit_filename + '.gpx')):
         print('\tFIT data file already exists; skipping...')
         return
 
@@ -524,7 +529,17 @@ def export_data_file(activity_id, activity_details, args):
                 z = zipfile.ZipFile(zip_file)
                 for name in z.namelist():
                     z.extract(name, args.directory)
+                    original_extension = name[-3:]
+                    original_filename = name[:-4]
+                    print("Unzipping " + original_filename + '.' + original_extension)
                 zip_file.close()
+
+                # renames extracted fit file to fit_filename format
+                print("Renaming " + args.directory + '/' + original_filename + '.' + original_extension + " to " + fit_filename + '.' + original_extension)
+                if not isdir(yearly_folder):
+                    mkdir(yearly_folder)
+                rename(args.directory + '/' + original_filename + '.' + original_extension, fit_filename + '.' + original_extension)
+
             else:
                 print('Skipping 0Kb zip file.')
             remove(data_filename)
@@ -559,6 +574,20 @@ def main(argv):
     if not isdir(args.directory):
         mkdir(args.directory)
 
+    # Reads the last connection date from file
+    last_filename = args.directory + '/last.txt'
+    last_existed = isfile(last_filename)
+    if last_existed:
+        last_file = open(last_filename, 'r')
+        last_date = last_file.readline()
+        last_file.close()
+
+    # If the request is for newer activites but last connection date is unknown, then all activities will be downloaded.
+    if (args.count == 'new') and (not last_existed):
+        args.count = 'all'
+        latest_date = '1901-01-01'
+        print('Retrieving all activities...')
+
     csv_filename = args.directory + '/activities.csv'
     csv_existed = isfile(csv_filename)
 
@@ -583,6 +612,8 @@ def main(argv):
         # Modify total_to_download based on how many activities the server reports.
         json_results = json.loads(result)  # TODO: Catch possible exceptions here.
         total_to_download = int(json_results['results']['totalFound'])
+    elif args.count == 'new':
+        total_to_download = 1
     else:
         total_to_download = int(args.count)
     total_downloaded = 0
@@ -607,7 +638,11 @@ def main(argv):
         else:
             num_to_download = total_to_download - total_downloaded
 
-        search_params = {'start': total_downloaded, 'limit': num_to_download}
+        if args.count == 'new':
+            # Gets activites since last connection date
+            search_params = {'startDate': last_date, 'sortBy': 'startLocal', 'sortOrder': 'asc'}
+        else:
+            search_params = {'start': total_downloaded, 'limit': num_to_download, 'sortBy': 'startLocal', 'sortOrder': 'asc'}
         # Query Garmin Connect
         print("Making activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         print(URL_GC_LIST + urlencode(search_params))
@@ -615,7 +650,7 @@ def main(argv):
         print("Finished activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
         # Persist JSON
-        write_to_file(args.directory + '/activities.json', result, 'a')
+        #write_to_file(args.directory + '/activities.json', result, 'a')
 
         json_results = json.loads(result)  # TODO: Catch possible exceptions here.
 
@@ -680,7 +715,7 @@ def main(argv):
             device_app_inst_id = None if absent_or_null('metadataDTO', details) else details['metadataDTO']['deviceApplicationInstallationId']
             if device_app_inst_id:
                 if not device_dict.has_key(device_app_inst_id):
-                    # print '\tGetting device details ' + str(device_app_inst_id)
+                    # print('\tGetting device details ' + str(device_app_inst_id))
                     device_details = http_req(URL_GC_DEVICE + str(device_app_inst_id))
                     write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json', device_details, 'a')
                     device_dict[device_app_inst_id] = None if not device_details else json.loads(device_details)
@@ -691,17 +726,25 @@ def main(argv):
                              start_time_with_offset, end_time_with_offset, duration, start_latitude, start_longitude,
                              end_latitude, end_longitude)
 
-            export_data_file(str(a['activityId']), activity_details, args)
+            export_data_file(str(a['activityId']), activity_details, args, a, activity_type_name, start_time_with_offset)
+
+            latest_date = start_time_with_offset.strftime('%Y-%m-%d')
 
         total_downloaded += num_to_download
     # End while loop for multiple chunks.
 
     csv_file.close()
 
-    print('Open CSV output.')
-    print(csv_filename)
+    # print('Open CSV output.')
+    # print(csv_filename)
     # open CSV file. Comment this line out if you don't want this behavior
     # call(["/usr/bin/libreoffice6.0", "--calc", csv_filename])
+
+    # saves current date to last connection file
+    last_file = open(last_filename, 'w')
+    last_file.write(latest_date)
+    last_file.close()
+    print('Updating latest downloaded date in file.')
 
     print('Done!')
 

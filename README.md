@@ -7,30 +7,15 @@ Note that Garmin introduced recently (around May 2018, for GDPR compatibility) a
 
 Forks and Branches
 ------------------
-Forked from [pe-st]'s repository, [develop] branch.
+Forked from [pe-st](https://github.com/pe-st)'s repository, [develop](https://github.com/pe-st/garmin-connect-export) branch.
 
-There exist many [forks](https://help.github.com/articles/fork-a-repo/) of this script repository:
+Personal modifications compared to the original fork and branch include:
 
-- [pe-st]()
-  This is my (**pe-st**) repository, the one you're looking at (or the source of the copy you're looking at)
-- [kjkjava](https://github.com/kjkjava/garmin-connect-export)
-  The original repo (mother repo) of my (**pe-st**) repo. It seems not maintained anymore (last commit in 2015)
-- [moderation](https://github.com/moderation/garmin-connect-export)
-  After some inactivity of the **@kjkjava** repo, **@moderation** made some corrections in his own fork to have a working script again.
-  In March 2018 I integrated **@moderation**'s work into my own repo, so logically **@moderation** is now the
-  father repo of my repo. In April 2018 **@moderation** migrated his script to Python 3. Unfortunately
-  **@moderation**'s script [doesn't work for me](https://github.com/moderation/garmin-connect-export/issues/11),
-  probably because of different Garmin Connect REST endpoints (URLs).
-
-These are the most important [branches](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging) in **pe-st**'s repo:
-
-- [develop](https://github.com/pe-st/garmin-connect-export)
-  The default branch. This is where my tinkering happens, and always contains the lastest version of `gcexport.py`
-- [master](https://github.com/pe-st/garmin-connect-export/tree/master)
-  Copy of the master branch of **@moderation**'s repo, kept for reference and comparison purposes
-- [revert-csv-to-kjkjava](https://github.com/pe-st/garmin-connect-export/tree/feature/revert-csv-to-kjkjava)
-  Backport of **@moderation**'s and my changes to the original repo, using the original CSV format ([PR 42](https://github.com/kjkjava/garmin-connect-export/pull/42))
-
+- Tracking of the latest Garmin download date and download newer data only.
+- Make JSON files not persistent.
+- Create yearly subfolders to store activities original files.
+- Rename original file as `DATE_Activity title_(activity type)`.
+- Daemon file to automatically launch the syncronization once per week (you need to update the files with your user data)
 
 Description
 -----------
@@ -59,7 +44,7 @@ optional arguments:
                         your Garmin Connect password (otherwise, you will be
                         prompted)
   -c [COUNT], --count [COUNT]
-                        number of recent activities to download, or 'all'
+                        number of recent activities to download, 'new' or 'all'
                         (default: 1)
   -f [{gpx,tcx,original,json}], --format [{gpx,tcx,original,json}]
                         export format; can be 'gpx', 'tcx', 'original' or

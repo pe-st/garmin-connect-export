@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>nokia-weight-sync.cron</string>
+    <key>KeepAlive</key>
+    <false/>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>Program</key>
+    <string>/Users/cralvarez/Python_scripts/nokia-weight-sync/nokia-weight-sync.sh</string>
+    <key>StandardOutPath</key>
+    <string>/var/log/python_script.out</string>
+    <key>StandardErrorPath</key>
+    <string>/var/log/python_script.error</string>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>13</integer>
+    </dict>
+</dict>
+</plist>
