@@ -36,7 +36,7 @@ import sys
 import urllib2
 import zipfile
 
-SCRIPT_VERSION = '2.0.1'
+SCRIPT_VERSION = '2.0.2'
 
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
@@ -103,7 +103,8 @@ DATA = {
 # URLs for various services.
 URL_GC_LOGIN = 'https://sso.garmin.com/sso/login?' + urlencode(DATA)
 URL_GC_POST_AUTH = 'https://connect.garmin.com/modern/activities?'
-URL_GC_SEARCH = 'https://connect.garmin.com/proxy/activity-search-service-1.2/json/activities?start=0&limit=1'
+URL_GC_PROFILE = 'https://connect.garmin.com/modern/profile'
+URL_GC_USERSTATS = 'https://connect.garmin.com/modern/proxy/userstats-service/statistics/'
 URL_GC_LIST = \
     'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
 URL_GC_ACTIVITY = 'https://connect.garmin.com/modern/proxy/activity-service/activity/'
@@ -325,6 +326,7 @@ def login_to_garmin_connect(args):
 
     print('Post login data')
     login_response = http_req(URL_GC_LOGIN, post_data)
+    # write_to_file(args.directory + '/login-response.html', login_response, 'w')
     print('Finish login post')
 
     # extract the ticket from the login response
@@ -569,20 +571,32 @@ def main(argv):
         csv_write_header(csv_file)
 
     if args.count == 'all':
-        # If the user wants to download all activities, first download one,
-        # then the result of that request will tell us how many are available
-        # so we will modify the variables then.
-        print("Making result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        print(URL_GC_SEARCH)
-        result = http_req(URL_GC_SEARCH)
-        print("Finished result summary request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        # If the user wants to download all activities, query the userstats
+        # on the profile page to know how many are available
+        print("Getting display name and user stats ~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print(URL_GC_PROFILE)
+        profile_page = http_req(URL_GC_PROFILE)
+        # write_to_file(args.directory + '/profile.html', profile_page, 'a')
+
+        # extract the display name from the profile page, it should be in there as
+        # \"displayName\":\"eschep\"
+        pattern = re.compile(r".*\\\"displayName\\\":\\\"([-\w]+)\\\".*", re.MULTILINE | re.DOTALL)
+        match = pattern.match(profile_page)
+        if not match:
+            raise Exception('Did not find the display name in the profile page.')
+        display_name = match.group(1)
+        print('displayName=' + display_name)
+
+        print(URL_GC_USERSTATS + display_name)
+        result = http_req(URL_GC_USERSTATS + display_name)
+        print("Finished display name and user stats ~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
         # Persist JSON
-        write_to_file(args.directory + '/activities-summary.json', result, 'a')
+        write_to_file(args.directory + '/userstats.json', result, 'w')
 
         # Modify total_to_download based on how many activities the server reports.
         json_results = json.loads(result)  # TODO: Catch possible exceptions here.
-        total_to_download = int(json_results['results']['totalFound'])
+        total_to_download = int(json_results['userMetrics'][0]['totalActivities'])
     else:
         total_to_download = int(args.count)
     total_downloaded = 0
