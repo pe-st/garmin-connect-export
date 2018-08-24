@@ -14,7 +14,7 @@ There exist many [forks](https://help.github.com/articles/fork-a-repo/) of this 
 - [pe-st]()
   This is my (**pe-st**) repository, the one you're looking at (or the source of the copy you're looking at)
 - [kjkjava](https://github.com/kjkjava/garmin-connect-export)
-  The original repo (mother repo) of my (**pe-st**) repo. It seems not maintained anymore (last commit in 2015)
+  The original repo (mother repo) of my (**pe-st**) repo. It seems not maintained anymore (last commit in 2015, see also: [issues#46](https://github.com/kjkjava/garmin-connect-export/issues/46))
 - [moderation](https://github.com/moderation/garmin-connect-export)
   After some inactivity of the **@kjkjava** repo, **@moderation** made some corrections in his own fork to have a working script again.
   In March 2018 I integrated **@moderation**'s work into my own repo, so logically **@moderation** is now the
