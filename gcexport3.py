@@ -498,8 +498,8 @@ activity...",
         )
         csv_record += (
             empty_record
-            if "activityDescription" not in a
-            else '"' + a["activityDescription"].replace('"', '""') + '",'
+            if "description" not in a
+            else '"' + a["description"].replace('"', '""') + '",'
         )
         csv_record += (
             empty_record
