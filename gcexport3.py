@@ -6,7 +6,7 @@ File: gcexport.py
 Original author: Kyle Krafka (https://github.com/kjkjava/)
 Date: April 28, 2015
 Fork author: Michael P (https://github.com/moderation/)
-Date: February 15, 2018
+Date: August 25, 2018
 
 Description:    Use this script to export your fitness data from Garmin Connect.
                 See README.md for more information.
@@ -199,9 +199,6 @@ print(urllib.parse.urlencode(DATA))
 # URLs for various services.
 URL_GC_LOGIN = "https://sso.garmin.com/sso/login?" + urllib.parse.urlencode(DATA)
 URL_GC_POST_AUTH = "https://connect.garmin.com/modern/activities?"
-URL_GC_SEARCH = (
-    "https://connect.garmin.com/proxy/activity-search-service-1.2/json/activities?"
-)
 URL_GC_LIST = "https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?"
 URL_GC_ACTIVITY = "https://connect.garmin.com/modern/proxy/activity-service/activity/"
 URL_GC_ACTIVITY_DETAIL = (
@@ -216,7 +213,9 @@ URL_GC_TCX_ACTIVITY = (
 URL_GC_ORIGINAL_ACTIVITY = (
     "http://connect.garmin.com/proxy/download-service/files/activity/"
 )
-
+URL_DEVICE_DETAIL = (
+    "https://connect.garmin.com/modern/proxy/device-service/deviceservice/app-info/"
+)
 # Initially, we need to get a valid session cookie, so we pull the login page.
 print("Request login page")
 http_req(URL_GC_LOGIN)
@@ -328,52 +327,32 @@ while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
         NUM_TO_DOWNLOAD = TOTAL_TO_DOWNLOAD - TOTAL_DOWNLOADED
 
     SEARCH_PARAMS = {"start": TOTAL_DOWNLOADED, "limit": NUM_TO_DOWNLOAD}
+    
     # Query Garmin Connect
-    print("Making activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    print(URL_GC_SEARCH + urllib.parse.urlencode(SEARCH_PARAMS))
-    RESULT = http_req(URL_GC_SEARCH + urllib.parse.urlencode(SEARCH_PARAMS))
-    print("Finished activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-
-    # Persist JSON
-    write_to_file(ARGS.directory + "/activities.json", RESULT.decode(), "a")
-
-    JSON_RESULTS = json.loads(RESULT)  # TODO: Catch possible exceptions here.
-
-    if DOWNLOAD_ALL:
-        # Modify TOTAL_TO_DOWNLOAD based on how many activities the server reports.
-        TOTAL_TO_DOWNLOAD = int(JSON_RESULTS["results"]["totalFound"])
-
-        # Do it only once.
-        DOWNLOAD_ALL = False
-
-    # Pull out just the list of activities.
-    ACTIVITIES = JSON_RESULTS["results"]["activities"]
-    # print(ACTIVITIES)
-
     print("Activity list URL: " + URL_GC_LIST + urllib.parse.urlencode(SEARCH_PARAMS))
     ACTIVITY_LIST = http_req(URL_GC_LIST + urllib.parse.urlencode(SEARCH_PARAMS))
     write_to_file(ARGS.directory + "/activity_list.json", ACTIVITY_LIST.decode(), "a")
-    # LIST = json.loads(ACTIVITY_LIST)
+    LIST = json.loads(ACTIVITY_LIST)
     # print(LIST)
 
     # Process each activity.
-    for a in ACTIVITIES:
+    for a in LIST:
         # Display which entry we're working on.
         print(
-            "Garmin Connect activity: [" + str(a["activity"]["activityId"]) + "]",
+            "Garmin Connect activity: [" + str(a["activityId"]) + "]",
             end=" ",
         )
-        print(a["activity"]["activityName"])
-        print("\t" + a["activity"]["uploadDate"]["display"] + ",", end=" ")
+        print(a["activityName"])
+        # print("\t" + a["uploadDate"]["display"] + ",", end=" ")
         if ARGS.format == "gpx":
             data_filename = (
                 ARGS.directory
                 + "/"
-                + str(a["activity"]["activityId"])
+                + str(a["activityId"])
                 + "_activity.gpx"
             )
             download_url = (
-                URL_GC_GPX_ACTIVITY + str(a["activity"]["activityId"]) + "?full=true"
+                URL_GC_GPX_ACTIVITY + str(a["activityId"]) + "?full=true"
             )
             print(download_url)
             file_mode = "w"
@@ -381,27 +360,27 @@ while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
             data_filename = (
                 ARGS.directory
                 + "/"
-                + str(a["activity"]["activityId"])
+                + str(a["activityId"])
                 + "_activity.tcx"
             )
             download_url = (
-                URL_GC_TCX_ACTIVITY + str(a["activity"]["activityId"]) + "?full=true"
+                URL_GC_TCX_ACTIVITY + str(a["activityId"]) + "?full=true"
             )
             file_mode = "w"
         elif ARGS.format == "original":
             data_filename = (
                 ARGS.directory
                 + "/"
-                + str(a["activity"]["activityId"])
+                + str(a["activityId"])
                 + "_activity.zip"
             )
             fit_filename = (
                 ARGS.directory
                 + "/"
-                + str(a["activity"]["activityId"])
+                + str(a["activityId"])
                 + "_activity.fit"
             )
-            download_url = URL_GC_ORIGINAL_ACTIVITY + str(a["activity"]["activityId"])
+            download_url = URL_GC_ORIGINAL_ACTIVITY + str(a["activityId"])
             file_mode = "wb"
         else:
             raise Exception("Unrecognized format.")
@@ -458,13 +437,13 @@ activity...",
         print(
             "Activity summary URL: "
             + URL_GC_ACTIVITY
-            + str(a["activity"]["activityId"])
+            + str(a["activityId"])
         )
-        ACTIVITY_SUMMARY = http_req(URL_GC_ACTIVITY + str(a["activity"]["activityId"]))
+        ACTIVITY_SUMMARY = http_req(URL_GC_ACTIVITY + str(a["activityId"]))
         write_to_file(
             ARGS.directory
             + "/"
-            + str(a["activity"]["activityId"])
+            + str(a["activityId"])
             + "_activity_summary.json",
             ACTIVITY_SUMMARY.decode(),
             "a",
@@ -473,17 +452,34 @@ activity...",
         # print(JSON_SUMMARY)
 
         print(
+            "Device detail URL: "
+            + URL_DEVICE_DETAIL
+            + str(JSON_SUMMARY["metadataDTO"]["deviceApplicationInstallationId"])
+        )
+        DEVICE_DETAIL = http_req(URL_DEVICE_DETAIL + str(JSON_SUMMARY["metadataDTO"]["deviceApplicationInstallationId"]))
+        write_to_file(
+            ARGS.directory
+            + "/"
+            + str(a["activityId"])
+            + "_app_info.json",
+            DEVICE_DETAIL.decode(),
+            "a",
+        )
+        JSON_DEVICE = json.loads(DEVICE_DETAIL)
+        # print(JSON_DEVICE)
+
+        print(
             "Activity details URL: "
             + URL_GC_ACTIVITY_DETAIL
-            + str(a["activity"]["activityId"])
+            + str(a["activityId"])
         )
         ACTIVITY_DETAIL = http_req(
-            URL_GC_ACTIVITY_DETAIL + str(a["activity"]["activityId"])
+            URL_GC_ACTIVITY_DETAIL + str(a["activityId"])
         )
         write_to_file(
             ARGS.directory
             + "/"
-            + str(a["activity"]["activityId"])
+            + str(a["activityId"])
             + "_activity_detail.json",
             ACTIVITY_DETAIL.decode(),
             "a",
@@ -497,13 +493,13 @@ activity...",
 
         csv_record += (
             empty_record
-            if "activityName" not in a["activity"]
-            else '"' + a["activity"]["activityName"].replace('"', '""') + '",'
+            if "activityName" not in a
+            else '"' + a["activityName"].replace('"', '""') + '",'
         )
         csv_record += (
             empty_record
-            if "activityDescription" not in a["activity"]
-            else '"' + a["activity"]["activityDescription"].replace('"', '""') + '",'
+            if "activityDescription" not in a
+            else '"' + a["activityDescription"].replace('"', '""') + '",'
         )
         csv_record += (
             empty_record
@@ -563,7 +559,7 @@ activity...",
         )
         csv_record += (
             empty_record if "minHR" not in JSON_SUMMARY["summaryDTO"] else ","
-        )  # no longer available in JSON
+        )
         csv_record += (
             empty_record
             if "maxHR" not in JSON_SUMMARY["summaryDTO"]
@@ -611,42 +607,42 @@ activity...",
         )
         csv_record += (
             empty_record
-            if "activityId" not in a["activity"]
+            if "activityId" not in a
             else '"https://connect.garmin.com/modern/activity/'
-            + str(a["activity"]["activityId"])
+            + str(a["activityId"])
             + '",'
         )
         csv_record += (
             empty_record if "endTimestamp" not in JSON_SUMMARY["summaryDTO"] else ","
-        )  # no longer available in JSON
+        )
         csv_record += (
             empty_record if "beginTimestamp" not in JSON_SUMMARY["summaryDTO"] else ","
-        )  # no longer available in JSON
+        )
         csv_record += (
             empty_record if "endTimestamp" not in JSON_SUMMARY["summaryDTO"] else ","
-        )  # no longer available in JSON
+        )
         csv_record += (
             empty_record
-            if "device" not in a["activity"]
-            else a["activity"]["device"]["display"]
+            if "productDisplayName" not in JSON_DEVICE
+            else JSON_DEVICE["productDisplayName"]
             + " "
-            + a["activity"]["device"]["version"]
+            + JSON_DEVICE["versionString"]
             + ","
         )
         csv_record += (
             empty_record
-            if "activityType" not in a["activity"]
-            else a["activity"]["activityType"]["display"] + ","
+            if "activityType" not in a
+            else a["activityType"]["typeKey"].title() + ","
         )
         csv_record += (
             empty_record
-            if "eventType" not in a["activity"]
-            else a["activity"]["eventType"]["display"] + ","
+            if "eventType" not in a
+            else a["eventType"]["typeKey"].title() + ","
         )
         csv_record += (
             empty_record
-            if "activityTimeZone" not in a["activity"]
-            else a["activity"]["activityTimeZone"]["display"] + ","
+            if "timeZoneUnitDTO" not in JSON_SUMMARY
+            else JSON_SUMMARY["timeZoneUnitDTO"]["timeZone"] + ","
         )
         csv_record += (
             empty_record
@@ -672,22 +668,22 @@ activity...",
             empty_record
             if "gainCorrectedElevation" not in JSON_SUMMARY["summaryDTO"]
             else ","
-        )  # no longer available in JSON
+        )
         csv_record += (
             empty_record
             if "lossCorrectedElevation" not in JSON_SUMMARY["summaryDTO"]
             else ","
-        )  # no longer available in JSON
+        )
         csv_record += (
             empty_record
             if "maxCorrectedElevation" not in JSON_SUMMARY["summaryDTO"]
             else ","
-        )  # no longer available in JSON
+        )
         csv_record += (
             empty_record
             if "minCorrectedElevation" not in JSON_SUMMARY["summaryDTO"]
             else ","
-        )  # no longer available in JSON
+        )
         csv_record += (
             empty_record
             if "metricsCount"
