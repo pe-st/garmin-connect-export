@@ -313,9 +313,8 @@ DOWNLOAD_ALL = False
 if ARGS.count == "all":
     # If the user wants to download all activities, query the userstats
     # on the profile page to know how many are available
-    print("Getting display name and user stats ~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    print(URL_GC_PROFILE)
-    PROFILE_PAGE = http_req(URL_GC_PROFILE)
+    print("Getting display name and user stats via: " + URL_GC_PROFILE)
+    PROFILE_PAGE = http_req(URL_GC_PROFILE).decode()
     # write_to_file(args.directory + '/profile.html', profile_page, 'a')
 
     # extract the display name from the profile page, it should be in there as
@@ -329,19 +328,21 @@ if ARGS.count == "all":
     DISPLAY_NAME = MATCH.group(1)
     print("displayName=" + DISPLAY_NAME)
 
-    print(URL_GC_USERSTATS + display_name)
+    print(URL_GC_USERSTATS + DISPLAY_NAME)
     USER_STATS = http_req(URL_GC_USERSTATS + DISPLAY_NAME)
     print("Finished display name and user stats ~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
     # Persist JSON
-    write_to_file(ARGS.directory + "/userstats.json", USER_STATS, "w")
+    write_to_file(ARGS.directory + "/userstats.json", USER_STATS.decode(), "a")
 
     # Modify total_to_download based on how many activities the server reports.
     JSON_USER = json.loads(USER_STATS)
     TOTAL_TO_DOWNLOAD = int(JSON_USER["userMetrics"][0]["totalActivities"])
 else:
     TOTAL_TO_DOWNLOAD = int(ARGS.count)
+
 TOTAL_DOWNLOADED = 0
+print("Total to download: " + str(TOTAL_TO_DOWNLOAD))
 
 # This while loop will download data from the server in multiple chunks, if necessary.
 while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
