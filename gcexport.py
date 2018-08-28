@@ -173,13 +173,14 @@ def http_req(url, post=None, headers={}):
 
 
 # idea stolen from https://stackoverflow.com/a/31852401/3686
-def load_properties(multiline, sep='=', comment_char='#'):
+def load_properties(multiline, sep='=', comment_char='#', keys=[]):
     """
     Read a multiline string of properties (key/value pair separated by *sep*) into a dict
 
-    :param multiline: input string of properties
-    :param sep:       separator between key and value
-    :param comment_char: lines starting with this chara are considered comments, not key/value pairs
+    :param multiline:    input string of properties
+    :param sep:          separator between key and value
+    :param comment_char: lines starting with this char are considered comments, not key/value pairs
+    :param keys:         list to append the keys to
     :return:
     """
     props = {}
@@ -190,6 +191,7 @@ def load_properties(multiline, sep='=', comment_char='#'):
             key = key_value[0].strip()
             value = sep.join(key_value[1:]).strip().strip('"')
             props[key] = value
+            keys.append(key)
     return props
 
 
@@ -271,6 +273,31 @@ def pace_or_speed_formatted(type_id, parent_type_id, mps):
         return "{0:.1f}".format(round(kmh, 1))
 
 
+class CsvFilter():
+    """Collects, filters and writes CSV."""
+
+    def __init__(self, csv_file, csv_header_properties):
+        self.__csv_file = csv_file
+        with open(csv_header_properties, 'r') as prop:
+            csv_header_props = prop.read()
+        self.__csv_columns = []
+        self.__csv_headers = load_properties(csv_header_props, keys=self.__csv_columns)
+
+    # def addColumn(self, name, value):
+    #     None
+
+    def write_header(self):
+        column_headers = []
+        for column in self.__csv_columns:
+            column_headers.append(self.__csv_headers[column])
+        header_line = ",".join(column_headers) + "\n"
+        self.__csv_file.write(header_line)
+
+    def write_row(self, csv_record):
+        self.__csv_file.write(csv_record.encode('utf8'))
+
+
+
 def parse_arguments(argv):
     """
     Setup the argument parser and parse the command line arguments.
@@ -343,50 +370,7 @@ def login_to_garmin_connect(args):
     print('Finished authentication')
 
 
-def csv_write_header(csv_file):
-    csv_file.write('Activity name,\
-    Description,\
-    Begin timestamp,\
-    Duration (h:m:s),\
-    Moving duration (h:m:s),\
-    Distance (km),\
-    Average speed (km/h or min/km),\
-    Average moving speed (km/h or min/km),\
-    Max. speed (km/h or min/km),\
-    Elevation loss uncorrected (m),\
-    Elevation gain uncorrected (m),\
-    Elevation min. uncorrected (m),\
-    Elevation max. uncorrected (m),\
-    Min. heart rate (bpm),\
-    Max. heart rate (bpm),\
-    Average heart rate (bpm),\
-    Calories,\
-    Avg. cadence (rpm),\
-    Max. cadence (rpm),\
-    Strokes,\
-    Avg. temp (°C),\
-    Min. temp (°C),\
-    Max. temp (°C),\
-    Map,\
-    End timestamp,\
-    Begin timestamp (ms),\
-    End timestamp (ms),\
-    Device,\
-    Activity type,\
-    Event type,\
-    Time zone,\
-    Begin latitude (°DD),\
-    Begin longitude (°DD),\
-    End latitude (°DD),\
-    End longitude (°DD),\
-    Elevation gain corrected (m),\
-    Elevation loss corrected (m),\
-    Elevation max. corrected (m),\
-    Elevation min. corrected (m),\
-    Sample count\n')
-
-
-def csv_write_record(csv_file, a, details, type_id, parent_type_id, activity_type_name, event_type_name, device,
+def csv_write_record(csv, a, details, type_id, parent_type_id, activity_type_name, event_type_name, device,
                      start_time_with_offset, end_time_with_offset, duration, start_latitude, start_longitude,
                      end_latitude, end_longitude):
 
@@ -438,7 +422,7 @@ def csv_write_record(csv_file, a, details, type_id, parent_type_id, activity_typ
     csv_record += '""'  # no Sample Count in JSON
     csv_record += '\n'
 
-    csv_file.write(csv_record.encode('utf8'))
+    csv.write_row(csv_record)
 
 
 def export_data_file(activity_id, activity_details, args):
@@ -565,10 +549,11 @@ def main(argv):
     csv_existed = isfile(csv_filename)
 
     csv_file = open(csv_filename, 'a')
+    csv_filter = CsvFilter(csv_file, 'csv_header_default.properties')
 
     # Write header to CSV file
     if not csv_existed:
-        csv_write_header(csv_file)
+        csv_filter.write_header()
 
     if args.count == 'all':
         # If the user wants to download all activities, query the userstats
@@ -701,7 +686,7 @@ def main(argv):
                 device = device_dict[device_app_inst_id]
 
             # Write stats to CSV.
-            csv_write_record(csv_file, a, details, type_id, parent_type_id, activity_type_name, event_type_name, device,
+            csv_write_record(csv_filter, a, details, type_id, parent_type_id, activity_type_name, event_type_name, device,
                              start_time_with_offset, end_time_with_offset, duration, start_latitude, start_longitude,
                              end_latitude, end_longitude)
 
