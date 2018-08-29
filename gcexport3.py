@@ -320,7 +320,7 @@ if ARGS.count == "all":
     # extract the display name from the profile page, it should be in there as
     # \"displayName\":\"eschep\"
     PATTERN = re.compile(
-        r".*\\\"displayName\\\":\\\"([-\w]+)\\\".*", re.MULTILINE | re.DOTALL
+        r".*\\\"displayName\\\":\\\"([-.\w]+)\\\".*", re.MULTILINE | re.DOTALL
     )
     MATCH = PATTERN.match(PROFILE_PAGE)
     if not MATCH:
