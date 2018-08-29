@@ -117,6 +117,17 @@ def write_to_file(filename, content, mode):
     write_file.write(content)
     write_file.close()
 
+def decoding_decider(data):
+    """Helper function that decides if a decoding should happen or not."""
+    if ARGS.format == "original":
+        # An original file (ZIP file) is binary and not UTF-8 encoded
+        data = data
+    else:
+        # GPX and TCX are textfiles and UTF-8 encoded
+        data = data.decode()
+
+    return data
+
 
 # url is a string, post is a dictionary of POST parameters, headers is a dictionary of headers.
 def http_req(url, post=None, headers=None):
@@ -439,7 +450,7 @@ activity...",
                 )
 
         # Persist file
-        write_to_file(data_filename, data.decode(), file_mode)
+        write_to_file(data_filename, decoding_decider(data), file_mode)
 
         print("Activity summary URL: " + URL_GC_ACTIVITY + str(a["activityId"]))
         ACTIVITY_SUMMARY = http_req(URL_GC_ACTIVITY + str(a["activityId"]))
