@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Tests for gcexport.py; Call them with this command line:
 
@@ -44,9 +45,9 @@ def test_load_properties_keys():
 def test_csv_write_record():
     with open('json/activitylist-service.json') as json_data_1:
         activities = json.load(json_data_1)
-    with open('json/activity_2541953812.json') as json_data_2:
+    with open('json/activity_emoji.json') as json_data_2:
         details = json.load(json_data_2)
-    with open('json/device_99280678.json') as json_data_3:
+    with open('json/device_856399.json') as json_data_3:
         device = json.load(json_data_3)
     with open('json/activity_types.properties', 'r') as prop_1:
         activity_type_props = prop_1.read()
@@ -70,4 +71,4 @@ def test_csv_write_record():
     csv_write_record(csv_filter, activities[0], details, type_id, parent_type_id, activity_type_name, event_type_name, device,
                      start_time_with_offset, end_time_with_offset, duration, start_latitude, start_longitude,
                      end_latitude, end_longitude)
-    assert csv_file.getvalue()[:10] == '"Reckingen'
+    assert csv_file.getvalue()[:20] == '"Biel 🏛 Pavillon"'
