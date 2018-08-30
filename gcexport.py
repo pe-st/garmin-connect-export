@@ -37,7 +37,7 @@ import sys
 import urllib2
 import zipfile
 
-SCRIPT_VERSION = '2.0.2'
+SCRIPT_VERSION = '2.0.3'
 
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
@@ -579,8 +579,8 @@ def main(argv):
         # write_to_file(args.directory + '/profile.html', profile_page, 'a')
 
         # extract the display name from the profile page, it should be in there as
-        # \"displayName\":\"eschep\"
-        pattern = re.compile(r".*\\\"displayName\\\":\\\"([-\w]+)\\\".*", re.MULTILINE | re.DOTALL)
+        # \"displayName\":\"John.Doe\"
+        pattern = re.compile(r".*\\\"displayName\\\":\\\"([-.\w]+)\\\".*", re.MULTILINE | re.DOTALL)
         match = pattern.match(profile_page)
         if not match:
             raise Exception('Did not find the display name in the profile page.')
