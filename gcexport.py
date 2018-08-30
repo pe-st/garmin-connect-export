@@ -72,6 +72,8 @@ LIMIT_MAXIMUM = 1000
 
 MAX_TRIES = 3
 
+CSV_TEMPLATE = "csv_header_default.properties"
+
 WEBHOST = "https://connect.garmin.com"
 REDIRECT = "https://connect.garmin.com/post-auth/login"
 BASE_URL = "http://connect.garmin.com/en-US/signin"
@@ -337,6 +339,8 @@ def parse_arguments(argv):
         directory to export to (default: './YYYY-MM-DD_garmin_connect_export')")
     parser.add_argument('-u', '--unzip', help="if downloading ZIP files (format: 'original'), unzip \
         the file and removes the ZIP file", action="store_true")
+    parser.add_argument('-t', '--template', nargs='?', default=CSV_TEMPLATE, help="template \
+        file with desired columns for CSV output")
 
     return parser.parse_args(argv[1:])
 
@@ -392,24 +396,29 @@ def csv_write_record(csv_filter, a, details, type_id, parent_type_id, activity_t
     empty_record = '"",'
     csv_record = ''
 
+    csv_filter.set_column('id', str(a['activityId']))
     csv_filter.set_column('activityName', a['activityName'].replace('"', '""') if present('activityName', a) else None)
     csv_filter.set_column('description', a['description'].replace('"', '""') if present('description', a) else None)
-    csv_filter.set_column('startTimeDesc', start_time_with_offset.strftime(ALMOST_RFC_1123))
+    csv_filter.set_column('startTime1123', start_time_with_offset.strftime(ALMOST_RFC_1123))
     # csv_record += '"' + startTimeWithOffset.isoformat() + '",'
     csv_filter.set_column('duration', hhmmss_from_seconds(round(duration)) if duration else None)
     csv_filter.set_column('movingDuration', hhmmss_from_seconds(details['summaryDTO']['movingDuration']) if present('movingDuration', details['summaryDTO']) else None)
-    csv_filter.set_column('distance', "{0:.5f}".format(a['distance'] / 1000) if present('distance', a) else None)
-    csv_filter.set_column('averageSpeed', trunc6(pace_or_speed_raw(type_id, parent_type_id, a['averageSpeed'])) if present('averageSpeed', a) else None)
-    csv_filter.set_column('averageMovingSpeed', trunc6(pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['averageMovingSpeed'])) if present('averageMovingSpeed', details['summaryDTO']) else None)
-    csv_filter.set_column('maxSpeed', trunc6(pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['maxSpeed'])) if present('maxSpeed', details['summaryDTO']) else None)
-    csv_filter.set_column('elevationLoss', str(round(details['summaryDTO']['elevationLoss'], 2)) if not a['elevationCorrected'] and present('elevationLoss', details['summaryDTO']) else None)
-    csv_filter.set_column('elevationGain', str(round(details['summaryDTO']['elevationGain'], 2)) if not a['elevationCorrected'] and present('elevationGain', details['summaryDTO']) else None)
-    csv_filter.set_column('minElevation', str(round(details['summaryDTO']['minElevation'], 2)) if not a['elevationCorrected'] and present('minElevation', details['summaryDTO']) else None)
-    csv_filter.set_column('maxElevation', str(round(details['summaryDTO']['maxElevation'], 2)) if not a['elevationCorrected'] and present('maxElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('distanceRaw', "{0:.5f}".format(a['distance'] / 1000) if present('distance', a) else None)
+    csv_filter.set_column('averageSpeedRaw', trunc6(pace_or_speed_raw(type_id, parent_type_id, a['averageSpeed'])) if present('averageSpeed', a) else None)
+    csv_filter.set_column('averageMovingSpeedRaw', trunc6(pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['averageMovingSpeed'])) if present('averageMovingSpeed', details['summaryDTO']) else None)
+    csv_filter.set_column('maxSpeedRaw', trunc6(pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['maxSpeed'])) if present('maxSpeed', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationLossUncorr', str(round(details['summaryDTO']['elevationLoss'], 2)) if not a['elevationCorrected'] and present('elevationLoss', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationGainUncorr', str(round(details['summaryDTO']['elevationGain'], 2)) if not a['elevationCorrected'] and present('elevationGain', details['summaryDTO']) else None)
+    csv_filter.set_column('minElevationUncorr', str(round(details['summaryDTO']['minElevation'], 2)) if not a['elevationCorrected'] and present('minElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('maxElevationUncorr', str(round(details['summaryDTO']['maxElevation'], 2)) if not a['elevationCorrected'] and present('maxElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationLoss', str(round(details['summaryDTO']['elevationLoss'], 2)) if present('elevationLoss', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationGain', str(round(details['summaryDTO']['elevationGain'], 2)) if present('elevationGain', details['summaryDTO']) else None)
+    csv_filter.set_column('minElevation', str(round(details['summaryDTO']['minElevation'], 2)) if present('minElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('maxElevation', str(round(details['summaryDTO']['maxElevation'], 2)) if present('maxElevation', details['summaryDTO']) else None)
     csv_record += empty_record  # no minimum heart rate in JSON
     csv_filter.set_column('maxHR', "{0:.0f}".format(a['maxHR']) if present('maxHR', a) else None)
     csv_filter.set_column('averageHR', "{0:.0f}".format(a['averageHR']) if present('averageHR', a) else None)
-    csv_filter.set_column('calories', str(details['summaryDTO']['calories']) if present('calories', details['summaryDTO']) else None)
+    csv_filter.set_column('caloriesRaw', str(details['summaryDTO']['calories']) if present('calories', details['summaryDTO']) else None)
     csv_filter.set_column('averageCadence', str(a['averageBikingCadenceInRevPerMinute']) if present('averageBikingCadenceInRevPerMinute', a) else None)
     csv_filter.set_column('maxCadence', str(a['maxBikingCadenceInRevPerMinute']) if present('maxBikingCadenceInRevPerMinute', a) else None)
     csv_filter.set_column('strokes', str(a['strokes']) if present('strokes', a) else None)
@@ -417,7 +426,7 @@ def csv_write_record(csv_filter, a, details, type_id, parent_type_id, activity_t
     csv_filter.set_column('minTemperature', str(details['summaryDTO']['minTemperature']) if present('minTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('maxTemperature', str(details['summaryDTO']['maxTemperature']) if present('maxTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('url', 'https://connect.garmin.com/modern/activity/' + str(a['activityId']))
-    csv_filter.set_column('endTimeDesc', end_time_with_offset.strftime(ALMOST_RFC_1123) if end_time_with_offset else None)
+    csv_filter.set_column('endTime1123', end_time_with_offset.strftime(ALMOST_RFC_1123) if end_time_with_offset else None)
     csv_filter.set_column('startTimeIso', start_time_with_offset.isoformat() if start_time_with_offset else None)
     # csv_filter.set_column('beginTimestamp', str(a['beginTimestamp']) if present('beginTimestamp', a) else None)
     csv_filter.set_column('endTimeIso', end_time_with_offset.isoformat() if end_time_with_offset else None)
@@ -564,7 +573,7 @@ def main(argv):
     csv_existed = isfile(csv_filename)
 
     csv_file = open(csv_filename, 'a')
-    csv_filter = CsvFilter(csv_file, 'csv_header_default.properties')
+    csv_filter = CsvFilter(csv_file, args.template)
 
     # Write header to CSV file
     if not csv_existed:
