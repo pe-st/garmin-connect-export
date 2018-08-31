@@ -117,6 +117,7 @@ def write_to_file(filename, content, mode):
     write_file.write(content)
     write_file.close()
 
+
 def decoding_decider(data):
     """Helper function that decides if a decoding should happen or not."""
     if ARGS.format == "original":
