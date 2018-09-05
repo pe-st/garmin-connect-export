@@ -472,23 +472,31 @@ activity...",
             URL_DEVICE_DETAIL
             + str(JSON_SUMMARY["metadataDTO"]["deviceApplicationInstallationId"])
         )
-        write_to_file(
-            ARGS.directory + "/" + str(a["activityId"]) + "_app_info.json",
-            DEVICE_DETAIL.decode(),
-            "a",
-        )
-        JSON_DEVICE = json.loads(DEVICE_DETAIL)
-        # print(JSON_DEVICE)
+        if DEVICE_DETAIL:
+            write_to_file(
+                ARGS.directory + "/" + str(a["activityId"]) + "_app_info.json",
+                DEVICE_DETAIL.decode(),
+                "a",
+            )
+            JSON_DEVICE = json.loads(DEVICE_DETAIL)
+            # print(JSON_DEVICE)
+        else:
+            print("Retrieving Device Details failed.")
+            JSON_DEVICE = None
 
         print("Activity details URL: " + URL_GC_ACTIVITY_DETAIL + str(a["activityId"]))
-        ACTIVITY_DETAIL = http_req(URL_GC_ACTIVITY_DETAIL + str(a["activityId"]))
-        write_to_file(
-            ARGS.directory + "/" + str(a["activityId"]) + "_activity_detail.json",
-            ACTIVITY_DETAIL.decode(),
-            "a",
-        )
-        JSON_DETAIL = json.loads(ACTIVITY_DETAIL)
-        # print(JSON_DETAIL)
+        try:
+            ACTIVITY_DETAIL = http_req(URL_GC_ACTIVITY_DETAIL + str(a["activityId"]))
+            write_to_file(
+                ARGS.directory + "/" + str(a["activityId"]) + "_activity_detail.json",
+                ACTIVITY_DETAIL.decode(),
+                "a",
+            )
+            JSON_DETAIL = json.loads(ACTIVITY_DETAIL)
+            # print(JSON_DETAIL)
+        except:
+            print("Retrieving Activity Details failed.")
+            JSON_DETAIL = None
 
         # Write stats to CSV.
         empty_record = ","
@@ -496,7 +504,7 @@ activity...",
 
         csv_record += (
             empty_record
-            if "activityName" not in a
+            if "activityName" not in a or not a["activityName"]
             else '"' + a["activityName"].replace('"', '""') + '",'
         )
 
@@ -628,7 +636,7 @@ activity...",
         )
         csv_record += (
             empty_record
-            if "productDisplayName" not in JSON_DEVICE
+            if not JSON_DEVICE or "productDisplayName" not in JSON_DEVICE
             else JSON_DEVICE["productDisplayName"]
             + " "
             + JSON_DEVICE["versionString"]
@@ -691,7 +699,7 @@ activity...",
         )
         csv_record += (
             empty_record
-            if "metricsCount"
+            if not JSON_DETAIL or "metricsCount"
             not in JSON_DETAIL["com.garmin.activity.details.json.ActivityDetails"]
             else str(
                 JSON_DETAIL["com.garmin.activity.details.json.ActivityDetails"][
