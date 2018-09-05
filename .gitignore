@@ -1,3 +1,4 @@
 .DS_Store
 extras/
 *_garmin_connect_export/
+*.pyc
