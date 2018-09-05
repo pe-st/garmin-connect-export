@@ -123,7 +123,7 @@ def decoding_decider(data):
     if ARGS.format == "original":
         # An original file (ZIP file) is binary and not UTF-8 encoded
         data = data
-    else:
+    elif data:
         # GPX and TCX are textfiles and UTF-8 encoded
         data = data.decode()
 
