@@ -56,19 +56,12 @@ def test_csv_write_record():
         event_type_props = prop_2.read()
     event_type_name = load_properties(event_type_props)
 
-    parent_type_id = 4
-    type_id = 4
-    start_latitude = 46.7
-    start_longitude = 7.1
-    end_latitude = 46.8
-    end_longitude = 7.2
-    start_time_with_offset = offset_date_time("2018-03-08 12:23:22", "2018-03-08 11:23:22")
-    end_time_with_offset = offset_date_time("2018-03-08 12:23:22", "2018-03-08 12:23:22")
-    duration = 42.43
+    extract = {}
+    extract['start_time_with_offset'] = offset_date_time("2018-03-08 12:23:22", "2018-03-08 11:23:22")
+    extract['end_time_with_offset'] = offset_date_time("2018-03-08 12:23:22", "2018-03-08 12:23:22")
+    extract['duration'] = 42.43
 
     csv_file = StringIO()
     csv_filter = CsvFilter(csv_file, 'csv_header_default.properties')
-    csv_write_record(csv_filter, activities[0], details, type_id, parent_type_id, activity_type_name, event_type_name, device,
-                     start_time_with_offset, end_time_with_offset, duration, start_latitude, start_longitude,
-                     end_latitude, end_longitude)
+    csv_write_record(csv_filter, extract, activities[0], details, activity_type_name, event_type_name, device)
     assert csv_file.getvalue()[:20] == '"Biel 🏛 Pavillon"'
