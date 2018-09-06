@@ -99,7 +99,7 @@ OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_J
 
 def hhmmss_from_seconds(sec):
     """Helper function that converts seconds to HH:MM:SS time format."""
-    if isinstance(sec, (float)):
+    if isinstance(sec, (float)) or isinstance(sec, (int)):
         formatted_time = str(timedelta(seconds=int(sec))).zfill(8)
     else:
         formatted_time = "0.000"
@@ -524,13 +524,13 @@ activity...",
         csv_record += (
             empty_record
             if "elapsedDuration" not in JSON_SUMMARY["summaryDTO"]
-            else hhmmss_from_seconds(JSON_SUMMARY["summaryDTO"]["elapsedDuration"])
+            else hhmmss_from_seconds(round(JSON_SUMMARY["summaryDTO"]["elapsedDuration"]))
             + ","
         )
         csv_record += (
             empty_record
             if "movingDuration" not in JSON_SUMMARY["summaryDTO"]
-            else hhmmss_from_seconds(JSON_SUMMARY["summaryDTO"]["movingDuration"]) + ","
+            else hhmmss_from_seconds(round(JSON_SUMMARY["summaryDTO"]["movingDuration"])) + ","
         )
         csv_record += (
             empty_record
@@ -706,7 +706,7 @@ activity...",
                     "metricsCount"
                 ]
             )
-            + ","
+            # + ","
         )
         csv_record += "\n"
 
@@ -748,6 +748,6 @@ CSV_FILE.close()
 print("Open CSV output.")
 print(CSV_FILENAME)
 # open CSV file. Comment this line out if you don't want this behavior
-call(["/usr/bin/libreoffice6.1", "--calc", CSV_FILENAME])
+# call(["/usr/bin/libreoffice6.1", "--calc", CSV_FILENAME])
 
 print("Done!")
