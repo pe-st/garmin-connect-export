@@ -111,6 +111,7 @@ URL_GC_USERSTATS = 'https://connect.garmin.com/modern/proxy/userstats-service/st
 URL_GC_LIST = \
     'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
 URL_GC_ACTIVITY = 'https://connect.garmin.com/modern/proxy/activity-service/activity/'
+URL_GC_ACTIVITY_DETAIL = 'https://connect.garmin.com/modern/proxy/activity-service-1.3/json/activityDetails/'
 URL_GC_DEVICE = 'https://connect.garmin.com/modern/proxy/device-service/deviceservice/app-info/'
 URL_GC_ACT_PROPS = 'https://connect.garmin.com/modern/main/js/properties/activity_types/activity_types.properties'
 URL_GC_EVT_PROPS = 'https://connect.garmin.com/modern/main/js/properties/event_types/event_types.properties'
@@ -450,7 +451,7 @@ def csv_write_record(csv_filter, extract, a, details, activity_type_name, event_
     csv_filter.set_column('startLongitude', trunc6(start_longitude) if start_longitude else None)
     csv_filter.set_column('endLatitude', trunc6(end_latitude) if end_latitude else None)
     csv_filter.set_column('endLongitude', trunc6(end_longitude) if end_longitude else None)
-    #csv_record += '""'  # no Sample Count in JSON
+    csv_filter.set_column('sampleCount', str(extract['samples']['metricsCount']) if present('metricsCount', extract['samples']) else None)
 
     csv_filter.write_row()
 
@@ -706,6 +707,18 @@ def main(argv):
                     write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json', device_details, 'a')
                     device_dict[device_app_inst_id] = None if not device_details else json.loads(device_details)
                 device = device_dict[device_app_inst_id]
+
+            # try to get the JSON with all the samples (not all activities have it...)
+            try:
+                activity_measurements = http_req(URL_GC_ACTIVITY_DETAIL + str(a['activityId']))
+                write_to_file(args.directory + '/activity_' + str(a['activityId']) + '_samples.json', activity_measurements, 'w')
+                samples = json.loads(activity_measurements)
+                if present('com.garmin.activity.details.json.ActivityDetails', samples):
+                    extract['samples'] = samples['com.garmin.activity.details.json.ActivityDetails']
+                else:
+                    extract['samples'] = None
+            except Exception as e:
+                print('Unable to get samples for ' + str(a['activityId']))
 
             # Write stats to CSV.
             csv_write_record(csv_filter, extract, a, details, activity_type_name, event_type_name, device)
