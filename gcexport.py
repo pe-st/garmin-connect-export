@@ -53,9 +53,9 @@ PARENT_TYPE_ID = {
     3: 'hiking',
     4: 'other',
     9: 'walking',
-    17: 'any activity type',
+    17: 'any',
     26: 'swimming',
-    29: 'fitness equipment',
+    29: 'fitness_equipment',
     71: 'motorcycling',
     83: 'transition',
     144: 'diving',
@@ -392,8 +392,13 @@ def login_to_garmin_connect(args):
 
 def csv_write_record(csv_filter, extract, a, details, activity_type_name, event_type_name, device):
 
-    parent_type_id = 4 if absent_or_null('activityType', a) else a['activityType']['parentTypeId']
     type_id = 4 if absent_or_null('activityType', a) else a['activityType']['typeId']
+    parent_type_id = 4 if absent_or_null('activityType', a) else a['activityType']['parentTypeId']
+    if present(parent_type_id, PARENT_TYPE_ID):
+        parent_type_key = PARENT_TYPE_ID[parent_type_id]
+    else:
+        parent_type_key = None
+        print('Unknown parentType ' + str(parent_type_id) + ', please tell script author')
 
     # get some values from detail if present, from a otherwise
     start_latitude = from_activities_or_detail('startLatitude', a, details, 'summaryDTO')
@@ -407,6 +412,7 @@ def csv_write_record(csv_filter, extract, a, details, activity_type_name, event_
     csv_filter.set_column('description', a['description'].replace('"', '""') if present('description', a) else None)
     csv_filter.set_column('startTimeIso', extract['start_time_with_offset'].isoformat())
     csv_filter.set_column('startTime1123', extract['start_time_with_offset'].strftime(ALMOST_RFC_1123))
+    csv_filter.set_column('startTimeMillis', str(a['beginTimestamp']) if present('beginTimestamp', a) else None)
     csv_filter.set_column('startTimeRaw', details['summaryDTO']['startTimeLocal'] if present('startTimeLocal', details['summaryDTO']) else None)
     csv_filter.set_column('endTimeIso', extract['end_time_with_offset'].isoformat() if extract['end_time_with_offset'] else None)
     csv_filter.set_column('endTime1123', extract['end_time_with_offset'].strftime(ALMOST_RFC_1123) if extract['end_time_with_offset'] else None)
@@ -446,6 +452,7 @@ def csv_write_record(csv_filter, extract, a, details, activity_type_name, event_
     csv_filter.set_column('device', device['productDisplayName'].replace('"', '""') + ' ' + device['versionString'] if present('productDisplayName', device) else None)
     csv_filter.set_column('activityTypeKey', a['activityType']['typeKey'].title() if present('typeKey', a['activityType']) else None)
     csv_filter.set_column('activityType', value_if_found_else_key(activity_type_name, 'activity_type_' + a['activityType']['typeKey']) if present('activityType', a) else None)
+    csv_filter.set_column('activityParent', value_if_found_else_key(activity_type_name, 'activity_type_' + parent_type_key) if parent_type_key else None)
     csv_filter.set_column('eventTypeKey', a['eventType']['typeKey'].title() if present('typeKey', a['eventType']) else None)
     csv_filter.set_column('eventType', value_if_found_else_key(event_type_name, a['eventType']['typeKey']) if present('eventType', a) else None)
     csv_filter.set_column('tz', details['timeZoneUnitDTO']['timeZone'] if present('timeZone', details['timeZoneUnitDTO']) else None)
