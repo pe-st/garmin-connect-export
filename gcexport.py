@@ -37,7 +37,7 @@ import sys
 import urllib2
 import zipfile
 
-SCRIPT_VERSION = '2.0.3'
+SCRIPT_VERSION = '2.1.0'
 
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
@@ -729,6 +729,7 @@ def main(argv):
                 device = device_dict[device_app_inst_id]
 
             # try to get the JSON with all the samples (not all activities have it...)
+            # TODO implement retries here, I have observed temporary failures
             extract['samples'] = None
             try:
                 activity_measurements = http_req(URL_GC_ACTIVITY_DETAIL + str(a['activityId']))

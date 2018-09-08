@@ -48,6 +48,7 @@ You will need a little experience running things from the command line to use th
 usage: gcexport.py [-h] [--version] [--username [USERNAME]]
                    [--password [PASSWORD]] [-c [COUNT]]
                    [-f [{gpx,tcx,original,json}]] [-d [DIRECTORY]] [-u]
+                   [-t [TEMPLATE]]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -69,6 +70,8 @@ optional arguments:
                         DD_garmin_connect_export')
   -u, --unzip           if downloading ZIP files (format: 'original'), unzip
                         the file and removes the ZIP file
+  -t [TEMPLATE], --template [TEMPLATE]
+                        template file with desired columns for CSV output
 ```
 
 Examples:
@@ -84,9 +87,20 @@ Data
 ----
 This tool is not guaranteed to get all of your data, or even download it correctly. I have only tested it out on my account and it works fine, but different account settings or different data types could potentially cause problems. Also, because this is not an official feature of Garmin Connect, Garmin may very well make changes that break this utility (and they certainly have since I created this project).
 
-If you want to see all of the raw data that Garmin hands to this script, just choose the JSON export format (`-f json`); in this case only metadata is exported, no track data. I believe most everything that is useful has been included in the CSV file. You will notice some columns have been duplicated: one column geared towards display, and another column fit for number crunching (labeled with "Raw"). I hope this is most useful. Some information is missing, such as "Favorite" or "Avg Strokes."  This is available from the web interface, but is not included in data given to this script.
+If you want to see all of the raw data that Garmin hands to this script, just choose the JSON export format (`-f json`); in this case only metadata is exported, no track data.
 
-Also, be careful with speed data, because sometimes it is measured as a pace (minutes per kilometer) and sometimes it is measured as a speed (kilometer per hour).
+The format of the CSV export file can be customized with template files (in Properties format, see the `--template` option); two examples are included:
+
+- `csv_header_default.properties` (the default) gives you the same outpot as **@moderation**'s fork, mainly targeted at cycling
+- `csv_header_running.properties` gives you the an outpot similar as **@kjkjava**'s original script, mainly targeted at running
+
+You can easily create a template file for your needs, just copy one of the examples and change the appearing columns, their order and/or their title. For the list of available columns see the `csv_write_record` function in the script.
+
+Some important columns explained:
+
+- `raw` (e.g. `durationRaw`) columns usually give you unformatted data as provided by the Garmin API, other columns (e.g. `duration`) often format the data more readable
+- speed columns (e.g. `averageSpeedRaw` and `averageSpeedPace`): when there is `Pace` in the column name the value given is a speed (km/) or pace (minutes per kilometer) depending on the activity type (e.g. pace for running, hiking and walking activities, speed for other activities)
+- The elevation is either uncorrected or corrected, with a flag telling which. The current API doesn't provide both sets of elevations
 
 Garmin Connect API
 ------------------
@@ -117,10 +131,7 @@ Endpoints to get information about a specific activity:
 
 ### Limitations of Data Provided by Current Endpoints and Choices Made
 
-- The timezones provided are just the names (e.g. for Central European Time CET you can get either "Europe/Paris" or "(GMT+01:00) Central European Time"), but not the exact offset. Note that the "GMT+01:00" part of the name is hardcoded, so in summer (daylight savings time) Garmin Connect still uses +01:00 in the name even if the offset then is +02:00. To get the offset you need to calculate the difference between the startTimeLocal and the startTimeGMT. The current script writes the calculate offset into the CSV file.
-- The elevation is either uncorrected or corrected, with a flag telling which. The current endpoints don't provide both sets of elevations anymore (older endpoints did provide them both, but these endpoints don't work anymore)
-- The speed written to the CSV file is the speed in km/h for most activities and the pace (min/km) for pedestrial activities (running, walking, hiking). This is easy to change though.
-
+- The timezones provided are just the names (e.g. for Central European Time CET you can get either "Europe/Paris" or "(GMT+01:00) Central European Time"), but not the exact offset. Note that the "GMT+01:00" part of the name is hardcoded, so in summer (daylight savings time) Garmin Connect still uses +01:00 in the name even if the offset then is +02:00. To get the offset you need to calculate the difference between the startTimeLocal and the startTimeGMT.
 
 
 History
@@ -133,6 +144,21 @@ Forks and Branches section above).
 Contributions
 -------------
 Contributions are welcome, particularly if this script stops working with Garmin Connect. You may consider opening a GitHub Issue first. New features, however simple, are encouraged.
+
+Contributors as of 2018-09 (Hope I didn't forget anyone):
+
+- Kyle Krafka @kjkjava
+- Jochem Wichers Hoeth @jowiho
+- Andreas Loeffler @lefty01
+- @sclub
+- Yohann Coppel @yohcop
+- Michael Payne @moderation
+- Chris McCarty @cmccarty
+- Julien Rebetez @julienr
+- Peter Steiner @pe-st
+- Jens Diemer @jedie
+- Christian Moelders @chmoelders
+
 
 License
 -------
