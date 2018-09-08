@@ -72,7 +72,7 @@ LIMIT_MAXIMUM = 1000
 
 MAX_TRIES = 3
 
-CSV_TEMPLATE = "csv_header_default.properties"
+CSV_TEMPLATE = "csv_header_running.properties"
 
 WEBHOST = "https://connect.garmin.com"
 REDIRECT = "https://connect.garmin.com/post-auth/login"
