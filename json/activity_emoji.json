@@ -1,0 +1,153 @@
+{
+  "activityId": 2958378924,
+  "activityName": "Biel 🏛 Pavillon",
+  "userProfileId": 2836200,
+  "isMultiSportParent": false,
+  "activityTypeDTO": {
+    "typeId": 1,
+    "typeKey": "running",
+    "parentTypeId": 17,
+    "sortOrder": 3
+  },
+  "eventTypeDTO": {
+    "typeId": 9,
+    "typeKey": "uncategorized",
+    "sortOrder": 10
+  },
+  "accessControlRuleDTO": {
+    "typeId": 3,
+    "typeKey": "subscribers"
+  },
+  "timeZoneUnitDTO": {
+    "unitId": 124,
+    "unitKey": "Europe/Paris",
+    "factor": 0.0,
+    "timeZone": "Europe/Paris"
+  },
+  "metadataDTO": {
+    "isOriginal": true,
+    "deviceApplicationInstallationId": 856399,
+    "agentApplicationInstallationId": null,
+    "agentString": null,
+    "fileFormat": {
+      "formatId": 7,
+      "formatKey": "fit"
+    },
+    "associatedCourseId": null,
+    "lastUpdateDate": "2018-08-24T05:54:31.0",
+    "uploadedDate": "2018-08-24T05:38:55.0",
+    "videoUrl": null,
+    "hasPolyline": true,
+    "hasChartData": true,
+    "hasHrTimeInZones": true,
+    "hasPowerTimeInZones": false,
+    "userInfoDto": {
+      "userProfilePk": 2836200,
+      "displayname": "eschep",
+      "fullname": "Peter Steiner",
+      "profileImageUrlLarge": null,
+      "profileImageUrlMedium": "https://s3.amazonaws.com/garmin-connect-prod/profile_images/1a8b37ca-2cd1-47bf-a191-9326dd26949f-2836200.png",
+      "profileImageUrlSmall": "https://s3.amazonaws.com/garmin-connect-prod/profile_images/c957e6a9-adb2-4cdb-8105-bf0739323504-2836200.png",
+      "userPro": false
+    },
+    "chartAvailability": {
+      "showAirTemperature": true,
+      "showDistance": true,
+      "showDuration": true,
+      "showElevation": true,
+      "showHeartRate": true,
+      "showMovingDuration": true,
+      "showMovingSpeed": true,
+      "showRunCadence": true,
+      "showSpeed": true,
+      "showTimestamp": true
+    },
+    "childIds": [],
+    "sensors": [
+      {
+        "sku": "006-B2697-00",
+        "sourceType": "LOCAL",
+        "softwareVersion": 10.0
+      },
+      {
+        "sku": "006-B2697-00",
+        "sourceType": "LOCAL",
+        "localDeviceType": "BAROMETER",
+        "softwareVersion": 10.0
+      },
+      {
+        "sku": "006-B1621-00",
+        "sourceType": "LOCAL",
+        "localDeviceType": "GPS",
+        "softwareVersion": 4.4
+      },
+      {
+        "sourceType": "LOCAL",
+        "localDeviceType": "ACCELEROMETER",
+        "softwareVersion": 0.0
+      },
+      {
+        "sku": "006-B0000-00",
+        "sourceType": "LOCAL",
+        "localDeviceType": "BLUETOOTH_LOW_ENERGY_CHIPSET",
+        "softwareVersion": 606.72
+      },
+      {
+        "sourceType": "LOCAL",
+        "localDeviceType": "WHR",
+        "softwareVersion": 3.31
+      }
+    ],
+    "activityImages": [],
+    "manufacturer": "GARMIN",
+    "diveNumber": null,
+    "lapCount": 5,
+    "associatedWorkoutId": null,
+    "isAtpActivity": null,
+    "deviceMetaDataDTO": {
+      "deviceId": "3946806421",
+      "deviceTypePk": 34236,
+      "deviceVersionPk": 856399
+    },
+    "gcj02": false,
+    "autoCalcCalories": false,
+    "elevationCorrected": false,
+    "favorite": false,
+    "manualActivity": false,
+    "personalRecord": false
+  },
+  "summaryDTO": {
+    "startTimeLocal": "2018-08-24T12:01:50.0",
+    "startTimeGMT": "2018-08-24T10:01:50.0",
+    "startLatitude": 47.13532981462777,
+    "startLongitude": 7.243065973743796,
+    "distance": 4146.45,
+    "duration": 2147.244,
+    "movingDuration": 1844.0,
+    "elapsedDuration": 2147.244,
+    "elevationGain": 101.0,
+    "elevationLoss": 99.0,
+    "maxElevation": 545.6,
+    "minElevation": 444.2,
+    "averageSpeed": 1.9309999942779543,
+    "averageMovingSpeed": 2.2486172425772777,
+    "maxSpeed": 3.6579999923706055,
+    "calories": 357.0388685495535,
+    "averageHR": 132.0,
+    "maxHR": 160.0,
+    "averageRunCadence": 124.03125,
+    "maxRunCadence": 187.0,
+    "averageTemperature": 26.007921714818266,
+    "maxTemperature": 29.0,
+    "minTemperature": 24.0,
+    "strideLength": 92.05550090389445,
+    "trainingEffect": 2.4000000953674316,
+    "anaerobicTrainingEffect": 0.10000000149011612,
+    "aerobicTrainingEffectMessage": "MAINTAINING_AEROBIC_FITNESS_1",
+    "anaerobicTrainingEffectMessage": "NO_ANAEROBIC_BENEFIT_0",
+    "endLatitude": 47.133489567786455,
+    "endLongitude": 7.231966909021139,
+    "maxVerticalSpeed": 0.600006103515625
+  },
+  "locationName": "Biel/Bienne"
+}

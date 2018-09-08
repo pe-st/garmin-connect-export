@@ -1,0 +1,26 @@
+{
+  "userProfileId": 2836200,
+  "statisticsStartDate": null,
+  "statisticsEndDate": null,
+  "userMetrics": [
+    {
+      "activityType": {
+        "typeId": 17,
+        "typeKey": "all",
+        "parentTypeId": 0,
+        "sortOrder": 1
+      },
+      "parentActivityType": {
+        "typeId": 17,
+        "typeKey": "all",
+        "parentTypeId": 0,
+        "sortOrder": 1
+      },
+      "totalActivities": 1028,
+      "totalDistance": 123.9,
+      "totalDuration": 123.724,
+      "totalCalories": 123.0,
+      "totalElevationGain": 123.51
+    }
+  ]
+}

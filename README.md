@@ -3,6 +3,35 @@ garmin-connect-export
 
 Download a copy of your Garmin Connect data, including stats and GPX tracks.
 
+Note that Garmin introduced recently (around May 2018, for GDPR compatibility) a possibility to [download all of your Garmin Connect data](https://www.garmin.com/en-US/account/datamanagement/exportdata/) in one zip file. Depending on your needs this might be enough, but the script here offers additional features like getting GPX tracks instead of the original upload format or limiting the export to just a couple of activities.
+
+Forks and Branches
+------------------
+Before going into the details of this script itself, some meta information.
+
+There exist many [forks](https://help.github.com/articles/fork-a-repo/) of this script repository:
+
+- [pe-st]()
+  This is my (**pe-st**) repository, the one you're looking at (or the source of the copy you're looking at)
+- [kjkjava](https://github.com/kjkjava/garmin-connect-export)
+  The original repo (mother repo) of my (**pe-st**) repo. It seems not maintained anymore (last commit in 2015, see also: [pr#42](https://github.com/kjkjava/garmin-connect-export/pull/42) and [issues#46](https://github.com/kjkjava/garmin-connect-export/issues/46))
+- [moderation](https://github.com/moderation/garmin-connect-export)
+  After some inactivity of the **@kjkjava** repo, **@moderation** made some corrections in his own fork to have a working script again. His fork is primarily designed for his use which is cycling, while mine (**pe-st**) is running.
+  In March 2018 I integrated **@moderation**'s work into my own repo, so logically **@moderation** is now the
+  father repo of my repo. In April 2018 **@moderation** migrated his script to Python 3. Unfortunately
+  **@moderation**'s script [didn't work for me for a couple of months](https://github.com/moderation/garmin-connect-export/issues/11),
+  probably because of different Garmin Connect REST endpoints (URLs).
+
+These are the most important [branches](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging) in **pe-st**'s repo:
+
+- [develop](https://github.com/pe-st/garmin-connect-export)
+  The default branch. This is where my tinkering happens, and always contains the lastest version of `gcexport.py`
+- [master](https://github.com/pe-st/garmin-connect-export/tree/master)
+  Copy of the master branch of **@moderation**'s repo, kept for reference and comparison purposes
+- [revert-csv-to-kjkjava](https://github.com/pe-st/garmin-connect-export/tree/feature/revert-csv-to-kjkjava)
+  Backport of **@moderation**'s and my changes to the original repo, using the original CSV format ([PR 42](https://github.com/kjkjava/garmin-connect-export/pull/42))
+
+
 Description
 -----------
 This script will backup your personal Garmin Connect data. All downloaded data will go into a directory called `YYYY-MM-DD_garmin_connect_export/` in the current working directory. Activity records and details will go into a CSV file called `activities.csv`. GPX files (or whatever format you specify) containing track data, activity title, and activity descriptions are saved as well, using the Activity ID.
@@ -16,16 +45,16 @@ Usage
 You will need a little experience running things from the command line to use this script. That said, here are the usage details from the `--help` flag:
 
 ```
-usage: gcexport3.py [-h] [--version] [--username [USERNAME]]
+usage: gcexport.py [-h] [--version] [--username [USERNAME]]
                    [--password [PASSWORD]] [-c [COUNT]]
-                   [-f [{gpx,tcx,original}]] [-d [DIRECTORY]] [-u]
+                   [-f [{gpx,tcx,original,json}]] [-d [DIRECTORY]] [-u]
 
 optional arguments:
   -h, --help            show this help message and exit
   --version             print version and exit
   --username [USERNAME]
-                        your Garmin Connect username (otherwise, you will be
-                        prompted)
+                        your Garmin Connect username or email address
+                        (otherwise, you will be prompted)
   --password [PASSWORD]
                         your Garmin Connect password (otherwise, you will be
                         prompted)
@@ -33,9 +62,8 @@ optional arguments:
                         number of recent activities to download, or 'all'
                         (default: 1)
   -f [{gpx,tcx,original,json}], --format [{gpx,tcx,original,json}]
-                        export format; can be 'gpx', 'tcx', 'original' or 'json'
-                        When using `json`, only the activity's metadata is exported.
-                        (default: 'gpx')
+                        export format; can be 'gpx', 'tcx', 'original' or
+                        'json' (default: 'gpx')
   -d [DIRECTORY], --directory [DIRECTORY]
                         the directory to export to (default: './YYYY-MM-
                         DD_garmin_connect_export')
@@ -44,11 +72,11 @@ optional arguments:
 ```
 
 Examples:
-`python gcexport3.py --count all` will download all of your data to a dated directory.
+`python gcexport.py --count all` will download all of your data to a dated directory.
 
-`python gcexport3.py -d ~/MyActivities -c 3 -f original -u --username bobbyjoe --password bestpasswordever1` will download your three most recent activities in the FIT file format (or whatever they were uploaded as) into the `~/MyActivities` directory (unless they already exist). Using the `--username` and `--password` flags are not recommended because your password will be stored in your command line history. Instead, omit them to be prompted (and note that nothing will be displayed when you type your password).
+`python gcexport.py -d ~/MyActivities -c 3 -f original -u --username bobbyjoe --password bestpasswordever1` will download your three most recent activities in the FIT file format (or whatever they were uploaded as) into the `~/MyActivities` directory (unless they already exist). Using the `--password` flags is not recommended because your password will be stored in your command line history. Instead, omit it to be prompted (and note that nothing will be displayed when you type your password). Equally you might not want to have the username stored in your command line history; in this case avoid also to give the `--username` option, and you'll be prompted for it. Note also that depending on the age of your garmin account your username is the email address (I myself still can login both with username and email address, but I've had a report that for some users the email address is mandatory to login).
 
-Alternatively, you may run it with `./gcexport3.py` if you set the file as executable (i.e., `chmod u+x gcexport3.py`).
+Alternatively, you may run it with `./gcexport.py` if you set the file as executable (i.e., `chmod u+x gcexport.py`).
 
 Of course, you must have Python installed to run this. Most Mac and Linux users should already have it. Also, as stated above, you should have some basic command line experience.
 
@@ -56,9 +84,9 @@ Data
 ----
 This tool is not guaranteed to get all of your data, or even download it correctly. I have only tested it out on my account and it works fine, but different account settings or different data types could potentially cause problems. Also, because this is not an official feature of Garmin Connect, Garmin may very well make changes that break this utility (and they certainly have since I created this project).
 
-If you want to see all of the raw data that Garmin hands to this script, just print out the contents of the `json_results` variable. I believe most everything that is useful has been included in the CSV file. You will notice some columns have been duplicated: one column geared towards display, and another column fit for number crunching (labeled with "Raw"). I hope this is most useful. Some information is missing, such as "Favorite" or "Avg Strokes."  This is available from the web interface, but is not included in data given to this script.
+If you want to see all of the raw data that Garmin hands to this script, just choose the JSON export format (`-f json`); in this case only metadata is exported, no track data. I believe most everything that is useful has been included in the CSV file. You will notice some columns have been duplicated: one column geared towards display, and another column fit for number crunching (labeled with "Raw"). I hope this is most useful. Some information is missing, such as "Favorite" or "Avg Strokes."  This is available from the web interface, but is not included in data given to this script.
 
-Also, be careful with speed data, because sometimes it is measured as a pace (minutes per mile) and sometimes it is measured as a speed (miles per hour).
+Also, be careful with speed data, because sometimes it is measured as a pace (minutes per kilometer) and sometimes it is measured as a speed (kilometer per hour).
 
 Garmin Connect API
 ------------------
@@ -68,16 +96,24 @@ This script is for personal use only. It simulates a standard user session (i.e.
 
 As this script doesn't use the paid API, the endpoints to use are known by reverse engineering browser sessions. And as the Garmin Connect website changes over time, chances are that this script gets broken.
 
-Small history of the endpoint used by `gcexport3.py` to get a list of activities:
+Small history of the endpoints used by `gcexport.py` to get a list of activities:
 
 - [activity-search-service-1.0](https://connect.garmin.com/proxy/activity-search-service-1.0/json/activities): initial endpoint used since 2015, worked at least until January 2018
-- [activity-search-service-1.2](https://connect.garmin.com/proxy/activity-search-service-1.2/json/activities): endpoint introduced in `gcexport.py` in August 2016. In March 2018 this still works, but doesn't allow you to fetch more than 20 activities, even split over multiple calls (when doing three consecutive calls with 1,19,19 as `limit` parameter, the third one fails with HTTP error 500). The JSON returned by this endpoint however is quite rich (see example in the `json` folder).
+- [activity-search-service-1.2](https://connect.garmin.com/proxy/activity-search-service-1.2/json/activities): endpoint introduced in `gcexport.py` in August 2016. In March 2018 this still works, but doesn't allow you to fetch more than 20 activities, even split over multiple calls (when doing three consecutive calls with 1,19,19 as `limit` parameter, the third one fails with HTTP error 500).
+  In August 2018 it stopped working altogether. The JSON returned by this endpoint however was quite rich (see example `activity-search-service-1.2.json` in the `json` folder).
+- [Profile page](https://connect.garmin.com/modern/profile) and
+  [User Stats page](https://connect.garmin.com/modern/proxy/userstats-service/statistics/user_name) were introduced in August 2018 when activity-search-service-1.2 stopped working. Their purpose in this script is solely to get the number of activities which I didn't find elsewhere.
 - [activitylist-service](https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities): endpoint introduced in `gcexport.py` in March 2018. The JSON returned by this endpoint is very different from the activity-search-service-1.2 one (also here see the example in the `json` folder), e.g.
     - it is concise and offers no redundant information (e.g. only speed, not speed and pace)
     - the units are not explicitly given and must be deducted (e.g. the speed unit is m/s)
     - there is less information, e.g. there is only one set of elevation values (not both corrected and uncorrected), and other values like minimum heart rate are missing.
     - some other information is available only as an ID (e.g. `timeZoneId` or `deviceId`), and more complete information
       is available by further REST calls (one for each activity and additional ones for device information)
+
+Endpoints to get information about a specific activity:
+
+- [activity-service](https://connect.garmin.com/modern/proxy/activity-service/activity/nnnn): A kind of summary of the activity, most values are present in their canonical format.
+- [activity-service-1.3 details](https://connect.garmin.com/modern/proxy/activity-service-1.3/json/activityDetails/nnnn): A detailed list of measurements, with a list of the metrics available for each measurement.
 
 ### Limitations of Data Provided by Current Endpoints and Choices Made
 
@@ -89,9 +125,10 @@ Small history of the endpoint used by `gcexport3.py` to get a list of activities
 
 History
 -------
-The original project was written in PHP (formerly in the `old` directory, now deleted), based on "Garmin Connect export to Dailymile" code at http://www.ciscomonkey.net/gc-to-dm-export/ (link has been down for a while). It no longer works due to the way Garmin handles logins. It could be updated, but I decided to rewrite everything in Python for the latest version.
+The original project was written in PHP (formerly in the `old` directory, now deleted), based on "Garmin Connect export to Dailymile" code at http://www.ciscomonkey.net/gc-to-dm-export/ (link has been down for a while). It no longer works due to the way Garmin handles logins. It could be updated, but I (**kjkjava**) decided to rewrite everything in Python for the latest version.
 
-@moderation forked the original from @kjkjava when the various endpoints stopped working and the original repo wasn't been updated. This fork is primarily designed for my use which is cycling. It has not well been tested against other activity types. In the latest updates (April 2018) I've deprecated the Python 2 version (renamed to gcexport2.py) and this script now requires Python 3. The code has been linted using [pylint3](https://packages.debian.org/sid/pylint3).
+After 2015, when the original repo stopped being maintained, several forks from **kjkjava** started appearing (see
+Forks and Branches section above).
 
 Contributions
 -------------
@@ -99,7 +136,7 @@ Contributions are welcome, particularly if this script stops working with Garmin
 
 License
 -------
-[MIT](https://github.com/kjkjava/garmin-connect-export/blob/master/LICENSE) &copy; 2015 Kyle Krafka
+[MIT](https://github.com/pe-st/garmin-connect-export/blob/master/LICENSE) &copy; 2015 Kyle Krafka and contributors
 
 Thank You
 ---------
