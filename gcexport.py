@@ -408,7 +408,7 @@ def csv_write_record(csv_filter, extract, a, details, activity_type_name, event_
 
     csv_filter.set_column('id', str(a['activityId']))
     csv_filter.set_column('url', 'https://connect.garmin.com/modern/activity/' + str(a['activityId']))
-    csv_filter.set_column('activityName', a['activityName'].replace('"', '""') if present('activityName', a) else None)
+    csv_filter.set_column('activityName', a['activityName'].replace('"', '""') if present('activityName', a) else 'Untitled')
     csv_filter.set_column('description', a['description'].replace('"', '""') if present('description', a) else None)
     csv_filter.set_column('startTimeIso', extract['start_time_with_offset'].isoformat())
     csv_filter.set_column('startTime1123', extract['start_time_with_offset'].strftime(ALMOST_RFC_1123))
@@ -458,7 +458,7 @@ def csv_write_record(csv_filter, extract, a, details, activity_type_name, event_
     csv_filter.set_column('averageTemperature', str(details['summaryDTO']['averageTemperature']) if present('averageTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('minTemperature', str(details['summaryDTO']['minTemperature']) if present('minTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('maxTemperature', str(details['summaryDTO']['maxTemperature']) if present('maxTemperature', details['summaryDTO']) else None)
-    csv_filter.set_column('device', device['productDisplayName'].replace('"', '""') + ' ' + device['versionString'] if present('productDisplayName', device) else None)
+    csv_filter.set_column('device', device['productDisplayName'].replace('"', '""') + ' ' + device['versionString'] if present('productDisplayName', device) else 'Unknown 0.0.0.0')
     csv_filter.set_column('activityTypeKey', a['activityType']['typeKey'].title() if present('typeKey', a['activityType']) else None)
     csv_filter.set_column('activityType', value_if_found_else_key(activity_type_name, 'activity_type_' + a['activityType']['typeKey']) if present('activityType', a) else None)
     csv_filter.set_column('activityParent', value_if_found_else_key(activity_type_name, 'activity_type_' + parent_type_key) if parent_type_key else None)
