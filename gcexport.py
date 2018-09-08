@@ -125,7 +125,7 @@ URL_GC_ORIGINAL_ACTIVITY = 'http://connect.garmin.com/proxy/download-service/fil
 
 def hhmmss_from_seconds(sec):
     """Helper function that converts seconds to HH:MM:SS time format."""
-    if isinstance(sec, (float)):
+    if isinstance(sec, (float)) or isinstance(sec, (int)):
         formatted_time = str(timedelta(seconds=int(sec))).zfill(8)
     else:
         formatted_time = "0.000"
@@ -416,15 +416,23 @@ def csv_write_record(csv_filter, extract, a, details, activity_type_name, event_
     csv_filter.set_column('startTimeRaw', details['summaryDTO']['startTimeLocal'] if present('startTimeLocal', details['summaryDTO']) else None)
     csv_filter.set_column('endTimeIso', extract['end_time_with_offset'].isoformat() if extract['end_time_with_offset'] else None)
     csv_filter.set_column('endTime1123', extract['end_time_with_offset'].strftime(ALMOST_RFC_1123) if extract['end_time_with_offset'] else None)
-    csv_filter.set_column('duration', hhmmss_from_seconds(round(extract['duration'])) if extract['duration'] else None)
+    csv_filter.set_column('endTimeMillis', str(a['beginTimestamp']+extract['elapsed_seconds']*1000) if present('beginTimestamp', a) else None)
+    csv_filter.set_column('durationRaw', str(a['duration']) if present('duration', a) else None)
+    csv_filter.set_column('duration', hhmmss_from_seconds(a['duration']) if present('duration', a) else None)
+    csv_filter.set_column('elapsedDurationRaw', str(round(extract['elapsed_duration'], 3)) if extract['elapsed_duration'] else None)
+    csv_filter.set_column('elapsedDuration', hhmmss_from_seconds(round(extract['elapsed_duration'])) if extract['elapsed_duration'] else None)
+    csv_filter.set_column('movingDurationRaw', str(details['summaryDTO']['movingDuration']) if present('movingDuration', details['summaryDTO']) else None)
     csv_filter.set_column('movingDuration', hhmmss_from_seconds(details['summaryDTO']['movingDuration']) if present('movingDuration', details['summaryDTO']) else None)
     csv_filter.set_column('distanceRaw', "{0:.5f}".format(a['distance'] / 1000) if present('distance', a) else None)
     csv_filter.set_column('averageSpeedRaw', kmh_from_mps(details['summaryDTO']['averageSpeed']) if present('averageSpeed', details['summaryDTO']) else None)
-    csv_filter.set_column('averageSpeedPace', trunc6(pace_or_speed_raw(type_id, parent_type_id, a['averageSpeed'])) if present('averageSpeed', a) else None)
+    csv_filter.set_column('averageSpeedPaceRaw', trunc6(pace_or_speed_raw(type_id, parent_type_id, a['averageSpeed'])) if present('averageSpeed', a) else None)
+    csv_filter.set_column('averageSpeedPace', pace_or_speed_formatted(type_id, parent_type_id, a['averageSpeed']) if present('averageSpeed', a) else None)
     csv_filter.set_column('averageMovingSpeedRaw', kmh_from_mps(details['summaryDTO']['averageMovingSpeed']) if present('averageMovingSpeed', details['summaryDTO']) else None)
-    csv_filter.set_column('averageMovingSpeedPace', trunc6(pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['averageMovingSpeed'])) if present('averageMovingSpeed', details['summaryDTO']) else None)
+    csv_filter.set_column('averageMovingSpeedPaceRaw', trunc6(pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['averageMovingSpeed'])) if present('averageMovingSpeed', details['summaryDTO']) else None)
+    csv_filter.set_column('averageMovingSpeedPace', pace_or_speed_formatted(type_id, parent_type_id, details['summaryDTO']['averageMovingSpeed']) if present('averageMovingSpeed', details['summaryDTO']) else None)
     csv_filter.set_column('maxSpeedRaw', kmh_from_mps(details['summaryDTO']['maxSpeed']) if present('maxSpeed', details['summaryDTO']) else None)
-    csv_filter.set_column('maxSpeedPace', trunc6(pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['maxSpeed'])) if present('maxSpeed', details['summaryDTO']) else None)
+    csv_filter.set_column('maxSpeedPaceRaw', trunc6(pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['maxSpeed'])) if present('maxSpeed', details['summaryDTO']) else None)
+    csv_filter.set_column('maxSpeedPace', pace_or_speed_formatted(type_id, parent_type_id, details['summaryDTO']['maxSpeed']) if present('maxSpeed', details['summaryDTO']) else None)
     csv_filter.set_column('elevationLoss', str(round(details['summaryDTO']['elevationLoss'], 2)) if present('elevationLoss', details['summaryDTO']) else None)
     csv_filter.set_column('elevationLossUncorr', str(round(details['summaryDTO']['elevationLoss'], 2)) if not a['elevationCorrected'] and present('elevationLoss', details['summaryDTO']) else None)
     csv_filter.set_column('elevationLossCorr', str(round(details['summaryDTO']['elevationLoss'], 2)) if a['elevationCorrected'] and present('elevationLoss', details['summaryDTO']) else None)
@@ -443,6 +451,7 @@ def csv_write_record(csv_filter, extract, a, details, activity_type_name, event_
     csv_filter.set_column('averageHRRaw', str(details['summaryDTO']['averageHR']) if present('averageHR', details['summaryDTO']) else None)
     csv_filter.set_column('averageHR', "{0:.0f}".format(a['averageHR']) if present('averageHR', a) else None)
     csv_filter.set_column('caloriesRaw', str(details['summaryDTO']['calories']) if present('calories', details['summaryDTO']) else None)
+    csv_filter.set_column('calories', "{0:.0f}".format(details['summaryDTO']['calories']) if present('calories', details['summaryDTO']) else None)
     csv_filter.set_column('averageCadence', str(a['averageBikingCadenceInRevPerMinute']) if present('averageBikingCadenceInRevPerMinute', a) else None)
     csv_filter.set_column('maxCadence', str(a['maxBikingCadenceInRevPerMinute']) if present('maxBikingCadenceInRevPerMinute', a) else None)
     csv_filter.set_column('strokes', str(a['strokes']) if present('strokes', a) else None)
@@ -697,15 +706,12 @@ def main(argv):
             extract = {}
             extract['start_time_with_offset'] = offset_date_time(a['startTimeLocal'], a['startTimeGMT'])
             elapsed_duration = details['summaryDTO']['elapsedDuration'] if 'summaryDTO' in details and 'elapsedDuration' in details['summaryDTO'] else None
-            extract['duration'] = elapsed_duration if elapsed_duration else a['duration']
-            duration_seconds = int(round(extract['duration']))
-            extract['end_time_with_offset'] = extract['start_time_with_offset'] + timedelta(seconds=duration_seconds) if extract['duration'] else None
+            extract['elapsed_duration'] = elapsed_duration if elapsed_duration else a['duration']
+            extract['elapsed_seconds'] = int(round(extract['elapsed_duration']))
+            extract['end_time_with_offset'] = extract['start_time_with_offset'] + timedelta(seconds=extract['elapsed_seconds'])
 
             print('\t' + extract['start_time_with_offset'].isoformat() + ', ', end='')
-            if 'duration' in a:
-                print(hhmmss_from_seconds(a['duration']) + ', ', end='')
-            else:
-                print('??:??:??, ', end='')
+            print(hhmmss_from_seconds(extract['elapsed_seconds']) + ', ', end='')
             if 'distance' in a and isinstance(a['distance'], (float)):
                 print("{0:.3f}".format(a['distance'] / 1000) + 'km')
             else:
@@ -723,14 +729,13 @@ def main(argv):
                 device = device_dict[device_app_inst_id]
 
             # try to get the JSON with all the samples (not all activities have it...)
+            extract['samples'] = None
             try:
                 activity_measurements = http_req(URL_GC_ACTIVITY_DETAIL + str(a['activityId']))
                 write_to_file(args.directory + '/activity_' + str(a['activityId']) + '_samples.json', activity_measurements, 'w')
                 samples = json.loads(activity_measurements)
                 if present('com.garmin.activity.details.json.ActivityDetails', samples):
                     extract['samples'] = samples['com.garmin.activity.details.json.ActivityDetails']
-                else:
-                    extract['samples'] = None
             except Exception as e:
                 print('Unable to get samples for ' + str(a['activityId']))
 

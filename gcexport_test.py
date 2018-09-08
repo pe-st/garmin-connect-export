@@ -66,7 +66,9 @@ def test_csv_write_record():
     extract = {}
     extract['start_time_with_offset'] = offset_date_time("2018-03-08 12:23:22", "2018-03-08 11:23:22")
     extract['end_time_with_offset'] = offset_date_time("2018-03-08 12:23:22", "2018-03-08 12:23:22")
-    extract['duration'] = 42.43
+    extract['elapsed_duration'] = 42.43
+    extract['elapsed_seconds'] = 42
+    extract['samples'] = None
 
     csv_file = StringIO()
     csv_filter = CsvFilter(csv_file, 'csv_header_default.properties')
