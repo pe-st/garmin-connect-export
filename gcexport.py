@@ -146,14 +146,15 @@ def write_to_file(filename, content, mode):
 
 
 # url is a string, post is a dictionary of POST parameters, headers is a dictionary of headers.
-def http_req(url, post=None, headers={}):
+def http_req(url, post=None, headers=None):
     """Helper function that makes the HTTP requests."""
     request = urllib2.Request(url)
     # Tell Garmin we're some supported browser.
     request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, \
         like Gecko) Chrome/54.0.2816.0 Safari/537.36')
-    for header_key, header_value in headers.iteritems():
-        request.add_header(header_key, header_value)
+    if headers:
+        for header_key, header_value in headers.iteritems():
+            request.add_header(header_key, header_value)
     if post:
         # print "POSTING"
         post = urlencode(post)  # Convert dictionary to POST parameter string.
@@ -180,7 +181,7 @@ def http_req(url, post=None, headers={}):
 
 
 # idea stolen from https://stackoverflow.com/a/31852401/3686
-def load_properties(multiline, sep='=', comment_char='#', keys=[]):
+def load_properties(multiline, sep='=', comment_char='#', keys=None):
     """
     Read a multiline string of properties (key/value pair separated by *sep*) into a dict
 
@@ -198,7 +199,8 @@ def load_properties(multiline, sep='=', comment_char='#', keys=[]):
             key = key_value[0].strip()
             value = sep.join(key_value[1:]).strip().strip('"')
             props[key] = value
-            keys.append(key)
+            if keys:
+                keys.append(key)
     return props
 
 
@@ -763,7 +765,7 @@ def main(argv):
                 samples = json.loads(activity_measurements)
                 if present('com.garmin.activity.details.json.ActivityDetails', samples):
                     extract['samples'] = samples['com.garmin.activity.details.json.ActivityDetails']
-            except Exception as e:
+            except urllib2.HTTPError:
                 logging.info("Unable to get samples for %d", a['activityId'])
                 # logging.exception(e)
 
