@@ -44,14 +44,12 @@ PARSER = argparse.ArgumentParser()
 PARSER.add_argument("--version", help="print version and exit", action="store_true")
 PARSER.add_argument(
     "--username",
-    help="your Garmin Connect username (otherwise, you will be \
-    prompted)",
+    help="your Garmin Connect username (otherwise, you will be prompted)",
     nargs="?",
 )
 PARSER.add_argument(
     "--password",
-    help="your Garmin Connect password (otherwise, you will be \
-    prompted)",
+    help="your Garmin Connect password (otherwise, you will be prompted)",
     nargs="?",
 )
 PARSER.add_argument(
@@ -59,8 +57,21 @@ PARSER.add_argument(
     "--count",
     nargs="?",
     default="1",
-    help="number of recent activities to \
-    download, or 'all' (default: 1)",
+    help="number of recent activities to download, or 'all' (default: 1)",
+)
+PARSER.add_argument(
+    "-e",
+    "--external",
+    nargs="?",
+    default="",
+    help="path to external program to pass CSV file too (default: )",
+)
+PARSER.add_argument(
+    "-a",
+    "--args",
+    nargs="?",
+    default="",
+    help="additional arguments to pass to external program (default: )",
 )
 PARSER.add_argument(
     "-f",
@@ -75,14 +86,12 @@ PARSER.add_argument(
     "--directory",
     nargs="?",
     default=ACTIVITIES_DIRECTORY,
-    help="the \
-    directory to export to (default: './YYYY-MM-DD_garmin_connect_export')",
+    help="the directory to export to (default: './YYYY-MM-DD_garmin_connect_export')",
 )
 PARSER.add_argument(
     "-u",
     "--unzip",
-    help="if downloading ZIP files (format: 'original'), unzip \
-    the file and removes the ZIP file",
+    help="if downloading ZIP files (format: 'original'), unzip the file and removes the ZIP file",
     action="store_true",
 )
 
@@ -737,9 +746,10 @@ activity...",
 
 CSV_FILE.close()
 
-print("Open CSV output.")
-print(CSV_FILENAME)
-# open CSV file. Comment this line out if you don't want this behavior
-call(["/usr/bin/libreoffice6.1", "--calc", CSV_FILENAME])
+if len(ARGS.external):
+    print("Open CSV output.")
+    print(CSV_FILENAME)
+    # open CSV file. Comment this line out if you don't want this behavior
+    call([ARGS.external, "--" + ARGS.args, CSV_FILENAME])
 
 print("Done!")
