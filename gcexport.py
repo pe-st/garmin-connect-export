@@ -32,6 +32,7 @@ import argparse
 import cookielib
 import csv
 import json
+import logging
 import re
 import sys
 import urllib2
@@ -161,14 +162,15 @@ def http_req(url, post=None, headers={}):
     # print(post)
     # print(request)
     response = OPENER.open(request, data=post)  # This line may throw a urllib2.HTTPError.
+    logging.debug('Got %s from %s', response.getcode(), url)
 
     # N.B. urllib2 will follow any 302 redirects. Also, the "open" call above may throw a
     # urllib2.HTTPError which is checked for below.
     # print(response.getcode())
     if response.getcode() == 204:
-        # For activities without GPS coordinates, there is no GPX download (204 = no content).
+        # 204 = no content, e.g. for activities without GPS coordinates there is no GPX download.
         # Write an empty file to prevent redownloading it.
-        print('Writing empty file since there was no GPX activity data...')
+        logging.info('Got 204 for %s, returning empty response', url)
         return ''
     elif response.getcode() != 200:
         raise Exception('Bad return code (' + str(response.getcode()) + ') for: ' + url)
@@ -363,12 +365,13 @@ def login_to_garmin_connect(args):
     username = args.username if args.username else raw_input('Username: ')
     password = args.password if args.password else getpass()
 
-    print(urlencode(DATA))
+    logging.debug("Login params: %s", urlencode(DATA))
 
     # Initially, we need to get a valid session cookie, so we pull the login page.
-    print('Request login page')
+    print('Connecting to Garmin Connect...', end='')
+    logging.info('Connecting to %s', URL_GC_LOGIN)
     http_req(URL_GC_LOGIN)
-    print('Finish login page')
+    print(' Done.')
 
     # Now we'll actually login.
     # Fields that are passed in a typical Garmin login.
@@ -381,10 +384,9 @@ def login_to_garmin_connect(args):
         'displayNameRequired': 'false'
     }
 
-    print('Post login data')
+    print('Requesting Login ticket...', end='')
     login_response = http_req(URL_GC_LOGIN, post_data)
     # write_to_file(args.directory + '/login-response.html', login_response, 'w')
-    print('Finish login post')
 
     # extract the ticket from the login response
     pattern = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE | re.DOTALL)
@@ -393,11 +395,12 @@ def login_to_garmin_connect(args):
         raise Exception('Did not get a ticket in the login response. Cannot log in. Did \
     you enter the correct username and password?')
     login_ticket = match.group(1)
-    print('login ticket=' + login_ticket)
+    print(' Done. Ticket=' + login_ticket)
 
-    print("Request authentication URL: " + URL_GC_POST_AUTH + 'ticket=' + login_ticket)
+    print("Authenticating...", end='')
+    logging.info('Authentication URL %s', URL_GC_POST_AUTH + 'ticket=' + login_ticket)
     http_req(URL_GC_POST_AUTH + 'ticket=' + login_ticket)
-    print('Finished authentication')
+    print(' Done.')
 
 
 def csv_write_record(csv_filter, extract, a, details, activity_type_name, event_type_name, device):
@@ -411,7 +414,7 @@ def csv_write_record(csv_filter, extract, a, details, activity_type_name, event_
         parent_type_key = PARENT_TYPE_ID[parent_type_id]
     else:
         parent_type_key = None
-        print('Unknown parentType ' + str(parent_type_id) + ', please tell script author')
+        logging.warning("Unknown parentType %s, please tell script author", str(parent_type_id))
 
     # get some values from detail if present, from a otherwise
     start_latitude = from_activities_or_detail('startLatitude', a, details, 'summaryDTO')
@@ -499,8 +502,6 @@ def export_data_file(activity_id, activity_details, args):
     if args.format == 'gpx':
         data_filename = args.directory + '/activity_' + activity_id + '.gpx'
         download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
-        # download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true' + '&original=true'
-        print(download_url)
         file_mode = 'w'
     elif args.format == 'tcx':
         data_filename = args.directory + '/activity_' + activity_id + '.tcx'
@@ -518,11 +519,13 @@ def export_data_file(activity_id, activity_details, args):
         raise Exception('Unrecognized format.')
 
     if isfile(data_filename):
+        logging.debug('Data file for %s already exists', activity_id)
         print('\tData file already exists; skipping...')
         return
 
     # Regardless of unzip setting, don't redownload if the ZIP or FIT file exists.
     if args.format == 'original' and isfile(fit_filename):
+        logging.debug('Original data file for %s already exists', activity_id)
         print('\tFIT data file already exists; skipping...')
         return
 
@@ -530,7 +533,6 @@ def export_data_file(activity_id, activity_details, args):
         # Download the data file from Garmin Connect. If the download fails (e.g., due to timeout),
         # this script will die, but nothing will have been written to disk about this activity, so
         # just running it again should pick up where it left off.
-        print('\tDownloading file...')
 
         try:
             data = http_req(download_url)
@@ -543,13 +545,13 @@ def export_data_file(activity_id, activity_details, args):
                 # are no tracks. One could be generated here, but that's a bit much. Use the GPX
                 # format if you want actual data in every file, as I believe Garmin provides a GPX
                 # file for every activity.
-                print('Writing empty file since Garmin did not generate a TCX file for this \
-                            activity...')
+                logging.info('Writing empty file since Garmin did not generate a TCX file for this \
+                             activity...')
                 data = ''
             elif e.code == 404 and args.format == 'original':
                 # For manual activities (i.e., entered in online without a file upload), there is
                 # no original file. # Write an empty file to prevent redownloading it.
-                print('Writing empty file since there was no original activity data...')
+                logging.info('Writing empty file since there was no original activity data...')
                 data = ''
             else:
                 raise Exception('Failed. Got an unexpected HTTP error (' + str(e.code) + download_url + ').')
@@ -567,9 +569,9 @@ def export_data_file(activity_id, activity_details, args):
         gpx_data_exists = len(gpx.getElementsByTagName('trkpt')) > 0
 
         if gpx_data_exists:
-            print('Done. GPX data saved.')
+            logging.debug('Done. GPX data saved.')
         else:
-            print('Done. No track points found.')
+            logging.info('No track points found for %s', activity_id)
     elif args.format == 'original':
         # Even manual upload of a GPX file is zipped, but we'll validate the extension.
         if args.unzip and data_filename[-3:].lower() == 'zip':
@@ -589,15 +591,33 @@ def export_data_file(activity_id, activity_details, args):
         # print nothing here
         pass
     else:
-        # TODO: Consider validating other formats.
         print('Done.')
+
+
+def setup_logging():
+    """Setup logging"""
+    logging.basicConfig(
+        filename='gcexport.log',
+        level=logging.DEBUG,
+        format='%(asctime)s [%(levelname)-7.7s] %(message)s'
+    )
+
+    # set up logging to console
+    console = logging.StreamHandler()
+    console.setLevel(logging.WARN)
+    formatter = logging.Formatter('[%(levelname)s] %(message)s')
+    console.setFormatter(formatter)
+    logging.getLogger('').addHandler(console)
 
 
 def main(argv):
     """
     Main entry point for gcexport.py
     """
+    setup_logging()
     args = parse_arguments(argv)
+    logging.info("Starting %s version %s", argv[0], SCRIPT_VERSION)
+
     if args.version:
         print(argv[0] + ", version " + SCRIPT_VERSION)
         exit(0)
@@ -606,8 +626,9 @@ def main(argv):
 
     # Create directory for data files.
     if isdir(args.directory):
-        print('Warning: Output directory already exists. Will skip already-downloaded files and \
-            append to the CSV file.')
+        logging.warning("Output directory %s already exists. "
+                        "Will skip already-downloaded files and append to the CSV file.",
+                        args.directory)
 
     login_to_garmin_connect(args)
 
@@ -628,8 +649,8 @@ def main(argv):
     if args.count == 'all':
         # If the user wants to download all activities, query the userstats
         # on the profile page to know how many are available
-        print("Getting display name and user stats ~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        print(URL_GC_PROFILE)
+        print('Getting display name...', end='')
+        logging.info('Profile page %s', URL_GC_PROFILE)
         profile_page = http_req(URL_GC_PROFILE)
         # write_to_file(args.directory + '/profile.html', profile_page, 'a')
 
@@ -640,11 +661,12 @@ def main(argv):
         if not match:
             raise Exception('Did not find the display name in the profile page.')
         display_name = match.group(1)
-        print('displayName=' + display_name)
+        print(' Done. displayName=' + display_name)
 
-        print(URL_GC_USERSTATS + display_name)
+        print('Fetching user stats...', end='')
+        logging.info('Userstats page %s', URL_GC_USERSTATS + display_name)
         result = http_req(URL_GC_USERSTATS + display_name)
-        print("Finished display name and user stats ~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print(' Done.')
 
         # Persist JSON
         write_to_file(args.directory + '/userstats.json', result, 'w')
@@ -678,10 +700,12 @@ def main(argv):
 
         search_params = {'start': total_downloaded, 'limit': num_to_download}
         # Query Garmin Connect
-        print("Making activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        print(URL_GC_LIST + urlencode(search_params))
+        print('Querying list of activities ' + str(total_downloaded + 1) \
+              + '..' + str(total_downloaded + num_to_download) \
+              + '...', end='')
+        logging.info('Activity list URL %s', URL_GC_LIST + urlencode(search_params))
         result = http_req(URL_GC_LIST + urlencode(search_params))
-        print("Finished activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print(' Done.')
 
         # Persist JSON activities list
         current_index = total_downloaded + 1
@@ -716,7 +740,7 @@ def main(argv):
                 if details['summaryDTO']:
                     tries = 0
                 else:
-                    print('retrying for ' + str(a['activityId']))
+                    logging.info("Retrying activity details download %s", URL_GC_ACTIVITY + str(a['activityId']))
                     tries -= 1
                     if tries == 0:
                         raise Exception('Didn\'t get "summaryDTO" after ' + str(MAX_TRIES) + ' tries for ' + str(a['activityId']))
@@ -756,7 +780,8 @@ def main(argv):
                 if present('com.garmin.activity.details.json.ActivityDetails', samples):
                     extract['samples'] = samples['com.garmin.activity.details.json.ActivityDetails']
             except Exception as e:
-                print('Unable to get samples for ' + str(a['activityId']))
+                logging.info("Unable to get samples for %d", a['activityId'])
+                # logging.exception(e)
 
             # Write stats to CSV.
             csv_write_record(csv_filter, extract, a, details, activity_type_name, event_type_name, device)
