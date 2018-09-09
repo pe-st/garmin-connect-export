@@ -27,7 +27,6 @@ from getpass import getpass
 from os import mkdir, remove, stat
 from os.path import isdir, isfile
 from timeit import default_timer as timer
-from xml.dom.minidom import parseString
 
 import argparse
 import cookielib
@@ -562,21 +561,7 @@ def export_data_file(activity_id, activity_details, args):
 
     # Persist file
     write_to_file(data_filename, data, file_mode)
-    if args.format == 'gpx' and data:
-        # Validate GPX data. If we have an activity without GPS data (e.g., running on a
-        # treadmill). Garmin Connect still kicks out a GPX (sometimes), but there is only activity
-        # information, no GPS data. N.B. You can omit the XML parse (and the associated log
-        # messages) to speed things up.
-        start_time = timer()
-        gpx = parseString(data)
-        gpx_data_exists = len(gpx.getElementsByTagName('trkpt')) > 0
-        parsing_time = timer() - start_time
-
-        if gpx_data_exists:
-            logging.debug('Done. GPX data saved, parsed in %s s', parsing_time)
-        else:
-            logging.info('No track points found for %s', activity_id)
-    elif args.format == 'original':
+    if args.format == 'original':
         # Even manual upload of a GPX file is zipped, but we'll validate the extension.
         if args.unzip and data_filename[-3:].lower() == 'zip':
             print("Unzipping and removing original files...")
@@ -591,18 +576,13 @@ def export_data_file(activity_id, activity_details, args):
                 print('Skipping 0Kb zip file.')
             remove(data_filename)
         print('Done.')
-    elif args.format == 'json':
-        # print nothing here
-        pass
-    else:
-        print('Done.')
 
 
 def setup_logging():
     """Setup logging"""
     logging.basicConfig(
         filename='gcexport.log',
-        level=logging.DEBUG,
+        level=logging.INFO,
         format='%(asctime)s [%(levelname)-7.7s] %(message)s'
     )
 
