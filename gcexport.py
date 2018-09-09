@@ -125,7 +125,7 @@ URL_GC_ORIGINAL_ACTIVITY = 'http://connect.garmin.com/proxy/download-service/fil
 
 def hhmmss_from_seconds(sec):
     """Helper function that converts seconds to HH:MM:SS time format."""
-    if isinstance(sec, (float)) or isinstance(sec, (int)):
+    if isinstance(sec, (float, int)):
         formatted_time = str(timedelta(seconds=int(sec))).zfill(8)
     else:
         formatted_time = "0.000"
@@ -210,8 +210,7 @@ def present(element, act):
         return False
     elif element not in act:
         return False
-    else:
-        return act[element]
+    return act[element]
 
 
 def absent_or_null(element, act):
@@ -222,16 +221,14 @@ def absent_or_null(element, act):
         return True
     elif act[element]:
         return False
-    else:
-        return True
+    return True
 
 
 def from_activities_or_detail(element, act, detail, detail_container):
     """Return detail[detail_container][element] if valid and act[element] (or None) otherwise"""
     if absent_or_null(detail_container, detail) or absent_or_null(element, detail[detail_container]):
         return None if absent_or_null(element, act) else act[element]
-    else:
-        return detail[detail_container][element]
+    return detail[detail_container][element]
 
 
 def trunc6(some_float):
@@ -245,16 +242,20 @@ class FixedOffset(tzinfo):
     """Fixed offset in minutes east from UTC."""
 
     def __init__(self, offset, name):
+        super(FixedOffset, self).__init__()
         self.__offset = timedelta(minutes=offset)
         self.__name = name
 
     def utcoffset(self, dt):
+        del dt # unused
         return self.__offset
 
     def tzname(self, dt):
+        del dt # unused
         return self.__name
 
     def dst(self, dt):
+        del dt # unused
         return timedelta(0)
 
 
@@ -271,23 +272,26 @@ def offset_date_time(time_local, time_gmt):
 
 
 def pace_or_speed_raw(type_id, parent_type_id, mps):
+    """Convert speed (m/s) to speed (km/h) or pace (min/km) depending on type and parent type"""
     kmh = 3.6 * mps
     if (type_id in USES_PACE) or (parent_type_id in USES_PACE):
         return 60 / kmh
-    else:
-        return kmh
+    return kmh
 
 
 def pace_or_speed_formatted(type_id, parent_type_id, mps):
+    """
+    Convert speed (m/s) to string: speed (km/h as x.x) or
+    pace (min/km as MM:SS), depending on type and parent type
+    """
     kmh = 3.6 * mps
     if (type_id in USES_PACE) or (parent_type_id in USES_PACE):
         # format seconds per kilometer as MM:SS, see https://stackoverflow.com/a/27751293
         return '{0:02d}:{1:02d}'.format(*divmod(int(round(3600 / kmh)), 60))
-    else:
-        return "{0:.1f}".format(round(kmh, 1))
+    return "{0:.1f}".format(round(kmh, 1))
 
 
-class CsvFilter():
+class CsvFilter(object):
     """Collects, filters and writes CSV."""
 
     def __init__(self, csv_file, csv_header_properties):
@@ -303,13 +307,19 @@ class CsvFilter():
         self.__current_row = {}
 
     def write_header(self):
+        """Write the active column names as CSV header"""
         self.__writer.writeheader()
 
     def write_row(self):
+        """Write the prepared CSV record"""
         self.__writer.writerow(self.__current_row)
         self.__current_row = {}
 
     def set_column(self, name, value):
+        """
+        Store a column value (if the column is active) into
+        the record prepared for the next write_row call
+        """
         if value and name in self.__csv_columns:
             # must encode in UTF-8 because the Python 'csv' module doesn't support unicode
             self.__current_row[self.__csv_headers[name]] = value.encode('utf8')
@@ -391,6 +401,9 @@ def login_to_garmin_connect(args):
 
 
 def csv_write_record(csv_filter, extract, a, details, activity_type_name, event_type_name, device):
+    """
+    Write out the given data as a CSV record
+    """
 
     type_id = 4 if absent_or_null('activityType', a) else a['activityType']['typeId']
     parent_type_id = 4 if absent_or_null('activityType', a) else a['activityType']['parentTypeId']
@@ -480,6 +493,9 @@ def csv_write_record(csv_filter, extract, a, details, activity_type_name, event_
 
 
 def export_data_file(activity_id, activity_details, args):
+    """
+    Write the data of the activity to a file, depending on the chosen data format
+    """
     if args.format == 'gpx':
         data_filename = args.directory + '/activity_' + activity_id + '.gpx'
         download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
@@ -697,7 +713,7 @@ def main(argv):
                 details = json.loads(activity_details)
                 # I observed a failure to get a complete JSON detail in about 5-10 calls out of 1000
                 # retrying then statistically gets a better JSON ;-)
-                if len(details['summaryDTO']) > 0:
+                if details['summaryDTO']:
                     tries = 0
                 else:
                     print('retrying for ' + str(a['activityId']))
