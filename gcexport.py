@@ -26,6 +26,7 @@ from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from os import mkdir, remove, stat
 from os.path import isdir, isfile
+from timeit import default_timer as timer
 from xml.dom.minidom import parseString
 
 import argparse
@@ -161,8 +162,9 @@ def http_req(url, post=None, headers={}):
     # print(COOKIE_JAR)
     # print(post)
     # print(request)
+    start_time = timer()
     response = OPENER.open(request, data=post)  # This line may throw a urllib2.HTTPError.
-    logging.debug('Got %s from %s', response.getcode(), url)
+    logging.debug('Got %s in %s s from %s', response.getcode(), timer() - start_time, url)
 
     # N.B. urllib2 will follow any 302 redirects. Also, the "open" call above may throw a
     # urllib2.HTTPError which is checked for below.
@@ -565,11 +567,13 @@ def export_data_file(activity_id, activity_details, args):
         # treadmill). Garmin Connect still kicks out a GPX (sometimes), but there is only activity
         # information, no GPS data. N.B. You can omit the XML parse (and the associated log
         # messages) to speed things up.
+        start_time = timer()
         gpx = parseString(data)
         gpx_data_exists = len(gpx.getElementsByTagName('trkpt')) > 0
+        parsing_time = timer() - start_time
 
         if gpx_data_exists:
-            logging.debug('Done. GPX data saved.')
+            logging.debug('Done. GPX data saved, parsed in %s s', parsing_time)
         else:
             logging.info('No track points found for %s', activity_id)
     elif args.format == 'original':
