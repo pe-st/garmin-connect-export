@@ -667,20 +667,22 @@ def main(argv):
         result = http_req(URL_GC_LIST + urlencode(search_params))
         print("Finished activity request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-        # Persist JSON
-        write_to_file(args.directory + '/activities.json', result, 'a')
+        # Persist JSON activities list
+        current_index = total_downloaded + 1
+        activities_list_filename = '/activities-' \
+            + str(current_index) + '-' \
+            + str(total_downloaded + num_to_download) + '.json'
+        write_to_file(args.directory + activities_list_filename, result, 'w')
 
         json_results = json.loads(result)  # TODO: Catch possible exceptions here.
-
-        # search = json_results['results']['search']
-
-        # Pull out just the list of activities.
         activities = json_results
 
         # Process each activity.
         for a in activities:
             # Display which entry we're working on.
-            print('Garmin Connect activity: [' + str(a['activityId']) + '] ', end='')
+            print('Garmin Connect activity ', end='')
+            print('(' + str(current_index) + '/' + str(total_to_download) + ') ', end='')
+            print('[' + str(a['activityId']) + '] ', end='')
             print(a['activityName'])
 
             # Retrieve also the detail data from the activity (the one displayed on
@@ -745,6 +747,8 @@ def main(argv):
 
             export_data_file(str(a['activityId']), activity_details, args)
 
+            current_index += 1
+        # End for loop for activities of chunk
         total_downloaded += num_to_download
     # End while loop for multiple chunks.
 
