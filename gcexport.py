@@ -658,7 +658,7 @@ def main(argv):
         write_to_file(args.directory + '/userstats.json', result, 'w')
 
         # Modify total_to_download based on how many activities the server reports.
-        json_results = json.loads(result)  # TODO: Catch possible exceptions here.
+        json_results = json.loads(result)
         total_to_download = int(json_results['userMetrics'][0]['totalActivities'])
     else:
         total_to_download = int(args.count)
@@ -700,8 +700,9 @@ def main(argv):
             + str(total_downloaded + num_to_download) + '.json'
         write_to_file(args.directory + activities_list_filename, result, 'w')
 
-        json_results = json.loads(result)  # TODO: Catch possible exceptions here.
-        activities = json_results
+        activities = json.loads(result)
+        if len(activities) != num_to_download:
+            logging.warning('Expected %s activities, got %s.', num_to_download, len(activities))
 
         # Process each activity.
         for a in activities:
