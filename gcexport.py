@@ -20,7 +20,6 @@ Activity & event types:
 from __future__ import print_function
 
 from math import floor
-from sets import Set
 from urllib import urlencode
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
@@ -64,7 +63,7 @@ PARENT_TYPE_ID = {
 }
 
 # typeId values using pace instead of speed
-USES_PACE = Set([1, 3, 9])  # running, hiking, walking
+USES_PACE = set([1, 3, 9])  # running, hiking, walking
 
 # Maximum number of activities you can request at once.
 # Used to be 100 and enforced by Garmin for older endpoints; for the current endpoint 'URL_GC_LIST'
