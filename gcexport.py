@@ -199,7 +199,7 @@ def load_properties(multiline, sep='=', comment_char='#', keys=None):
             key = key_value[0].strip()
             value = sep.join(key_value[1:]).strip().strip('"')
             props[key] = value
-            if keys:
+            if keys != None:
                 keys.append(key)
     return props
 
