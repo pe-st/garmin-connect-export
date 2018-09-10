@@ -19,13 +19,13 @@ Activity & event types:
 # this avoids different pylint behaviour for python 2 and 3
 from __future__ import print_function
 
-from math import floor
-from urllib import urlencode
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
+from math import floor
 from os import mkdir, remove, stat
 from os.path import isdir, isfile
 from timeit import default_timer as timer
+from urllib import urlencode
 
 import argparse
 import cookielib
@@ -37,7 +37,7 @@ import sys
 import urllib2
 import zipfile
 
-SCRIPT_VERSION = '2.1.0'
+SCRIPT_VERSION = '2.1.1'
 
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
