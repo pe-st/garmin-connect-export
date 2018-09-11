@@ -22,7 +22,7 @@ from __future__ import print_function
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
-from os import mkdir, remove, stat
+from os import mkdir, remove, stat, utime
 from os.path import isdir, isfile
 from timeit import default_timer as timer
 from urllib import urlencode
@@ -37,7 +37,7 @@ import sys
 import urllib2
 import zipfile
 
-SCRIPT_VERSION = '2.1.1'
+SCRIPT_VERSION = '2.1.2'
 
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
@@ -137,11 +137,13 @@ def kmh_from_mps(mps):
     return str(mps * 3.6)
 
 
-def write_to_file(filename, content, mode):
+def write_to_file(filename, content, mode, file_time=None):
     """Helper function that persists content to file."""
     write_file = open(filename, mode)
     write_file.write(content)
     write_file.close()
+    if file_time:
+        utime(filename, (file_time, file_time))
 
 
 # url is a string, post is a dictionary of POST parameters, headers is a dictionary of headers.
@@ -354,6 +356,9 @@ def parse_arguments(argv):
         directory to export to (default: './YYYY-MM-DD_garmin_connect_export')")
     parser.add_argument('-u', '--unzip', help="if downloading ZIP files (format: 'original'), unzip \
         the file and removes the ZIP file", action="store_true")
+    parser.add_argument('-ot', '--originaltime',
+                        help="will set downloaded (and possibly unzipped) file time to the activity start time",
+                        action="store_true")
     parser.add_argument('-t', '--template', nargs='?', default=CSV_TEMPLATE, help="template \
         file with desired columns for CSV output")
 
@@ -497,7 +502,7 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.write_row()
 
 
-def export_data_file(activity_id, activity_details, args):
+def export_data_file(activity_id, activity_details, args, file_time=None):
     """
     Write the data of the activity to a file, depending on the chosen data format
     """
@@ -561,7 +566,7 @@ def export_data_file(activity_id, activity_details, args):
         data = activity_details
 
     # Persist file
-    write_to_file(data_filename, data, file_mode)
+    write_to_file(data_filename, data, file_mode, file_time)
     if args.format == 'original':
         # Even manual upload of a GPX file is zipped, but we'll validate the extension.
         if args.unzip and data_filename[-3:].lower() == 'zip':
@@ -571,7 +576,9 @@ def export_data_file(activity_id, activity_details, args):
                 zip_file = open(data_filename, 'rb')
                 zip_obj = zipfile.ZipFile(zip_file)
                 for name in zip_obj.namelist():
-                    zip_obj.extract(name, args.directory)
+                    unzipped_name = zip_obj.extract(name, args.directory)
+                    if file_time:
+                        utime(unzipped_name, (file_time, file_time))
                 zip_file.close()
             else:
                 print('Skipping 0Kb zip file.')
@@ -745,6 +752,11 @@ def main(argv):
             else:
                 print('0.000 km')
 
+            if args.originaltime:
+                start_time_seconds = actvty['beginTimestamp'] // 1000 if present('beginTimestamp', actvty) else None
+            else:
+                start_time_seconds = None
+
             # try to get the device details (and cache them, as they're used for multiple activities)
             device = None
             device_app_inst_id = None if absent_or_null('metadataDTO', details) else details['metadataDTO']['deviceApplicationInstallationId']
@@ -752,7 +764,9 @@ def main(argv):
                 if not device_dict.has_key(device_app_inst_id):
                     # print '\tGetting device details ' + str(device_app_inst_id)
                     device_details = http_req(URL_GC_DEVICE + str(device_app_inst_id))
-                    write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json', device_details, 'a')
+                    write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json',
+                                  device_details, 'w',
+                                  start_time_seconds)
                     device_dict[device_app_inst_id] = None if not device_details else json.loads(device_details)
                 device = device_dict[device_app_inst_id]
 
@@ -761,7 +775,9 @@ def main(argv):
             extract['samples'] = None
             try:
                 activity_measurements = http_req(URL_GC_ACTIVITY_DETAIL + str(actvty['activityId']))
-                write_to_file(args.directory + '/activity_' + str(actvty['activityId']) + '_samples.json', activity_measurements, 'w')
+                write_to_file(args.directory + '/activity_' + str(actvty['activityId']) + '_samples.json',
+                              activity_measurements, 'w',
+                              start_time_seconds)
                 samples = json.loads(activity_measurements)
                 if present('com.garmin.activity.details.json.ActivityDetails', samples):
                     extract['samples'] = samples['com.garmin.activity.details.json.ActivityDetails']
@@ -772,7 +788,7 @@ def main(argv):
             # Write stats to CSV.
             csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name, device)
 
-            export_data_file(str(actvty['activityId']), activity_details, args)
+            export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds)
 
             current_index += 1
         # End for loop for activities of chunk
