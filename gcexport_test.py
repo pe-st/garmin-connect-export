@@ -69,8 +69,9 @@ def test_csv_write_record():
     extract['elapsed_duration'] = 42.43
     extract['elapsed_seconds'] = 42
     extract['samples'] = None
+    extract['device'] = "some device"
 
     csv_file = StringIO()
     csv_filter = CsvFilter(csv_file, 'csv_header_default.properties')
-    csv_write_record(csv_filter, extract, activities[0], details, activity_type_name, event_type_name, device)
+    csv_write_record(csv_filter, extract, activities[0], details, activity_type_name, event_type_name)
     assert csv_file.getvalue()[:20] == '"Biel 🏛 Pavillon"'
