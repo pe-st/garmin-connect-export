@@ -22,15 +22,7 @@ There exist many [forks](https://help.github.com/articles/fork-a-repo/) of this 
   **@moderation**'s script [didn't work for me for a couple of months](https://github.com/moderation/garmin-connect-export/issues/11),
   probably because of different Garmin Connect REST endpoints (URLs).
 
-These are the most important [branches](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging) in **pe-st**'s repo:
-
-- [develop](https://github.com/pe-st/garmin-connect-export)
-  The default branch. This is where my tinkering happens, and always contains the lastest version of `gcexport.py`
-- [master](https://github.com/pe-st/garmin-connect-export/tree/master)
-  Copy of the master branch of **@moderation**'s repo, kept for reference and comparison purposes
-- [revert-csv-to-kjkjava](https://github.com/pe-st/garmin-connect-export/tree/feature/revert-csv-to-kjkjava)
-  Backport of **@moderation**'s and my changes to the original repo, using the original CSV format ([PR 42](https://github.com/kjkjava/garmin-connect-export/pull/42))
-
+For the [branches](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging) in **pe-st**'s repo see [BRANCH.md](BRANCH.md)
 
 Description
 -----------
