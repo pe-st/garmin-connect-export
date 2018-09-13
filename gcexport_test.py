@@ -54,8 +54,6 @@ def test_csv_write_record():
         activities = json.load(json_data_1)
     with open('json/activity_emoji.json') as json_data_2:
         details = json.load(json_data_2)
-    with open('json/device_856399.json') as json_data_3:
-        device = json.load(json_data_3)
     with open('json/activity_types.properties', 'r') as prop_1:
         activity_type_props = prop_1.read()
     activity_type_name = load_properties(activity_type_props)
@@ -75,3 +73,20 @@ def test_csv_write_record():
     csv_filter = CsvFilter(csv_file, 'csv_header_default.properties')
     csv_write_record(csv_filter, extract, activities[0], details, activity_type_name, event_type_name)
     assert csv_file.getvalue()[:20] == '"Biel 🏛 Pavillon"'
+
+
+def write_to_file_mock(filename, content, mode, file_time=None):
+    pass
+
+
+def http_req_mock(url, post=None, headers=None):
+    with open('json/device_856399.json') as json_device:
+        return json_device.read()
+
+
+def test_extract_device():
+    with open('json/activity_emoji.json') as json_detail:
+        details = json.load(json_detail)
+    args = parse_arguments([])
+
+    assert extract_device({}, details, None, args, http_req_mock, write_to_file_mock).encode('utf8') == 'fēnix 5 10.0.0.0'

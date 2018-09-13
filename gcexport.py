@@ -505,6 +505,34 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.write_row()
 
 
+def extract_device(device_dict, details, start_time_seconds, args, http_req, write_to_file):
+    """
+    Try to get the device details (and cache them, as they're used for multiple activities)
+    """
+    device_app_inst_id = None if absent_or_null('metadataDTO', details) else details['metadataDTO'][
+        'deviceApplicationInstallationId']
+    # TODO use details['metadataDTO']['deviceMetaDataDTO']['deviceId'] == null instead of magic number 80?
+    if device_app_inst_id and device_app_inst_id != 80:
+        if not device_dict.has_key(device_app_inst_id):
+            device_json = http_req(URL_GC_DEVICE + str(device_app_inst_id))
+            write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json',
+                          device_json, 'w',
+                          start_time_seconds)
+            if not device_json:
+                logging.warning("Device Details %s are empty", device_app_inst_id)
+                device_dict[device_app_inst_id] = "device-id:" + str(device_app_inst_id)
+            else:
+                device_details = json.loads(device_json)
+                if present('productDisplayName', device_details):
+                    device_dict[device_app_inst_id] = device_details['productDisplayName'] + ' ' \
+                                                      + device_details['versionString']
+                else:
+                    logging.warning("Device details %s incomplete", device_app_inst_id)
+                    device_dict[device_app_inst_id] = None
+        return device_dict[device_app_inst_id]
+    return None
+
+
 def export_data_file(activity_id, activity_details, args, file_time=None):
     """
     Write the data of the activity to a file, depending on the chosen data format
@@ -760,29 +788,7 @@ def main(argv):
             else:
                 start_time_seconds = None
 
-            # try to get the device details (and cache them, as they're used for multiple activities)
-            extract['device'] = None
-            device_app_inst_id = None if absent_or_null('metadataDTO', details) else details['metadataDTO']['deviceApplicationInstallationId']
-            # TODO use details['metadataDTO']['deviceMetaDataDTO']['deviceId'] == null instead of magic number 80?
-            if device_app_inst_id and device_app_inst_id != 80:
-                if not device_dict.has_key(device_app_inst_id):
-                    # print '\tGetting device details ' + str(device_app_inst_id)
-                    device_json = http_req(URL_GC_DEVICE + str(device_app_inst_id))
-                    write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json',
-                                  device_json, 'w',
-                                  start_time_seconds)
-                    if not device_json:
-                        logging.warning("Device Details %s are empty", device_app_inst_id)
-                        device_dict[device_app_inst_id] = "device-id:" + str(device_app_inst_id)
-                    else:
-                        device_details = json.loads(device_json)
-                        if present('productDisplayName', device_details):
-                            device_dict[device_app_inst_id] = device_details['productDisplayName'] + ' ' \
-                                                              + device_details['versionString']
-                        else:
-                            logging.warning("Device details %s incomplete", device_app_inst_id)
-                            device_dict[device_app_inst_id] = None
-                extract['device'] = device_dict[device_app_inst_id]
+            extract['device'] = extract_device(device_dict, details, start_time_seconds, args, http_req, write_to_file)
 
             # try to get the JSON with all the samples (not all activities have it...),
             # but only if it's really needed for the CSV output
