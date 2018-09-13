@@ -335,7 +335,6 @@ class CsvFilter(object):
         return name in self.__csv_columns
 
 
-
 def parse_arguments(argv):
     """
     Setup the argument parser and parse the command line arguments.
@@ -435,8 +434,8 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
 
     csv_filter.set_column('id', str(actvty['activityId']))
     csv_filter.set_column('url', 'https://connect.garmin.com/modern/activity/' + str(actvty['activityId']))
-    csv_filter.set_column('activityName', actvty['activityName'].replace('"', '""') if present('activityName', actvty) else None)
-    csv_filter.set_column('description', actvty['description'].replace('"', '""') if present('description', actvty) else None)
+    csv_filter.set_column('activityName', actvty['activityName'] if present('activityName', actvty) else None)
+    csv_filter.set_column('description', actvty['description'] if present('description', actvty) else None)
     csv_filter.set_column('startTimeIso', extract['start_time_with_offset'].isoformat())
     csv_filter.set_column('startTime1123', extract['start_time_with_offset'].strftime(ALMOST_RFC_1123))
     csv_filter.set_column('startTimeMillis', str(actvty['beginTimestamp']) if present('beginTimestamp', actvty) else None)
@@ -485,7 +484,7 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('averageTemperature', str(details['summaryDTO']['averageTemperature']) if present('averageTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('minTemperature', str(details['summaryDTO']['minTemperature']) if present('minTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('maxTemperature', str(details['summaryDTO']['maxTemperature']) if present('maxTemperature', details['summaryDTO']) else None)
-    csv_filter.set_column('device', extract['device'].replace('"', '""') if extract['device'] else None)
+    csv_filter.set_column('device', extract['device'] if extract['device'] else None)
     csv_filter.set_column('activityTypeKey', actvty['activityType']['typeKey'].title() if present('typeKey', actvty['activityType']) else None)
     csv_filter.set_column('activityType', value_if_found_else_key(activity_type_name, 'activity_type_' + actvty['activityType']['typeKey']) if present('activityType', actvty) else None)
     csv_filter.set_column('activityParent', value_if_found_else_key(activity_type_name, 'activity_type_' + parent_type_key) if parent_type_key else None)
