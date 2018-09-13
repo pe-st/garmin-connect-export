@@ -330,6 +330,10 @@ class CsvFilter(object):
             # must encode in UTF-8 because the Python 'csv' module doesn't support unicode
             self.__current_row[self.__csv_headers[name]] = value.encode('utf8')
 
+    def is_column_active(self, name):
+        """Return True if the column is present in the header template"""
+        return name in self.__csv_columns
+
 
 
 def parse_arguments(argv):
@@ -781,20 +785,22 @@ def main(argv):
                             device_dict[device_app_inst_id] = None
                 extract['device'] = device_dict[device_app_inst_id]
 
-            # try to get the JSON with all the samples (not all activities have it...)
-            # TODO implement retries here, I have observed temporary failures
+            # try to get the JSON with all the samples (not all activities have it...),
+            # but only if it's really needed for the CSV output
             extract['samples'] = None
-            try:
-                activity_measurements = http_req(URL_GC_ACTIVITY_DETAIL + str(actvty['activityId']))
-                write_to_file(args.directory + '/activity_' + str(actvty['activityId']) + '_samples.json',
-                              activity_measurements, 'w',
-                              start_time_seconds)
-                samples = json.loads(activity_measurements)
-                if present('com.garmin.activity.details.json.ActivityDetails', samples):
-                    extract['samples'] = samples['com.garmin.activity.details.json.ActivityDetails']
-            except urllib2.HTTPError:
-                logging.info("Unable to get samples for %d", actvty['activityId'])
-                # logging.exception(e)
+            if csv_filter.is_column_active('sampleCount'):
+                try:
+                    # TODO implement retries here, I have observed temporary failures
+                    activity_measurements = http_req(URL_GC_ACTIVITY_DETAIL + str(actvty['activityId']))
+                    write_to_file(args.directory + '/activity_' + str(actvty['activityId']) + '_samples.json',
+                                  activity_measurements, 'w',
+                                  start_time_seconds)
+                    samples = json.loads(activity_measurements)
+                    if present('com.garmin.activity.details.json.ActivityDetails', samples):
+                        extract['samples'] = samples['com.garmin.activity.details.json.ActivityDetails']
+                except urllib2.HTTPError:
+                    logging.info("Unable to get samples for %d", actvty['activityId'])
+                    # logging.exception(e)
 
             # Write stats to CSV.
             csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name)
