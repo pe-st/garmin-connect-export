@@ -63,7 +63,7 @@ PARENT_TYPE_ID = {
 }
 
 # typeId values using pace instead of speed
-USES_PACE = set([1, 3, 9])  # running, hiking, walking
+USES_PACE = {1, 3, 9}  # running, hiking, walking
 
 # Maximum number of activities you can request at once.
 # Used to be 100 and enforced by Garmin for older endpoints; for the current endpoint 'URL_GC_LIST'
@@ -410,7 +410,7 @@ def login_to_garmin_connect(args):
     print(' Done.')
 
 
-def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name, device):
+def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name):
     """
     Write out the given data as a CSV record
     """
@@ -481,7 +481,7 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('averageTemperature', str(details['summaryDTO']['averageTemperature']) if present('averageTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('minTemperature', str(details['summaryDTO']['minTemperature']) if present('minTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('maxTemperature', str(details['summaryDTO']['maxTemperature']) if present('maxTemperature', details['summaryDTO']) else None)
-    csv_filter.set_column('device', device['productDisplayName'].replace('"', '""') + ' ' + device['versionString'] if present('productDisplayName', device) else None)
+    csv_filter.set_column('device', extract['device'].replace('"', '""') if extract['device'] else None)
     csv_filter.set_column('activityTypeKey', actvty['activityType']['typeKey'].title() if present('typeKey', actvty['activityType']) else None)
     csv_filter.set_column('activityType', value_if_found_else_key(activity_type_name, 'activity_type_' + actvty['activityType']['typeKey']) if present('activityType', actvty) else None)
     csv_filter.set_column('activityParent', value_if_found_else_key(activity_type_name, 'activity_type_' + parent_type_key) if parent_type_key else None)
@@ -758,17 +758,28 @@ def main(argv):
                 start_time_seconds = None
 
             # try to get the device details (and cache them, as they're used for multiple activities)
-            device = None
+            extract['device'] = None
             device_app_inst_id = None if absent_or_null('metadataDTO', details) else details['metadataDTO']['deviceApplicationInstallationId']
-            if device_app_inst_id:
+            # TODO use details['metadataDTO']['deviceMetaDataDTO']['deviceId'] == null instead of magic number 80?
+            if device_app_inst_id and device_app_inst_id != 80:
                 if not device_dict.has_key(device_app_inst_id):
                     # print '\tGetting device details ' + str(device_app_inst_id)
-                    device_details = http_req(URL_GC_DEVICE + str(device_app_inst_id))
+                    device_json = http_req(URL_GC_DEVICE + str(device_app_inst_id))
                     write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json',
-                                  device_details, 'w',
+                                  device_json, 'w',
                                   start_time_seconds)
-                    device_dict[device_app_inst_id] = None if not device_details else json.loads(device_details)
-                device = device_dict[device_app_inst_id]
+                    if not device_json:
+                        logging.warning("Device Details %s are empty", device_app_inst_id)
+                        device_dict[device_app_inst_id] = "device-id:" + str(device_app_inst_id)
+                    else:
+                        device_details = json.loads(device_json)
+                        if present('productDisplayName', device_details):
+                            device_dict[device_app_inst_id] = device_details['productDisplayName'] + ' ' \
+                                                              + device_details['versionString']
+                        else:
+                            logging.warning("Device details %s incomplete", device_app_inst_id)
+                            device_dict[device_app_inst_id] = None
+                extract['device'] = device_dict[device_app_inst_id]
 
             # try to get the JSON with all the samples (not all activities have it...)
             # TODO implement retries here, I have observed temporary failures
@@ -786,7 +797,7 @@ def main(argv):
                 # logging.exception(e)
 
             # Write stats to CSV.
-            csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name, device)
+            csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name)
 
             export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds)
 
