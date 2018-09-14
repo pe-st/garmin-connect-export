@@ -335,7 +335,6 @@ class CsvFilter(object):
         return name in self.__csv_columns
 
 
-
 def parse_arguments(argv):
     """
     Setup the argument parser and parse the command line arguments.
@@ -435,8 +434,8 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
 
     csv_filter.set_column('id', str(actvty['activityId']))
     csv_filter.set_column('url', 'https://connect.garmin.com/modern/activity/' + str(actvty['activityId']))
-    csv_filter.set_column('activityName', actvty['activityName'].replace('"', '""') if present('activityName', actvty) else 'Untitled')
-    csv_filter.set_column('description', actvty['description'].replace('"', '""') if present('description', actvty) else None)
+    csv_filter.set_column('activityName', actvty['activityName'] if present('activityName', actvty) else 'Untitled')
+    csv_filter.set_column('description', actvty['description'] if present('description', actvty) else None)
     csv_filter.set_column('startTimeIso', extract['start_time_with_offset'].isoformat())
     csv_filter.set_column('startTime1123', extract['start_time_with_offset'].strftime(ALMOST_RFC_1123))
     csv_filter.set_column('startTimeMillis', str(actvty['beginTimestamp']) if present('beginTimestamp', actvty) else None)
@@ -485,7 +484,7 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('averageTemperature', str(details['summaryDTO']['averageTemperature']) if present('averageTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('minTemperature', str(details['summaryDTO']['minTemperature']) if present('minTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('maxTemperature', str(details['summaryDTO']['maxTemperature']) if present('maxTemperature', details['summaryDTO']) else None)
-    csv_filter.set_column('device', extract['device'].replace('"', '""') if extract['device'] else 'Unknown 0.0.0.0')
+    csv_filter.set_column('device', extract['device'] if extract['device'] else 'Unknown 0.0.0.0')
     csv_filter.set_column('activityTypeKey', actvty['activityType']['typeKey'].title() if present('typeKey', actvty['activityType']) else None)
     csv_filter.set_column('activityType', value_if_found_else_key(activity_type_name, 'activity_type_' + actvty['activityType']['typeKey']) if present('activityType', actvty) else None)
     csv_filter.set_column('activityParent', value_if_found_else_key(activity_type_name, 'activity_type_' + parent_type_key) if parent_type_key else None)
@@ -504,6 +503,44 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('sampleCount', str(extract['samples']['metricsCount']) if present('metricsCount', extract['samples']) else None)
 
     csv_filter.write_row()
+
+
+def extract_device(device_dict, details, start_time_seconds, args, http_req, write_to_file):
+    """
+    Try to get the device details (and cache them, as they're used for multiple activities)
+    """
+    if not present('metadataDTO', details):
+        logging.warning("no metadataDTO")
+        return
+
+    metadata = details['metadataDTO']
+    device_app_inst_id = metadata['deviceApplicationInstallationId'] if present('deviceApplicationInstallationId', metadata) else None
+    if device_app_inst_id:
+        if not device_dict.has_key(device_app_inst_id):
+            # observed from my stock of activities:
+            # details['metadataDTO']['deviceMetaDataDTO']['deviceId'] == null -> device unknown
+            # details['metadataDTO']['deviceMetaDataDTO']['deviceId'] == '0' -> device unknown
+            # details['metadataDTO']['deviceMetaDataDTO']['deviceId'] == 'someid' -> device known
+            device_dict[device_app_inst_id] = None
+            device_meta = metadata['deviceMetaDataDTO'] if present('deviceMetaDataDTO', metadata) else None
+            device_id = device_meta['deviceId'] if present('deviceId', device_meta) else None
+            if not device_meta.has_key('deviceId') or device_id and device_id != '0':
+                device_json = http_req(URL_GC_DEVICE + str(device_app_inst_id))
+                write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json',
+                              device_json, 'w',
+                              start_time_seconds)
+                if not device_json:
+                    logging.warning("Device Details %s are empty", device_app_inst_id)
+                    device_dict[device_app_inst_id] = "device-id:" + str(device_app_inst_id)
+                else:
+                    device_details = json.loads(device_json)
+                    if present('productDisplayName', device_details):
+                        device_dict[device_app_inst_id] = device_details['productDisplayName'] + ' ' \
+                                                          + device_details['versionString']
+                    else:
+                        logging.warning("Device details %s incomplete", device_app_inst_id)
+        return device_dict[device_app_inst_id]
+    return None
 
 
 def export_data_file(activity_id, activity_details, args, file_time=None):
@@ -761,29 +798,7 @@ def main(argv):
             else:
                 start_time_seconds = None
 
-            # try to get the device details (and cache them, as they're used for multiple activities)
-            extract['device'] = None
-            device_app_inst_id = None if absent_or_null('metadataDTO', details) else details['metadataDTO']['deviceApplicationInstallationId']
-            # TODO use details['metadataDTO']['deviceMetaDataDTO']['deviceId'] == null instead of magic number 80?
-            if device_app_inst_id and device_app_inst_id != 80:
-                if not device_dict.has_key(device_app_inst_id):
-                    # print '\tGetting device details ' + str(device_app_inst_id)
-                    device_json = http_req(URL_GC_DEVICE + str(device_app_inst_id))
-                    write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json',
-                                  device_json, 'w',
-                                  start_time_seconds)
-                    if not device_json:
-                        logging.warning("Device Details %s are empty", device_app_inst_id)
-                        device_dict[device_app_inst_id] = "device-id:" + str(device_app_inst_id)
-                    else:
-                        device_details = json.loads(device_json)
-                        if present('productDisplayName', device_details):
-                            device_dict[device_app_inst_id] = device_details['productDisplayName'] + ' ' \
-                                                              + device_details['versionString']
-                        else:
-                            logging.warning("Device details %s incomplete", device_app_inst_id)
-                            device_dict[device_app_inst_id] = None
-                extract['device'] = device_dict[device_app_inst_id]
+            extract['device'] = extract_device(device_dict, details, start_time_seconds, args, http_req, write_to_file)
 
             # try to get the JSON with all the samples (not all activities have it...),
             # but only if it's really needed for the CSV output

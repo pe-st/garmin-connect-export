@@ -1,0 +1,94 @@
+{
+  "activityId": 154105348,
+  "activityName": "Stechelberg-Lauterbrunnen",
+  "userProfileId": 2836200,
+  "isMultiSportParent": false,
+  "activityTypeDTO": {
+    "typeId": 81,
+    "typeKey": "cross_country_skiing",
+    "parentTypeId": 4,
+    "sortOrder": 39
+  },
+  "eventTypeDTO": {
+    "typeId": 9,
+    "typeKey": "uncategorized",
+    "sortOrder": 10
+  },
+  "accessControlRuleDTO": {
+    "typeId": 1,
+    "typeKey": "public"
+  },
+  "timeZoneUnitDTO": {
+    "unitId": 124,
+    "unitKey": "Europe/Paris",
+    "factor": 0.0,
+    "timeZone": "Europe/Paris"
+  },
+  "metadataDTO": {
+    "isOriginal": true,
+    "deviceApplicationInstallationId": 80,
+    "agentApplicationInstallationId": null,
+    "agentString": null,
+    "fileFormat": {
+      "formatId": 2,
+      "formatKey": "gpx"
+    },
+    "associatedCourseId": null,
+    "lastUpdateDate": "2012-03-02T11:09:30.0",
+    "uploadedDate": "2012-03-02T10:49:45.0",
+    "videoUrl": null,
+    "hasPolyline": true,
+    "hasChartData": true,
+    "hasHrTimeInZones": false,
+    "hasPowerTimeInZones": false,
+    "userInfoDto": {
+      "userProfilePk": 2836200,
+      "displayname": "eschep",
+      "fullname": "Peter Steiner",
+      "profileImageUrlLarge": null,
+      "profileImageUrlMedium": "https://s3.amazonaws.com/garmin-connect-prod/profile_images/1a8b37ca-2cd1-47bf-a191-9326dd26949f-2836200.png",
+      "profileImageUrlSmall": "https://s3.amazonaws.com/garmin-connect-prod/profile_images/c957e6a9-adb2-4cdb-8105-bf0739323504-2836200.png",
+      "userPro": false
+    },
+    "chartAvailability": {
+      "showElevation": true,
+      "showMovingSpeed": true,
+      "showSpeed": true,
+      "showTimestamp": true
+    },
+    "childIds": [],
+    "sensors": null,
+    "activityImages": [],
+    "manufacturer": "",
+    "diveNumber": null,
+    "lapCount": 1,
+    "associatedWorkoutId": null,
+    "isAtpActivity": null,
+    "deviceMetaDataDTO": {
+      "deviceId": null,
+      "deviceTypePk": 19,
+      "deviceVersionPk": 80
+    },
+    "gcj02": false,
+    "favorite": false,
+    "autoCalcCalories": false,
+    "elevationCorrected": false,
+    "manualActivity": false,
+    "personalRecord": false
+  },
+  "summaryDTO": {
+    "startTimeLocal": "2012-02-27T10:10:06.0",
+    "startTimeGMT": "2012-02-27T09:10:06.0",
+    "distance": 11610.0,
+    "duration": 4177.0,
+    "movingDuration": 3887.0,
+    "elapsedDuration": 4177.0,
+    "elevationGain": 137.0,
+    "elevationLoss": 138.0,
+    "maxElevation": 907.91,
+    "minElevation": 793.9,
+    "averageSpeed": 2.7777777777777777,
+    "averageMovingSpeed": 2.986575184492859,
+    "maxSpeed": 15.722222222222221
+  }
+}
