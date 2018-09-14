@@ -100,7 +100,7 @@ OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_J
 
 def hhmmss_from_seconds(sec):
     """Helper function that converts seconds to HH:MM:SS time format."""
-    if isinstance(sec, (float)) or isinstance(sec, (int)):
+    if isinstance(sec, (float, int)):
         formatted_time = str(timedelta(seconds=int(sec))).zfill(8)
     else:
         formatted_time = "0.000"
@@ -120,6 +120,14 @@ def trunc6(some_float):
 def trunc9(some_float):
     """Return the given float as string formatted with nine digit precision"""
     return "{0:12.9f}".format(floor(some_float * 1000000000) / 1000000000).lstrip()
+
+
+def str_not_zero(num):
+    ret = str(num)
+    print(ret)
+    if ret == '0' or ret == '0.0':
+        return ''
+    return ret
 
 
 def write_to_file(filename, content, mode):
@@ -566,7 +574,7 @@ activity...",
         csv_record += (
             empty_record
             if "elevationLoss" not in JSON_SUMMARY["summaryDTO"]
-            else str(JSON_SUMMARY["summaryDTO"]["elevationLoss"]) + ","
+            else str_not_zero(JSON_SUMMARY["summaryDTO"]["elevationLoss"]) + ","
         )
         csv_record += (
             empty_record
@@ -712,7 +720,7 @@ activity...",
             empty_record
             if not JSON_DETAIL or "metricsCount"
             not in JSON_DETAIL["com.garmin.activity.details.json.ActivityDetails"]
-            else str(
+            else str_not_zero(
                 JSON_DETAIL["com.garmin.activity.details.json.ActivityDetails"][
                     "metricsCount"
                 ]
