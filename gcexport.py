@@ -134,7 +134,7 @@ def hhmmss_from_seconds(sec):
 
 def kmh_from_mps(mps):
     """Helper function that converts meters per second (mps) to km/h."""
-    return str(mps * 3.6)
+    return trunc9(mps * 3.6)
 
 
 def write_to_file(filename, content, mode, file_time=None):
@@ -240,6 +240,11 @@ def from_activities_or_detail(element, act, detail, detail_container):
 def trunc6(some_float):
     """Return the given float as string formatted with six digit precision"""
     return "{0:12.6f}".format(floor(some_float * 1000000) / 1000000).lstrip()
+
+
+def trunc9(some_float):
+    """Return the given float as string formatted with nine digit precision"""
+    return "{0:12.9f}".format(floor(some_float * 1000000000) / 1000000000).lstrip()
 
 
 # A class building tzinfo objects for fixed-offset time zones.
@@ -476,12 +481,12 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('maxHR', "{0:.0f}".format(actvty['maxHR']) if present('maxHR', actvty) else None)
     csv_filter.set_column('averageHRRaw', str(details['summaryDTO']['averageHR']) if present('averageHR', details['summaryDTO']) else None)
     csv_filter.set_column('averageHR', "{0:.0f}".format(actvty['averageHR']) if present('averageHR', actvty) else None)
-    csv_filter.set_column('caloriesRaw', str(details['summaryDTO']['calories']) if present('calories', details['summaryDTO']) else None)
+    csv_filter.set_column('caloriesRaw', trunc6(details['summaryDTO']['calories']) if present('calories', details['summaryDTO']) else None)
     csv_filter.set_column('calories', "{0:.0f}".format(details['summaryDTO']['calories']) if present('calories', details['summaryDTO']) else None)
     csv_filter.set_column('averageCadence', str(actvty['averageBikingCadenceInRevPerMinute']) if present('averageBikingCadenceInRevPerMinute', actvty) else None)
     csv_filter.set_column('maxCadence', str(actvty['maxBikingCadenceInRevPerMinute']) if present('maxBikingCadenceInRevPerMinute', actvty) else None)
     csv_filter.set_column('strokes', str(actvty['strokes']) if present('strokes', actvty) else None)
-    csv_filter.set_column('averageTemperature', str(details['summaryDTO']['averageTemperature']) if present('averageTemperature', details['summaryDTO']) else None)
+    csv_filter.set_column('averageTemperature', trunc9(details['summaryDTO']['averageTemperature']) if present('averageTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('minTemperature', str(details['summaryDTO']['minTemperature']) if present('minTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('maxTemperature', str(details['summaryDTO']['maxTemperature']) if present('maxTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('device', extract['device'] if extract['device'] else None)
@@ -492,13 +497,13 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('eventType', value_if_found_else_key(event_type_name, actvty['eventType']['typeKey']) if present('eventType', actvty) else None)
     csv_filter.set_column('tz', details['timeZoneUnitDTO']['timeZone'] if present('timeZone', details['timeZoneUnitDTO']) else None)
     csv_filter.set_column('tzOffset', extract['start_time_with_offset'].isoformat()[-6:])
-    csv_filter.set_column('startLatitudeRaw', str(start_latitude) if start_latitude else None)
+    csv_filter.set_column('startLatitudeRaw', trunc9(start_latitude) if start_latitude else None)
     csv_filter.set_column('startLatitude', trunc6(start_latitude) if start_latitude else None)
-    csv_filter.set_column('startLongitudeRaw', str(start_longitude) if start_longitude else None)
+    csv_filter.set_column('startLongitudeRaw', trunc9(start_longitude) if start_longitude else None)
     csv_filter.set_column('startLongitude', trunc6(start_longitude) if start_longitude else None)
-    csv_filter.set_column('endLatitudeRaw', str(end_latitude) if end_latitude else None)
+    csv_filter.set_column('endLatitudeRaw', trunc9(end_latitude) if end_latitude else None)
     csv_filter.set_column('endLatitude', trunc6(end_latitude) if end_latitude else None)
-    csv_filter.set_column('endLongitudeRaw', str(end_longitude) if end_longitude else None)
+    csv_filter.set_column('endLongitudeRaw', trunc9(end_longitude) if end_longitude else None)
     csv_filter.set_column('endLongitude', trunc6(end_longitude) if end_longitude else None)
     csv_filter.set_column('sampleCount', str(extract['samples']['metricsCount']) if present('metricsCount', extract['samples']) else None)
 
