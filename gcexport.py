@@ -509,26 +509,36 @@ def extract_device(device_dict, details, start_time_seconds, args, http_req, wri
     """
     Try to get the device details (and cache them, as they're used for multiple activities)
     """
-    device_app_inst_id = None if absent_or_null('metadataDTO', details) else details['metadataDTO'][
-        'deviceApplicationInstallationId']
-    # TODO use details['metadataDTO']['deviceMetaDataDTO']['deviceId'] == null instead of magic number 80?
-    if device_app_inst_id and device_app_inst_id != 80:
+    if not present('metadataDTO', details):
+        logging.warning("no metadataDTO")
+        return
+
+    metadata = details['metadataDTO']
+    device_app_inst_id = metadata['deviceApplicationInstallationId'] if present('deviceApplicationInstallationId', metadata) else None
+    if device_app_inst_id:
         if not device_dict.has_key(device_app_inst_id):
-            device_json = http_req(URL_GC_DEVICE + str(device_app_inst_id))
-            write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json',
-                          device_json, 'w',
-                          start_time_seconds)
-            if not device_json:
-                logging.warning("Device Details %s are empty", device_app_inst_id)
-                device_dict[device_app_inst_id] = "device-id:" + str(device_app_inst_id)
-            else:
-                device_details = json.loads(device_json)
-                if present('productDisplayName', device_details):
-                    device_dict[device_app_inst_id] = device_details['productDisplayName'] + ' ' \
-                                                      + device_details['versionString']
+            # observed from my stock of activities:
+            # details['metadataDTO']['deviceMetaDataDTO']['deviceId'] == null -> device unknown
+            # details['metadataDTO']['deviceMetaDataDTO']['deviceId'] == '0' -> device unknown
+            # details['metadataDTO']['deviceMetaDataDTO']['deviceId'] == 'someid' -> device known
+            device_dict[device_app_inst_id] = None
+            device_meta = metadata['deviceMetaDataDTO'] if present('deviceMetaDataDTO', metadata) else None
+            device_id = device_meta['deviceId'] if present('deviceId', device_meta) else None
+            if not device_meta.has_key('deviceId') or device_id and device_id != '0':
+                device_json = http_req(URL_GC_DEVICE + str(device_app_inst_id))
+                write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json',
+                              device_json, 'w',
+                              start_time_seconds)
+                if not device_json:
+                    logging.warning("Device Details %s are empty", device_app_inst_id)
+                    device_dict[device_app_inst_id] = "device-id:" + str(device_app_inst_id)
                 else:
-                    logging.warning("Device details %s incomplete", device_app_inst_id)
-                    device_dict[device_app_inst_id] = None
+                    device_details = json.loads(device_json)
+                    if present('productDisplayName', device_details):
+                        device_dict[device_app_inst_id] = device_details['productDisplayName'] + ' ' \
+                                                          + device_details['versionString']
+                    else:
+                        logging.warning("Device details %s incomplete", device_app_inst_id)
         return device_dict[device_app_inst_id]
     return None
 

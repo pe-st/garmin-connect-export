@@ -85,8 +85,16 @@ def http_req_mock(url, post=None, headers=None):
 
 
 def test_extract_device():
-    with open('json/activity_emoji.json') as json_detail:
-        details = json.load(json_detail)
     args = parse_arguments([])
 
-    assert extract_device({}, details, None, args, http_req_mock, write_to_file_mock).encode('utf8') == 'fēnix 5 10.0.0.0'
+    with open('json/activity_2541953812.json') as json_detail:
+        details = json.load(json_detail)
+    assert 'fēnix 5 10.0.0.0' == extract_device({}, details, None, args, http_req_mock, write_to_file_mock).encode('utf8')
+
+    with open('json/activity_154105348_gpx_device_null.json') as json_detail:
+        details = json.load(json_detail)
+    assert None == extract_device({}, details, None, args, http_req_mock, write_to_file_mock)
+
+    with open('json/activity_995784118_gpx_device_0.json') as json_detail:
+        details = json.load(json_detail)
+    assert None == extract_device({}, details, None, args, http_req_mock, write_to_file_mock)
