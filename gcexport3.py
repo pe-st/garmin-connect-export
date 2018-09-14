@@ -18,6 +18,7 @@ Activity & event types:
 
 from datetime import datetime, timedelta
 from getpass import getpass
+from math import floor
 from os import mkdir, remove, stat
 from os.path import isdir, isfile
 from subprocess import call
@@ -108,7 +109,17 @@ def hhmmss_from_seconds(sec):
 
 def kmh_from_mps(mps):
     """Helper function that converts meters per second (mps) to km/h."""
-    return str(mps * 3.6)
+    return trunc9(mps * 3.6)
+
+
+def trunc6(some_float):
+    """Return the given float as string formatted with six digit precision"""
+    return "{0:12.6f}".format(floor(some_float * 1000000) / 1000000).lstrip()
+
+
+def trunc9(some_float):
+    """Return the given float as string formatted with nine digit precision"""
+    return "{0:12.9f}".format(floor(some_float * 1000000000) / 1000000000).lstrip()
 
 
 def write_to_file(filename, content, mode):
@@ -586,7 +597,7 @@ activity...",
         csv_record += (
             empty_record
             if "calories" not in JSON_SUMMARY["summaryDTO"]
-            else str(JSON_SUMMARY["summaryDTO"]["calories"]) + ","
+            else trunc6(JSON_SUMMARY["summaryDTO"]["calories"]) + ","
         )
         csv_record += (
             empty_record
@@ -606,7 +617,7 @@ activity...",
         csv_record += (
             empty_record
             if "averageTemperature" not in JSON_SUMMARY["summaryDTO"]
-            else str(JSON_SUMMARY["summaryDTO"]["averageTemperature"]) + ","
+            else trunc9(JSON_SUMMARY["summaryDTO"]["averageTemperature"]) + ","
         )
         csv_record += (
             empty_record
@@ -660,22 +671,22 @@ activity...",
         csv_record += (
             empty_record
             if "startLatitude" not in JSON_SUMMARY["summaryDTO"]
-            else str(JSON_SUMMARY["summaryDTO"]["startLatitude"]) + ","
+            else trunc9(JSON_SUMMARY["summaryDTO"]["startLatitude"]) + ","
         )
         csv_record += (
             empty_record
             if "startLongitude" not in JSON_SUMMARY["summaryDTO"]
-            else str(JSON_SUMMARY["summaryDTO"]["startLongitude"]) + ","
+            else trunc9(JSON_SUMMARY["summaryDTO"]["startLongitude"]) + ","
         )
         csv_record += (
             empty_record
             if "endLatitude" not in JSON_SUMMARY["summaryDTO"]
-            else str(JSON_SUMMARY["summaryDTO"]["endLatitude"]) + ","
+            else trunc9(JSON_SUMMARY["summaryDTO"]["endLatitude"]) + ","
         )
         csv_record += (
             empty_record
             if "endLongitude" not in JSON_SUMMARY["summaryDTO"]
-            else str(JSON_SUMMARY["summaryDTO"]["endLongitude"]) + ","
+            else trunc9(JSON_SUMMARY["summaryDTO"]["endLongitude"]) + ","
         )
         csv_record += (
             empty_record
