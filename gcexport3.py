@@ -124,7 +124,6 @@ def trunc9(some_float):
 
 def str_not_zero(num):
     ret = str(num)
-    print(ret)
     if ret == '0' or ret == '0.0':
         return ''
     return ret
@@ -579,7 +578,7 @@ activity...",
         csv_record += (
             empty_record
             if "elevationGain" not in JSON_SUMMARY["summaryDTO"]
-            else str(JSON_SUMMARY["summaryDTO"]["elevationGain"]) + ","
+            else str_not_zero(JSON_SUMMARY["summaryDTO"]["elevationGain"]) + ","
         )
         csv_record += (
             empty_record
