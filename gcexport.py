@@ -432,10 +432,11 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
         logging.warning("Unknown parentType %s, please tell script author", str(parent_type_id))
 
     # get some values from detail if present, from a otherwise
-    start_latitude = from_activities_or_detail('startLatitude', actvty, details, 'summaryDTO')
-    start_longitude = from_activities_or_detail('startLongitude', actvty, details, 'summaryDTO')
-    end_latitude = from_activities_or_detail('endLatitude', actvty, details, 'summaryDTO')
-    end_longitude = from_activities_or_detail('endLongitude', actvty, details, 'summaryDTO')
+    # to compare with the p2 branch only take from details...
+    start_latitude = from_activities_or_detail('startLatitude', None, details, 'summaryDTO')
+    start_longitude = from_activities_or_detail('startLongitude', None, details, 'summaryDTO')
+    end_latitude = from_activities_or_detail('endLatitude', None, details, 'summaryDTO')
+    end_longitude = from_activities_or_detail('endLongitude', None, details, 'summaryDTO')
 
     csv_filter.set_column('id', str(actvty['activityId']))
     csv_filter.set_column('url', 'https://connect.garmin.com/modern/activity/' + str(actvty['activityId']))
@@ -536,7 +537,7 @@ def extract_device(device_dict, details, start_time_seconds, args, http_req, wri
                               start_time_seconds)
                 if not device_json:
                     logging.warning("Device Details %s are empty", device_app_inst_id)
-                    device_dict[device_app_inst_id] = "device-id:" + str(device_app_inst_id)
+                    #device_dict[device_app_inst_id] = "device-id:" + str(device_app_inst_id)
                 else:
                     device_details = json.loads(device_json)
                     if present('productDisplayName', device_details):
