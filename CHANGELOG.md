@@ -1,0 +1,70 @@
+# Changelog for the Garmin Connect Exporter
+
+This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+
+## 2.1.3 - 2018-09-17
+
+- added: CHANGELOG.md file
+- changed: improved detection if device information is unknown or missing
+  (i.e. they once were known, but the information got lost somehow)
+- changed: the default CSV template (csv_header_default.properties) makes no difference
+  anymore between corrected and uncorrected elevation
+- changed: the URL_GC_ACTIVITY_DETAIL endpoint isn't called anymore when the chosen
+  CSV template doesn't contain the `sampleCount` column
+
+
+## 2.1.2 - 2018-09-11
+
+- added: switch `-ot` to set file time to activity time (original
+  [Pull Request](https://github.com/kjkjava/garmin-connect-export/pull/8) by @tobiaslj)
+
+
+## 2.1.1 - 2018-09-10
+
+- added: Python module `logging` to write log files
+- changed: console output is less verbose
+- changed: remove most Pylint warning
+
+
+## 2.1.0 - 2018-09-08
+
+- added: CSV templates (csv_header_default.properties and csv_header_running.properties)
+  to make the CSV output configurable
+
+
+## 2.0.3 - 2018-08-30
+
+- changed: Fix regex for displayName to allow dots (original
+  [Pull Request](https://github.com/moderation/garmin-connect-export/pull/19) by @chmoelders)
+
+
+## 2.0.2 - 2018-08-24
+
+- changed: use the User Stats to discover the number of activities
+  (the old `activity-search-service-1.2` endpoint doesn't work anymore)
+
+
+## 2.0.1 - 2018-06-15
+
+- added: first unit tests
+- changed: refactor into a Python module having a `main` function and using
+  the `if __name__ == "__main__":` incantation
+- changed: fixed some Pylint issues
+- changed: note about using the user name or email address for logging in
+- changed: fixed user name prompt (reported by
+  [@TheKiteRunning](https://github.com/pe-st/garmin-connect-export/issues/6))
+
+
+## 2.0.0 - 2018-04-17
+
+- changed: aligned with the current state of the **moderation** fork, but still using Python 2 for now
+- changed: fixed distance and elapsedDuration parsing
+  ([Pull Request](https://github.com/pe-st/garmin-connect-export/pull/3) by @lindback)
+
+
+## 2018-04-06
+
+- changed: login ticket is now extracted from HTML response (the cookie doesn't contain the ticket anymore)
+
+
