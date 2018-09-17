@@ -56,15 +56,40 @@ This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1
   [@TheKiteRunning](https://github.com/pe-st/garmin-connect-export/issues/6))
 
 
-## 2.0.0 - 2018-04-17
+## 2.0.0 - 2018-04-17 - pe-st | branch develop
 
 - changed: aligned with the current state of the **moderation** fork, but still using Python 2 for now
 - changed: fixed distance and elapsedDuration parsing
   ([Pull Request](https://github.com/pe-st/garmin-connect-export/pull/3) by @lindback)
 
 
-## 2018-04-06
+## 2018-04-06 - pe-st | branch develop
 
 - changed: login ticket is now extracted from HTML response (the cookie doesn't contain the ticket anymore)
 
 
+## 2018-03-10..2018-04-10 - pe-st | branch develop
+
+- changed: various tunings to the CSV output
+
+
+## 2018-03-10 - pe-st | branch develop
+
+- added: using `activitylist-service` to get the list of activities
+- changed: using **moderation**'s master as base using newer Garmin endpoints
+  (`activity-search-service-1.2`)
+
+
+## 2017-06-14 - pe-st | branch develop
+
+- added: JSON export format
+  ([Pull Request](https://github.com/kjkjava/garmin-connect-export/pull/6) by @yohcop)
+- changed: use newer endpoints for GPX/TCX downloads (`modern/.../download-service`)
+  ([Pull Request](https://github.com/kjkjava/garmin-connect-export/pull/30) by @julienr)
+- changed: don't abort for HTTP status 204 (empty GPX file)
+
+
+## 2015-12-23 - kjkjava | branch master
+
+- last commit in original repo of **kjkjava**
+- using `activity-search-service-1.0` for the list and `activity-service-1.1` for GPX/TCX exports
