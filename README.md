@@ -151,6 +151,8 @@ Contributors as of 2018-09 (Hope I didn't forget anyone):
 - Chris McCarty @cmccarty
 - Julien Rebetez @julienr
 - Peter Steiner @pe-st
+- @lindback
+- @TheKiteRunning
 - Jens Diemer @jedie
 - Christian Moelders @chmoelders
 
