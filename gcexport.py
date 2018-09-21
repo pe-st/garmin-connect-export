@@ -343,32 +343,32 @@ def parse_arguments(argv):
     current_date = datetime.now().strftime('%Y-%m-%d')
     activities_directory = './' + current_date + '_garmin_connect_export'
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Garmin Connect Exporter')
 
     # TODO: Implement verbose and/or quiet options.
-    # parser.add_argument('-v', '--verbose', help="increase output verbosity", action="store_true")
-    parser.add_argument('--version', help="print version and exit", action="store_true")
-    parser.add_argument('--username', help="your Garmin Connect username or email address \
-        (otherwise, you will be prompted)", nargs='?')
-    parser.add_argument('--password', help="your Garmin Connect password (otherwise, you will be \
-        prompted)", nargs='?')
-    parser.add_argument('-c', '--count', nargs='?', default="1", help="number of recent activities to \
-        download, or 'all' (default: 1)")
-    parser.add_argument('-e', '--external', nargs='?', default="", help="path to external program to \
-        pass CSV file too (default: )")
-    parser.add_argument('-a', '--args', nargs='?', default="", help="additional arguments to pass to \
-        external program (default: )")
-    parser.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original', 'json'], default="gpx",
+    # parser.add_argument('-v', '--verbose', help='increase output verbosity', action='store_true')
+    parser.add_argument('--version', action='version', version='%(prog)s ' + SCRIPT_VERSION,
+        help='print version and exit')
+    parser.add_argument('--username',
+        help='your Garmin Connect username or email address (otherwise, you will be prompted)')
+    parser.add_argument('--password',
+        help='your Garmin Connect password (otherwise, you will be prompted)')
+    parser.add_argument('-c', '--count', default='1',
+        help='number of recent activities to download, or \'all\' (default: 1)')
+    parser.add_argument('-e', '--external',
+        help='path to external program to pass CSV file too')
+    parser.add_argument('-a', '--args',
+        help='additional arguments to pass to external program')
+    parser.add_argument('-f', '--format', choices=['gpx', 'tcx', 'original', 'json'], default='gpx',
         help="export format; can be 'gpx', 'tcx', 'original' or 'json' (default: 'gpx')")
-    parser.add_argument('-d', '--directory', nargs='?', default=activities_directory, help="the \
-        directory to export to (default: './YYYY-MM-DD_garmin_connect_export')")
-    parser.add_argument('-u', '--unzip', help="if downloading ZIP files (format: 'original'), unzip \
-        the file and removes the ZIP file", action="store_true")
-    parser.add_argument('-ot', '--originaltime',
-                        help="will set downloaded (and possibly unzipped) file time to the activity start time",
-                        action="store_true")
-    parser.add_argument('-t', '--template', nargs='?', default=CSV_TEMPLATE, help="template \
-        file with desired columns for CSV output")
+    parser.add_argument('-d', '--directory', default=activities_directory,
+        help='the directory to export to (default: \'./YYYY-MM-DD_garmin_connect_export\')')
+    parser.add_argument('-u', '--unzip', action='store_true',
+        help='if downloading ZIP files (format: \'original\'), unzip the file and remove the ZIP file')
+    parser.add_argument('-ot', '--originaltime', action='store_true',
+        help='will set downloaded (and possibly unzipped) file time to the activity start time')
+    parser.add_argument('-t', '--template', default=CSV_TEMPLATE,
+        help='template file with desired columns for CSV output')
 
     return parser.parse_args(argv[1:])
 
@@ -653,12 +653,8 @@ def main(argv):
     Main entry point for gcexport.py
     """
     setup_logging()
-    args = parse_arguments(argv)
     logging.info("Starting %s version %s", argv[0], SCRIPT_VERSION)
-
-    if args.version:
-        print(argv[0] + ", version " + SCRIPT_VERSION)
-        exit(0)
+    args = parse_arguments(argv)
 
     print('Welcome to Garmin Connect Exporter!')
 
@@ -834,7 +830,7 @@ def main(argv):
 
     csv_file.close()
 
-    if len(args.external):
+    if args.external:
         print('Open CSV output.')
         print(csv_filename)
         call([args.external, "--" + args.args, csv_filename])

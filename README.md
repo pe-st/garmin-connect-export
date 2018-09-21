@@ -37,40 +37,37 @@ Usage
 You will need a little experience running things from the command line to use this script. That said, here are the usage details from the `--help` flag:
 
 ```
-usage: gcexport.py [-h] [--version] [--username [USERNAME]]
-                   [--password [PASSWORD]] [-c [COUNT]] [-e [EXTERNAL]]
-                   [-a [ARGS]] [-f [{gpx,tcx,original,json}]] [-d [DIRECTORY]]
-                   [-u] [-ot] [-t [TEMPLATE]]
+usage: gcexport.py [-h] [--version] [--username USERNAME]
+                   [--password PASSWORD] [-c COUNT] [-e EXTERNAL] [-a ARGS]
+                   [-f {gpx,tcx,original,json}] [-d DIRECTORY] [-u] [-ot]
+                   [-t TEMPLATE]
+
+Garmin Connect Exporter
 
 optional arguments:
   -h, --help            show this help message and exit
   --version             print version and exit
-  --username [USERNAME]
-                        your Garmin Connect username or email address
+  --username USERNAME   your Garmin Connect username or email address
                         (otherwise, you will be prompted)
-  --password [PASSWORD]
-                        your Garmin Connect password (otherwise, you will be
+  --password PASSWORD   your Garmin Connect password (otherwise, you will be
                         prompted)
-  -c [COUNT], --count [COUNT]
+  -c COUNT, --count COUNT
                         number of recent activities to download, or 'all'
                         (default: 1)
-  -e [EXTERNAL], --external [EXTERNAL]
+  -e EXTERNAL, --external EXTERNAL
                         path to external program to pass CSV file too
-                        (default: )
-  -a [ARGS], --args [ARGS]
-                        additional arguments to pass to external program
-                        (default: )
-  -f [{gpx,tcx,original,json}], --format [{gpx,tcx,original,json}]
+  -a ARGS, --args ARGS  additional arguments to pass to external program
+  -f {gpx,tcx,original,json}, --format {gpx,tcx,original,json}
                         export format; can be 'gpx', 'tcx', 'original' or
                         'json' (default: 'gpx')
-  -d [DIRECTORY], --directory [DIRECTORY]
+  -d DIRECTORY, --directory DIRECTORY
                         the directory to export to (default: './YYYY-MM-
                         DD_garmin_connect_export')
   -u, --unzip           if downloading ZIP files (format: 'original'), unzip
-                        the file and removes the ZIP file
+                        the file and remove the ZIP file
   -ot, --originaltime   will set downloaded (and possibly unzipped) file time
                         to the activity start time
-  -t [TEMPLATE], --template [TEMPLATE]
+  -t TEMPLATE, --template TEMPLATE
                         template file with desired columns for CSV output
 ```
 
