@@ -24,6 +24,7 @@ from getpass import getpass
 from math import floor
 from os import mkdir, remove, stat, utime
 from os.path import isdir, isfile
+from subprocess import call
 from timeit import default_timer as timer
 from urllib import urlencode
 
@@ -353,6 +354,11 @@ def parse_arguments(argv):
         prompted)", nargs='?')
     parser.add_argument('-c', '--count', nargs='?', default="1", help="number of recent activities to \
         download, or 'all' (default: 1)")
+    # to call Libreoffice on Mac use '-e /Applications/LibreOffice.app/Contents/MacOS/soffice -a calc'
+    parser.add_argument('-e', '--external', nargs='?', default="", help="path to external program to \
+        pass CSV file too (default: )")
+    parser.add_argument('-a', '--args', nargs='?', default="", help="additional arguments to pass to \
+        external program (default: )")
     parser.add_argument('-f', '--format', nargs='?', choices=['gpx', 'tcx', 'original', 'json'], default="gpx",
         help="export format; can be 'gpx', 'tcx', 'original' or 'json' (default: 'gpx')")
     parser.add_argument('-d', '--directory', nargs='?', default=activities_directory, help="the \
@@ -829,10 +835,10 @@ def main(argv):
 
     csv_file.close()
 
-    print('Open CSV output.')
-    print(csv_filename)
-    # open CSV file. Comment this line out if you don't want this behavior
-    # call(["/usr/bin/libreoffice6.0", "--calc", csv_filename])
+    if len(args.external):
+        print('Open CSV output.')
+        print(csv_filename)
+        call([args.external, "--" + args.args, csv_filename])
 
     print('Done!')
 
