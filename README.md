@@ -38,9 +38,9 @@ You will need a little experience running things from the command line to use th
 
 ```
 usage: gcexport.py [-h] [--version] [--username [USERNAME]]
-                   [--password [PASSWORD]] [-c [COUNT]]
-                   [-f [{gpx,tcx,original,json}]] [-d [DIRECTORY]] [-u] [-ot]
-                   [-t [TEMPLATE]]
+                   [--password [PASSWORD]] [-c [COUNT]] [-e [EXTERNAL]]
+                   [-a [ARGS]] [-f [{gpx,tcx,original,json}]] [-d [DIRECTORY]]
+                   [-u] [-ot] [-t [TEMPLATE]]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -54,6 +54,12 @@ optional arguments:
   -c [COUNT], --count [COUNT]
                         number of recent activities to download, or 'all'
                         (default: 1)
+  -e [EXTERNAL], --external [EXTERNAL]
+                        path to external program to pass CSV file too
+                        (default: )
+  -a [ARGS], --args [ARGS]
+                        additional arguments to pass to external program
+                        (default: )
   -f [{gpx,tcx,original,json}], --format [{gpx,tcx,original,json}]
                         export format; can be 'gpx', 'tcx', 'original' or
                         'json' (default: 'gpx')
@@ -70,6 +76,8 @@ optional arguments:
 
 Examples:
 `python gcexport.py --count all` will download all of your data to a dated directory.
+
+`python gcexport.py -c all -e /Applications/LibreOffice.app/Contents/MacOS/soffice -a calc` will download all of your data and then use LibreOffice to open the CSV file with the list of your activities (the path to LibreOffice is platform-specific; the example is for macOS).
 
 `python gcexport.py -d ~/MyActivities -c 3 -f original -u --username bobbyjoe --password bestpasswordever1` will download your three most recent activities in the FIT file format (or whatever they were uploaded as) into the `~/MyActivities` directory (unless they already exist). Using the `--password` flags is not recommended because your password will be stored in your command line history. Instead, omit it to be prompted (and note that nothing will be displayed when you type your password). Equally you might not want to have the username stored in your command line history; in this case avoid also to give the `--username` option, and you'll be prompted for it. Note also that depending on the age of your garmin account your username is the email address (I myself still can login both with username and email address, but I've had a report that for some users the email address is mandatory to login).
 

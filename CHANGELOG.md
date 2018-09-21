@@ -3,6 +3,12 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 2.1.4 - 2018-09-21
+
+- added: command line switches `-e` and `-a` to pass the CSV output to an external programm
+  (merged from @moderation's commit from 2018-09-09)
+
+
 ## 2.1.3 - 2018-09-17
 
 - added: CHANGELOG.md file

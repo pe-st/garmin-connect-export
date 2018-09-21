@@ -38,7 +38,7 @@ import sys
 import urllib2
 import zipfile
 
-SCRIPT_VERSION = '2.1.3'
+SCRIPT_VERSION = '2.1.4'
 
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
@@ -354,7 +354,6 @@ def parse_arguments(argv):
         prompted)", nargs='?')
     parser.add_argument('-c', '--count', nargs='?', default="1", help="number of recent activities to \
         download, or 'all' (default: 1)")
-    # to call Libreoffice on Mac use '-e /Applications/LibreOffice.app/Contents/MacOS/soffice -a calc'
     parser.add_argument('-e', '--external', nargs='?', default="", help="path to external program to \
         pass CSV file too (default: )")
     parser.add_argument('-a', '--args', nargs='?', default="", help="additional arguments to pass to \
