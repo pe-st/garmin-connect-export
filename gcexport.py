@@ -34,7 +34,9 @@ import csv
 import json
 import logging
 import re
+import string
 import sys
+import unicodedata
 import urllib2
 import zipfile
 
@@ -46,6 +48,9 @@ OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
 # this is almost the datetime format Garmin used in the activity-search-service
 # JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
 ALMOST_RFC_1123 = "%a, %d %b %Y %H:%M"
+
+# used by sanitize_filename()
+VALID_FILENAME_CHARS = "-_.() %s%s" % (string.ascii_letters, string.digits)
 
 # map the numeric parentTypeId to its name for the CSV output
 PARENT_TYPE_ID = {
@@ -136,6 +141,16 @@ def hhmmss_from_seconds(sec):
 def kmh_from_mps(mps):
     """Helper function that converts meters per second (mps) to km/h."""
     return str(mps * 3.6)
+
+
+def sanitize_filename(name, max_length=0):
+    """
+    Remove or replace characters that are unsafe for filename
+    """
+    # inspired by https://stackoverflow.com/a/698714/3686
+    cleaned_filename = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore') if name else ''
+    stripped_filename = ''.join(c for c in cleaned_filename if c in VALID_FILENAME_CHARS).replace(' ', '_')
+    return stripped_filename[:max_length] if max_length > 0 else stripped_filename
 
 
 def write_to_file(filename, content, mode, file_time=None):
@@ -345,8 +360,6 @@ def parse_arguments(argv):
 
     parser = argparse.ArgumentParser(description='Garmin Connect Exporter')
 
-    # TODO: Implement verbose and/or quiet options.
-    # parser.add_argument('-v', '--verbose', help='increase output verbosity', action='store_true')
     parser.add_argument('--version', action='version', version='%(prog)s ' + SCRIPT_VERSION,
         help='print version and exit')
     parser.add_argument('--username',
@@ -367,6 +380,8 @@ def parse_arguments(argv):
         help='if downloading ZIP files (format: \'original\'), unzip the file and remove the ZIP file')
     parser.add_argument('-ot', '--originaltime', action='store_true',
         help='will set downloaded (and possibly unzipped) file time to the activity start time')
+    parser.add_argument('--desc', type=int, nargs='?', const=0, default=None,
+        help='append the activity\'s description to the file name of the download; limit size if number is given')
     parser.add_argument('-t', '--template', default=CSV_TEMPLATE,
         help='template file with desired columns for CSV output')
 
@@ -548,25 +563,25 @@ def extract_device(device_dict, details, start_time_seconds, args, http_req, wri
     return None
 
 
-def export_data_file(activity_id, activity_details, args, file_time=None):
+def export_data_file(activity_id, activity_details, args, file_time, append_desc):
     """
     Write the data of the activity to a file, depending on the chosen data format
     """
     if args.format == 'gpx':
-        data_filename = args.directory + '/activity_' + activity_id + '.gpx'
+        data_filename = args.directory + '/activity_' + activity_id + append_desc + '.gpx'
         download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
         file_mode = 'w'
     elif args.format == 'tcx':
-        data_filename = args.directory + '/activity_' + activity_id + '.tcx'
+        data_filename = args.directory + '/activity_' + activity_id + append_desc + '.tcx'
         download_url = URL_GC_TCX_ACTIVITY + activity_id + '?full=true'
         file_mode = 'w'
     elif args.format == 'original':
-        data_filename = args.directory + '/activity_' + activity_id + '.zip'
+        data_filename = args.directory + '/activity_' + activity_id + append_desc + '.zip'
         fit_filename = args.directory + '/' + activity_id + '.fit'
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
     elif args.format == 'json':
-        data_filename = args.directory + '/activity_' + activity_id + '.json'
+        data_filename = args.directory + '/activity_' + activity_id + append_desc + '.json'
         file_mode = 'w'
     else:
         raise Exception('Unrecognized format.')
@@ -794,6 +809,11 @@ def main(argv):
             else:
                 print('0.000 km')
 
+            if args.desc != None:
+                append_desc = '_' + sanitize_filename(actvty['activityName'], args.desc)
+            else:
+                append_desc = ''
+
             if args.originaltime:
                 start_time_seconds = actvty['beginTimestamp'] // 1000 if present('beginTimestamp', actvty) else None
             else:
@@ -821,7 +841,7 @@ def main(argv):
             # Write stats to CSV.
             csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name)
 
-            export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds)
+            export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc)
 
             current_index += 1
         # End for loop for activities of chunk

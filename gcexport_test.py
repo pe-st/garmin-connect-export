@@ -39,6 +39,18 @@ def test_hhmmss_from_seconds():
     assert hhmmss_from_seconds(round(2969.6)) == "00:49:30"
 
 
+def test_sanitize_filename():
+    assert 'all_ascii' == sanitize_filename(u'all_ascii')
+    assert 'deja_funf' == sanitize_filename(u'déjà fünf')
+    assert 'deja_' == sanitize_filename(u'déjà fünf', 5)
+    assert '' == sanitize_filename(u'')
+    assert '' == sanitize_filename(None)
+
+    with open('json/activity_emoji.json') as json_data:
+        details = json.load(json_data)
+    assert 'Biel__Pavillon' == sanitize_filename(details['activityName'])
+
+
 def test_load_properties_keys():
     with open('csv_header_default.properties', 'r') as prop:
         csv_header_props = prop.read()
