@@ -12,6 +12,10 @@
     <string>cralvarez</string>
     <key>Program</key>
     <string>/Users/cralvarez/Documents/CartoGPS/Data/garmin-connect-export.sh</string>
+    <key>StandardOutPath</key>
+    <string>/Users/cralvarez/Documents/CartoGPS/Data/log/python_script.out</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/cralvarez/Documents/CartoGPS/Data/log/python_script.error</string>
     <key>StartCalendarInterval</key>
     <dict>
         <key>Minute</key>
