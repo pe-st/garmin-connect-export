@@ -625,7 +625,8 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                 logging.info('Writing empty file since there was no original activity data...')
                 data = ''
             else:
-                raise Exception('Failed. Got an unexpected HTTP error (' + str(ex.code) + download_url + ').')
+                logging.info('Got %s for %s', ex.code, download_url)
+                raise Exception('Failed. Got an HTTP error ' + str(ex.code) + ' for ' + download_url)
     else:
         data = activity_details
 
@@ -857,7 +858,8 @@ def main(argv):
                     if present('com.garmin.activity.details.json.ActivityDetails', samples):
                         extract['samples'] = samples['com.garmin.activity.details.json.ActivityDetails']
                 except urllib2.HTTPError:
-                    logging.info("Unable to get samples for %d", actvty['activityId'])
+                    pass # don't abort just for missing samples...
+                    # logging.info("Unable to get samples for %d", actvty['activityId'])
                     # logging.exception(e)
 
             # Write stats to CSV.
