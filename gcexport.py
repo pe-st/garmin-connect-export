@@ -22,8 +22,8 @@ from __future__ import print_function
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
-from os import mkdir, remove, stat, utime
-from os.path import isdir, isfile
+from os import mkdir, rename, remove, stat, utime
+from os.path import isdir, isfile, splitext
 from subprocess import call
 from timeit import default_timer as timer
 from urllib import urlencode
@@ -577,6 +577,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
         file_mode = 'w'
     elif args.format == 'original':
         data_filename = args.directory + '/activity_' + activity_id + append_desc + '.zip'
+        # TODO not all 'original' files are in FIT format, some are GPX or TCX...
         fit_filename = args.directory + '/' + activity_id + '.fit'
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
@@ -631,20 +632,23 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     if args.format == 'original':
         # Even manual upload of a GPX file is zipped, but we'll validate the extension.
         if args.unzip and data_filename[-3:].lower() == 'zip':
-            print("Unzipping and removing original files...")
-            print('Filesize is: ' + str(stat(data_filename).st_size))
+            logging.debug('Unzipping and removing original file, size is %s', stat(data_filename).st_size)
             if stat(data_filename).st_size > 0:
                 zip_file = open(data_filename, 'rb')
                 zip_obj = zipfile.ZipFile(zip_file)
                 for name in zip_obj.namelist():
                     unzipped_name = zip_obj.extract(name, args.directory)
+                    # prepend 'activity_' and append the description to the base name
+                    name_base, name_ext = splitext(name)
+                    new_name = args.directory + '/activity_' + name_base + append_desc + name_ext
+                    logging.debug('renaming %s to %s', unzipped_name, new_name)
+                    rename(unzipped_name, new_name)
                     if file_time:
-                        utime(unzipped_name, (file_time, file_time))
+                        utime(new_name, (file_time, file_time))
                 zip_file.close()
             else:
-                print('Skipping 0Kb zip file.')
+                print('\tSkipping 0Kb zip file.')
             remove(data_filename)
-        print('Done.')
 
 
 def setup_logging():
