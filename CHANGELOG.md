@@ -3,6 +3,11 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 2.1.5 - 2018-09-24
+
+- added: command line switches `-v` (verbosity) and `--desc` (description)
+
+
 ## 2.1.4 - 2018-09-21
 
 - added: command line switches `-e` and `-a` to pass the CSV output to an external programm
