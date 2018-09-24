@@ -37,16 +37,17 @@ Usage
 You will need a little experience running things from the command line to use this script. That said, here are the usage details from the `--help` flag:
 
 ```
-usage: gcexport.py [-h] [--version] [--username USERNAME]
+usage: gcexport.py [-h] [--version] [-v] [--username USERNAME]
                    [--password PASSWORD] [-c COUNT] [-e EXTERNAL] [-a ARGS]
                    [-f {gpx,tcx,original,json}] [-d DIRECTORY] [-u] [-ot]
-                   [-t TEMPLATE]
+                   [--desc [DESC]] [-t TEMPLATE]
 
 Garmin Connect Exporter
 
 optional arguments:
   -h, --help            show this help message and exit
   --version             print version and exit
+  -v, --verbosity       increase output verbosity
   --username USERNAME   your Garmin Connect username or email address
                         (otherwise, you will be prompted)
   --password PASSWORD   your Garmin Connect password (otherwise, you will be
@@ -67,12 +68,16 @@ optional arguments:
                         the file and remove the ZIP file
   -ot, --originaltime   will set downloaded (and possibly unzipped) file time
                         to the activity start time
+  --desc [DESC]         append the activity's description to the file name of
+                        the download; limit size if number is given
   -t TEMPLATE, --template TEMPLATE
                         template file with desired columns for CSV output
 ```
 
 Examples:
 `python gcexport.py --count all` will download all of your data to a dated directory.
+
+`python gcexport.py -c all -f gpx -ot --desc 20` will export all of your data in GPX format, set the timestamp of the GPX files to the start time of the activity and append the 20 first characters of the activity's description to the file name.
 
 `python gcexport.py -c all -e /Applications/LibreOffice.app/Contents/MacOS/soffice -a calc` will download all of your data and then use LibreOffice to open the CSV file with the list of your activities (the path to LibreOffice is platform-specific; the example is for macOS).
 

@@ -40,7 +40,7 @@ import unicodedata
 import urllib2
 import zipfile
 
-SCRIPT_VERSION = '2.1.4'
+SCRIPT_VERSION = '2.1.5'
 
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
@@ -527,13 +527,13 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.write_row()
 
 
-def extract_device(device_dict, details, start_time_seconds, args, http_req, write_to_file):
+def extract_device(device_dict, details, start_time_seconds, args, http_caller, file_writer):
     """
     Try to get the device details (and cache them, as they're used for multiple activities)
     """
     if not present('metadataDTO', details):
         logging.warning("no metadataDTO")
-        return
+        return None
 
     metadata = details['metadataDTO']
     device_app_inst_id = metadata['deviceApplicationInstallationId'] if present('deviceApplicationInstallationId', metadata) else None
@@ -547,10 +547,10 @@ def extract_device(device_dict, details, start_time_seconds, args, http_req, wri
             device_meta = metadata['deviceMetaDataDTO'] if present('deviceMetaDataDTO', metadata) else None
             device_id = device_meta['deviceId'] if present('deviceId', device_meta) else None
             if not device_meta.has_key('deviceId') or device_id and device_id != '0':
-                device_json = http_req(URL_GC_DEVICE + str(device_app_inst_id))
-                write_to_file(args.directory + '/device_' + str(device_app_inst_id) + '.json',
-                              device_json, 'w',
-                              start_time_seconds)
+                device_json = http_caller(URL_GC_DEVICE + str(device_app_inst_id))
+                file_writer(args.directory + '/device_' + str(device_app_inst_id) + '.json',
+                            device_json, 'w',
+                            start_time_seconds)
                 if not device_json:
                     logging.warning("Device Details %s are empty", device_app_inst_id)
                     device_dict[device_app_inst_id] = "device-id:" + str(device_app_inst_id)
@@ -671,6 +671,7 @@ def setup_logging():
 
 
 def logging_verbosity(verbosity):
+    """Adapt logging verbosity, separately for logfile and console output"""
     logger = logging.getLogger()
     for handler in logger.handlers:
         if isinstance(handler, logging.FileHandler):
