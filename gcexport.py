@@ -24,6 +24,7 @@ from getpass import getpass
 from math import floor
 from os import mkdir, rename, remove, stat, utime
 from os.path import isdir, isfile, splitext
+from platform import python_version
 from subprocess import call
 from timeit import default_timer as timer
 from urllib import urlencode
@@ -173,18 +174,20 @@ def http_req(url, post=None, headers=None):
         for header_key, header_value in headers.iteritems():
             request.add_header(header_key, header_value)
     if post:
-        # print "POSTING"
         post = urlencode(post)  # Convert dictionary to POST parameter string.
-    # print(request.headers)
-    # print(COOKIE_JAR)
-    # print(post)
-    # print(request)
+
     start_time = timer()
-    response = OPENER.open(request, data=post)  # This line may throw a urllib2.HTTPError.
+    try:
+        response = OPENER.open(request, data=post)
+    except urllib2.URLError as e:
+        if hasattr(e, 'reason'):
+            logging.error('Failed to reach url %s, reason: %s.', url, e.reason)
+            raise
+        else:
+            raise
     logging.debug('Got %s in %s s from %s', response.getcode(), timer() - start_time, url)
 
-    # N.B. urllib2 will follow any 302 redirects. Also, the "open" call above may throw a
-    # urllib2.HTTPError which is checked for below.
+    # N.B. urllib2 will follow any 302 redirects.
     # print(response.getcode())
     if response.getcode() == 204:
         # 204 = no content, e.g. for activities without GPS coordinates there is no GPX download.
@@ -691,7 +694,7 @@ def main(argv):
     Main entry point for gcexport.py
     """
     setup_logging()
-    logging.info("Starting %s version %s", argv[0], SCRIPT_VERSION)
+    logging.info("Starting %s version %s, using Python version %s", argv[0], SCRIPT_VERSION, python_version())
     args = parse_arguments(argv)
     logging_verbosity(args.verbosity)
 
