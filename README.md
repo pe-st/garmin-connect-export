@@ -32,6 +32,13 @@ If there is no GPS track data (e.g., due to an indoor treadmill workout), a data
 
 If you have many activities, you may find that this script crashes with an "Operation timed out" message. Just run the script again and it will pick up where it left off.
 
+Installation
+------------
+
+- If you're comfortable using Git, just clone the repo from github
+- Otherwise get the latest `zip` (or `tar.gz`) from the [releases page](https://github.com/pe-st/garmin-connect-export/releases)
+  and unpack it where it suits you.
+
 Usage
 -----
 You will need a little experience running things from the command line to use this script. That said, here are the usage details from the `--help` flag:
@@ -85,7 +92,10 @@ Examples:
 
 Alternatively, you may run it with `./gcexport.py` if you set the file as executable (i.e., `chmod u+x gcexport.py`).
 
-Of course, you must have Python installed to run this. Most Mac and Linux users should already have it. Also, as stated above, you should have some basic command line experience.
+Of course, you must have Python installed to run this. Most Mac and Linux users should already have it. Note that if you run into the [TLSV1 ALERT problem](https://github.com/pe-st/garmin-connect-export/issues/16), your Python installation might not be recent enough, e.g. macOS Sierra and High Sierra come with Python 2.7.10 which suffers from this problem (macOS Mojave's Python is recent enough though). In this case you can install a more recent Python on your Mac using [Homebrew](https://docs.brew.sh/Homebrew-and-Python) and MUSTN'T run the script with `./gcexport.py`, but with `python gcexport.py`.
+
+Also, as stated above, you should have some basic command line experience.
+
 
 Data
 ----
