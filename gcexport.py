@@ -24,6 +24,7 @@ from getpass import getpass
 from math import floor
 from os import mkdir, rename, remove, stat, utime
 from os.path import isdir, isfile, splitext
+from platform import python_version
 from subprocess import call
 from timeit import default_timer as timer
 from urllib import urlencode
@@ -78,7 +79,7 @@ LIMIT_MAXIMUM = 1000
 
 MAX_TRIES = 3
 
-CSV_TEMPLATE = "csv_header_running.properties"
+CSV_TEMPLATE = "csv_header_kjkjava.properties"
 
 WEBHOST = "https://connect.garmin.com"
 REDIRECT = "https://connect.garmin.com/post-auth/login"
@@ -173,18 +174,20 @@ def http_req(url, post=None, headers=None):
         for header_key, header_value in headers.iteritems():
             request.add_header(header_key, header_value)
     if post:
-        # print "POSTING"
         post = urlencode(post)  # Convert dictionary to POST parameter string.
-    # print(request.headers)
-    # print(COOKIE_JAR)
-    # print(post)
-    # print(request)
+
     start_time = timer()
-    response = OPENER.open(request, data=post)  # This line may throw a urllib2.HTTPError.
+    try:
+        response = OPENER.open(request, data=post)
+    except urllib2.URLError as e:
+        if hasattr(e, 'reason'):
+            logging.error('Failed to reach url %s, reason: %s.', url, e.reason)
+            raise
+        else:
+            raise
     logging.debug('Got %s in %s s from %s', response.getcode(), timer() - start_time, url)
 
-    # N.B. urllib2 will follow any 302 redirects. Also, the "open" call above may throw a
-    # urllib2.HTTPError which is checked for below.
+    # N.B. urllib2 will follow any 302 redirects.
     # print(response.getcode())
     if response.getcode() == 204:
         # 204 = no content, e.g. for activities without GPS coordinates there is no GPX download.
@@ -493,6 +496,7 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('maxElevation', str(round(details['summaryDTO']['maxElevation'], 2)) if present('maxElevation', details['summaryDTO']) else None)
     csv_filter.set_column('maxElevationUncorr', str(round(details['summaryDTO']['maxElevation'], 2)) if not actvty['elevationCorrected'] and present('maxElevation', details['summaryDTO']) else None)
     csv_filter.set_column('maxElevationCorr', str(round(details['summaryDTO']['maxElevation'], 2)) if actvty['elevationCorrected'] and present('maxElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationCorrected', 'true' if actvty['elevationCorrected'] else 'false')
     # csv_record += empty_record  # no minimum heart rate in JSON
     csv_filter.set_column('maxHRRaw', str(details['summaryDTO']['maxHR']) if present('maxHR', details['summaryDTO']) else None)
     csv_filter.set_column('maxHR', "{0:.0f}".format(actvty['maxHR']) if present('maxHR', actvty) else None)
@@ -500,6 +504,13 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('averageHR', "{0:.0f}".format(actvty['averageHR']) if present('averageHR', actvty) else None)
     csv_filter.set_column('caloriesRaw', str(details['summaryDTO']['calories']) if present('calories', details['summaryDTO']) else None)
     csv_filter.set_column('calories', "{0:.0f}".format(details['summaryDTO']['calories']) if present('calories', details['summaryDTO']) else None)
+    csv_filter.set_column('vo2max', str(actvty['vO2MaxValue']) if present('vO2MaxValue', actvty) else None)
+    csv_filter.set_column('aerobicEffect', str(round(details['summaryDTO']['trainingEffect'], 2)) if present('trainingEffect', details['summaryDTO']) else None)
+    csv_filter.set_column('anaerobicEffect', str(round(details['summaryDTO']['anaerobicTrainingEffect'], 2)) if present('anaerobicTrainingEffect', details['summaryDTO']) else None)
+    csv_filter.set_column('averageRunCadence', str(round(details['summaryDTO']['averageRunCadence'], 2)) if present('averageRunCadence', details['summaryDTO']) else None)
+    csv_filter.set_column('maxRunCadence', str(details['summaryDTO']['maxRunCadence']) if present('maxRunCadence', details['summaryDTO']) else None)
+    csv_filter.set_column('strideLength', str(round(details['summaryDTO']['strideLength'], 2)) if present('strideLength', details['summaryDTO']) else None)
+    csv_filter.set_column('steps', str(actvty['steps']) if present('steps', actvty) else None)
     csv_filter.set_column('averageCadence', str(actvty['averageBikingCadenceInRevPerMinute']) if present('averageBikingCadenceInRevPerMinute', actvty) else None)
     csv_filter.set_column('maxCadence', str(actvty['maxBikingCadenceInRevPerMinute']) if present('maxBikingCadenceInRevPerMinute', actvty) else None)
     csv_filter.set_column('strokes', str(actvty['strokes']) if present('strokes', actvty) else None)
@@ -512,8 +523,11 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('activityParent', value_if_found_else_key(activity_type_name, 'activity_type_' + parent_type_key) if parent_type_key else None)
     csv_filter.set_column('eventTypeKey', actvty['eventType']['typeKey'].title() if present('typeKey', actvty['eventType']) else None)
     csv_filter.set_column('eventType', value_if_found_else_key(event_type_name, actvty['eventType']['typeKey']) if present('eventType', actvty) else None)
+    csv_filter.set_column('privacy', details['accessControlRuleDTO']['typeKey'] if present('typeKey', details['accessControlRuleDTO']) else None)
+    csv_filter.set_column('fileFormat', details['metadataDTO']['fileFormat']['formatKey'] if present('fileFormat', details['metadataDTO']) and present('formatKey', details['metadataDTO']['fileFormat']) else None)
     csv_filter.set_column('tz', details['timeZoneUnitDTO']['timeZone'] if present('timeZone', details['timeZoneUnitDTO']) else None)
     csv_filter.set_column('tzOffset', extract['start_time_with_offset'].isoformat()[-6:])
+    csv_filter.set_column('locationName', details['locationName'] if present('locationName', details) else None)
     csv_filter.set_column('startLatitudeRaw', str(start_latitude) if start_latitude else None)
     csv_filter.set_column('startLatitude', trunc6(start_latitude) if start_latitude else None)
     csv_filter.set_column('startLongitudeRaw', str(start_longitude) if start_longitude else None)
@@ -691,7 +705,7 @@ def main(argv):
     Main entry point for gcexport.py
     """
     setup_logging()
-    logging.info("Starting %s version %s", argv[0], SCRIPT_VERSION)
+    logging.info("Starting %s version %s, using Python version %s", argv[0], SCRIPT_VERSION, python_version())
     args = parse_arguments(argv)
     logging_verbosity(args.verbosity)
 
