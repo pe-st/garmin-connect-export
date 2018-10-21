@@ -440,6 +440,7 @@ def csv_write_record(csv_file, a, details, type_id, parent_type_id, activity_typ
 
 
 def export_data_file(activity_id, activity_details, args, a, activity_type_name, start_time_with_offset):
+    """Return False only if file already exists"""
     if args.format == 'gpx':
         data_filename = args.directory + '/activity_' + activity_id + '.gpx'
         download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
@@ -468,12 +469,12 @@ def export_data_file(activity_id, activity_details, args, a, activity_type_name,
 
     if isfile(data_filename):
         print('\tData file already exists; skipping...')
-        return
+        return True
 
     # Regardless of unzip setting, don't redownload if the ZIP, FIT or GPX file exists.
     if args.format == 'original' and (isfile(fit_filename + '.fit') or isfile(fit_filename + '.gpx')):
         print('\tFIT data file already exists; skipping...')
-        return
+        return False
 
     if args.format != 'json':
         # Download the data file from Garmin Connect. If the download fails (e.g., due to timeout),
@@ -550,6 +551,8 @@ def export_data_file(activity_id, activity_details, args, a, activity_type_name,
     else:
         # TODO: Consider validating other formats.
         print('Done.')
+
+    return True
 
 
 def main(argv):
@@ -721,12 +724,11 @@ def main(argv):
                     device_dict[device_app_inst_id] = None if not device_details else json.loads(device_details)
                 device = device_dict[device_app_inst_id]
 
-            # Write stats to CSV.
-            csv_write_record(csv_file, a, details, type_id, parent_type_id, activity_type_name, event_type_name, device,
-                             start_time_with_offset, end_time_with_offset, duration, start_latitude, start_longitude,
-                             end_latitude, end_longitude)
-
-            export_data_file(str(a['activityId']), activity_details, args, a, activity_type_name, start_time_with_offset)
+            if (export_data_file(str(a['activityId']), activity_details, args, a, activity_type_name, start_time_with_offset)):
+                # Write stats to CSV.
+                csv_write_record(csv_file, a, details, type_id, parent_type_id, activity_type_name, event_type_name, device,
+                    start_time_with_offset, end_time_with_offset, duration, start_latitude, start_longitude,
+                    end_latitude, end_longitude)
 
             latest_date = start_time_with_offset.strftime('%Y-%m-%d')
 
