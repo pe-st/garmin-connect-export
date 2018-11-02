@@ -115,17 +115,15 @@ URL_GC_LOGIN = 'https://sso.garmin.com/sso/login?' + urlencode(DATA)
 URL_GC_POST_AUTH = 'https://connect.garmin.com/modern/activities?'
 URL_GC_PROFILE = 'https://connect.garmin.com/modern/profile'
 URL_GC_USERSTATS = 'https://connect.garmin.com/modern/proxy/userstats-service/statistics/'
-URL_GC_LIST = \
-    'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
+URL_GC_LIST = 'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
 URL_GC_ACTIVITY = 'https://connect.garmin.com/modern/proxy/activity-service/activity/'
 URL_GC_ACTIVITY_DETAIL = 'https://connect.garmin.com/modern/proxy/activity-service-1.3/json/activityDetails/'
 URL_GC_DEVICE = 'https://connect.garmin.com/modern/proxy/device-service/deviceservice/app-info/'
+URL_GC_GEAR = 'https://connect.garmin.com/modern/proxy/gear-service/gear/filterGear?activityId='
 URL_GC_ACT_PROPS = 'https://connect.garmin.com/modern/main/js/properties/activity_types/activity_types.properties'
 URL_GC_EVT_PROPS = 'https://connect.garmin.com/modern/main/js/properties/event_types/event_types.properties'
-URL_GC_GPX_ACTIVITY = \
-    'https://connect.garmin.com/modern/proxy/download-service/export/gpx/activity/'
-URL_GC_TCX_ACTIVITY = \
-    'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
+URL_GC_GPX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/export/gpx/activity/'
+URL_GC_TCX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
 URL_GC_ORIGINAL_ACTIVITY = 'http://connect.garmin.com/proxy/download-service/files/activity/'
 
 
@@ -179,9 +177,9 @@ def http_req(url, post=None, headers=None):
     start_time = timer()
     try:
         response = OPENER.open(request, data=post)
-    except urllib2.URLError as e:
-        if hasattr(e, 'reason'):
-            logging.error('Failed to reach url %s, reason: %s.', url, e.reason)
+    except urllib2.URLError as ex:
+        if hasattr(ex, 'reason'):
+            logging.error('Failed to reach url %s, reason: %s.', url, ex.reason)
             raise
         else:
             raise
@@ -518,6 +516,7 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('minTemperature', str(details['summaryDTO']['minTemperature']) if present('minTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('maxTemperature', str(details['summaryDTO']['maxTemperature']) if present('maxTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('device', extract['device'] if extract['device'] else None)
+    csv_filter.set_column('gear', extract['gear'] if extract['gear'] else None)
     csv_filter.set_column('activityTypeKey', actvty['activityType']['typeKey'].title() if present('typeKey', actvty['activityType']) else None)
     csv_filter.set_column('activityType', value_if_found_else_key(activity_type_name, 'activity_type_' + actvty['activityType']['typeKey']) if present('activityType', actvty) else None)
     csv_filter.set_column('activityParent', value_if_found_else_key(activity_type_name, 'activity_type_' + parent_type_key) if parent_type_key else None)
@@ -577,6 +576,26 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
                         logging.warning("Device details %s incomplete", device_app_inst_id)
         return device_dict[device_app_inst_id]
     return None
+
+
+def load_gear(activity_id, args):
+    """Retrieve the gear/equipment for an activity"""
+    try:
+        gear_json = http_req(URL_GC_GEAR + activity_id)
+        gear = json.loads(gear_json)
+        if gear:
+            del args # keep 'args' argument in case you need to uncomment write_to_file
+            # write_to_file(args.directory + '/activity_' + activity_id + '-gear.json',
+            #               gear_json, 'w')
+            gear_display_name = gear[0]['displayName'] if present('displayName', gear[0]) else None
+            gear_model = gear[0]['customMakeModel'] if present('customMakeModel', gear[0]) else None
+            logging.debug("Gear for %s = %s/%s", activity_id, gear_display_name, gear_model)
+            return gear_display_name if gear_display_name else gear_model
+        return None
+    except urllib2.HTTPError:
+        pass  # don't abort just for missing gear...
+        # logging.info("Unable to get gear for %d", activity_id)
+        # logging.exception(e)
 
 
 def export_data_file(activity_id, activity_details, args, file_time, append_desc):
@@ -876,6 +895,10 @@ def main(argv):
                     pass # don't abort just for missing samples...
                     # logging.info("Unable to get samples for %d", actvty['activityId'])
                     # logging.exception(e)
+
+            extract['gear'] = None
+            if csv_filter.is_column_active('gear'):
+                extract['gear'] = load_gear(str(actvty['activityId']), args)
 
             # Write stats to CSV.
             csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name)
