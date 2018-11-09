@@ -24,6 +24,7 @@ from getpass import getpass
 from math import floor
 from os import mkdir, rename, remove, stat, utime
 from os.path import isdir, isfile, splitext
+from platform import python_version
 from subprocess import call
 from timeit import default_timer as timer
 from urllib import urlencode
@@ -40,7 +41,7 @@ import unicodedata
 import urllib2
 import zipfile
 
-SCRIPT_VERSION = '2.1.5'
+SCRIPT_VERSION = '2.2.0'
 
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
@@ -114,17 +115,15 @@ URL_GC_LOGIN = 'https://sso.garmin.com/sso/login?' + urlencode(DATA)
 URL_GC_POST_AUTH = 'https://connect.garmin.com/modern/activities?'
 URL_GC_PROFILE = 'https://connect.garmin.com/modern/profile'
 URL_GC_USERSTATS = 'https://connect.garmin.com/modern/proxy/userstats-service/statistics/'
-URL_GC_LIST = \
-    'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
+URL_GC_LIST = 'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
 URL_GC_ACTIVITY = 'https://connect.garmin.com/modern/proxy/activity-service/activity/'
 URL_GC_ACTIVITY_DETAIL = 'https://connect.garmin.com/modern/proxy/activity-service-1.3/json/activityDetails/'
 URL_GC_DEVICE = 'https://connect.garmin.com/modern/proxy/device-service/deviceservice/app-info/'
+URL_GC_GEAR = 'https://connect.garmin.com/modern/proxy/gear-service/gear/filterGear?activityId='
 URL_GC_ACT_PROPS = 'https://connect.garmin.com/modern/main/js/properties/activity_types/activity_types.properties'
 URL_GC_EVT_PROPS = 'https://connect.garmin.com/modern/main/js/properties/event_types/event_types.properties'
-URL_GC_GPX_ACTIVITY = \
-    'https://connect.garmin.com/modern/proxy/download-service/export/gpx/activity/'
-URL_GC_TCX_ACTIVITY = \
-    'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
+URL_GC_GPX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/export/gpx/activity/'
+URL_GC_TCX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
 URL_GC_ORIGINAL_ACTIVITY = 'http://connect.garmin.com/proxy/download-service/files/activity/'
 
 
@@ -173,18 +172,20 @@ def http_req(url, post=None, headers=None):
         for header_key, header_value in headers.iteritems():
             request.add_header(header_key, header_value)
     if post:
-        # print "POSTING"
         post = urlencode(post)  # Convert dictionary to POST parameter string.
-    # print(request.headers)
-    # print(COOKIE_JAR)
-    # print(post)
-    # print(request)
+
     start_time = timer()
-    response = OPENER.open(request, data=post)  # This line may throw a urllib2.HTTPError.
+    try:
+        response = OPENER.open(request, data=post)
+    except urllib2.URLError as ex:
+        if hasattr(ex, 'reason'):
+            logging.error('Failed to reach url %s, reason: %s.', url, ex.reason)
+            raise
+        else:
+            raise
     logging.debug('Got %s in %s s from %s', response.getcode(), timer() - start_time, url)
 
-    # N.B. urllib2 will follow any 302 redirects. Also, the "open" call above may throw a
-    # urllib2.HTTPError which is checked for below.
+    # N.B. urllib2 will follow any 302 redirects.
     # print(response.getcode())
     if response.getcode() == 204:
         # 204 = no content, e.g. for activities without GPS coordinates there is no GPX download.
@@ -493,6 +494,7 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('maxElevation', str(round(details['summaryDTO']['maxElevation'], 2)) if present('maxElevation', details['summaryDTO']) else None)
     csv_filter.set_column('maxElevationUncorr', str(round(details['summaryDTO']['maxElevation'], 2)) if not actvty['elevationCorrected'] and present('maxElevation', details['summaryDTO']) else None)
     csv_filter.set_column('maxElevationCorr', str(round(details['summaryDTO']['maxElevation'], 2)) if actvty['elevationCorrected'] and present('maxElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationCorrected', 'true' if actvty['elevationCorrected'] else 'false')
     # csv_record += empty_record  # no minimum heart rate in JSON
     csv_filter.set_column('maxHRRaw', str(details['summaryDTO']['maxHR']) if present('maxHR', details['summaryDTO']) else None)
     csv_filter.set_column('maxHR', "{0:.0f}".format(actvty['maxHR']) if present('maxHR', actvty) else None)
@@ -500,6 +502,13 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('averageHR', "{0:.0f}".format(actvty['averageHR']) if present('averageHR', actvty) else None)
     csv_filter.set_column('caloriesRaw', str(details['summaryDTO']['calories']) if present('calories', details['summaryDTO']) else None)
     csv_filter.set_column('calories', "{0:.0f}".format(details['summaryDTO']['calories']) if present('calories', details['summaryDTO']) else None)
+    csv_filter.set_column('vo2max', str(actvty['vO2MaxValue']) if present('vO2MaxValue', actvty) else None)
+    csv_filter.set_column('aerobicEffect', str(round(details['summaryDTO']['trainingEffect'], 2)) if present('trainingEffect', details['summaryDTO']) else None)
+    csv_filter.set_column('anaerobicEffect', str(round(details['summaryDTO']['anaerobicTrainingEffect'], 2)) if present('anaerobicTrainingEffect', details['summaryDTO']) else None)
+    csv_filter.set_column('averageRunCadence', str(round(details['summaryDTO']['averageRunCadence'], 2)) if present('averageRunCadence', details['summaryDTO']) else None)
+    csv_filter.set_column('maxRunCadence', str(details['summaryDTO']['maxRunCadence']) if present('maxRunCadence', details['summaryDTO']) else None)
+    csv_filter.set_column('strideLength', str(round(details['summaryDTO']['strideLength'], 2)) if present('strideLength', details['summaryDTO']) else None)
+    csv_filter.set_column('steps', str(actvty['steps']) if present('steps', actvty) else None)
     csv_filter.set_column('averageCadence', str(actvty['averageBikingCadenceInRevPerMinute']) if present('averageBikingCadenceInRevPerMinute', actvty) else None)
     csv_filter.set_column('maxCadence', str(actvty['maxBikingCadenceInRevPerMinute']) if present('maxBikingCadenceInRevPerMinute', actvty) else None)
     csv_filter.set_column('strokes', str(actvty['strokes']) if present('strokes', actvty) else None)
@@ -507,13 +516,17 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('minTemperature', str(details['summaryDTO']['minTemperature']) if present('minTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('maxTemperature', str(details['summaryDTO']['maxTemperature']) if present('maxTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('device', extract['device'] if extract['device'] else None)
+    csv_filter.set_column('gear', extract['gear'] if extract['gear'] else None)
     csv_filter.set_column('activityTypeKey', actvty['activityType']['typeKey'].title() if present('typeKey', actvty['activityType']) else None)
     csv_filter.set_column('activityType', value_if_found_else_key(activity_type_name, 'activity_type_' + actvty['activityType']['typeKey']) if present('activityType', actvty) else None)
     csv_filter.set_column('activityParent', value_if_found_else_key(activity_type_name, 'activity_type_' + parent_type_key) if parent_type_key else None)
     csv_filter.set_column('eventTypeKey', actvty['eventType']['typeKey'].title() if present('typeKey', actvty['eventType']) else None)
     csv_filter.set_column('eventType', value_if_found_else_key(event_type_name, actvty['eventType']['typeKey']) if present('eventType', actvty) else None)
+    csv_filter.set_column('privacy', details['accessControlRuleDTO']['typeKey'] if present('typeKey', details['accessControlRuleDTO']) else None)
+    csv_filter.set_column('fileFormat', details['metadataDTO']['fileFormat']['formatKey'] if present('fileFormat', details['metadataDTO']) and present('formatKey', details['metadataDTO']['fileFormat']) else None)
     csv_filter.set_column('tz', details['timeZoneUnitDTO']['timeZone'] if present('timeZone', details['timeZoneUnitDTO']) else None)
     csv_filter.set_column('tzOffset', extract['start_time_with_offset'].isoformat()[-6:])
+    csv_filter.set_column('locationName', details['locationName'] if present('locationName', details) else None)
     csv_filter.set_column('startLatitudeRaw', str(start_latitude) if start_latitude else None)
     csv_filter.set_column('startLatitude', trunc6(start_latitude) if start_latitude else None)
     csv_filter.set_column('startLongitudeRaw', str(start_longitude) if start_longitude else None)
@@ -563,6 +576,26 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
                         logging.warning("Device details %s incomplete", device_app_inst_id)
         return device_dict[device_app_inst_id]
     return None
+
+
+def load_gear(activity_id, args):
+    """Retrieve the gear/equipment for an activity"""
+    try:
+        gear_json = http_req(URL_GC_GEAR + activity_id)
+        gear = json.loads(gear_json)
+        if gear:
+            del args # keep 'args' argument in case you need to uncomment write_to_file
+            # write_to_file(args.directory + '/activity_' + activity_id + '-gear.json',
+            #               gear_json, 'w')
+            gear_display_name = gear[0]['displayName'] if present('displayName', gear[0]) else None
+            gear_model = gear[0]['customMakeModel'] if present('customMakeModel', gear[0]) else None
+            logging.debug("Gear for %s = %s/%s", activity_id, gear_display_name, gear_model)
+            return gear_display_name if gear_display_name else gear_model
+        return None
+    except urllib2.HTTPError:
+        pass  # don't abort just for missing gear...
+        # logging.info("Unable to get gear for %d", activity_id)
+        # logging.exception(e)
 
 
 def export_data_file(activity_id, activity_details, args, file_time, append_desc):
@@ -691,7 +724,7 @@ def main(argv):
     Main entry point for gcexport.py
     """
     setup_logging()
-    logging.info("Starting %s version %s", argv[0], SCRIPT_VERSION)
+    logging.info("Starting %s version %s, using Python version %s", argv[0], SCRIPT_VERSION, python_version())
     args = parse_arguments(argv)
     logging_verbosity(args.verbosity)
 
@@ -862,6 +895,10 @@ def main(argv):
                     pass # don't abort just for missing samples...
                     # logging.info("Unable to get samples for %d", actvty['activityId'])
                     # logging.exception(e)
+
+            extract['gear'] = None
+            if csv_filter.is_column_active('gear'):
+                extract['gear'] = load_gear(str(actvty['activityId']), args)
 
             # Write stats to CSV.
             csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name)

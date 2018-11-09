@@ -3,6 +3,27 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 2.2.0 - 2018-11-09
+
+- added: new exported fields
+    - `vo2max` the VO2 Max (maximum volume of oxygen, cardiovascular fitness indicator)
+    - `aerobicEffect` aerobic training effect (value between 0 and 5)
+    - `aneerobicEffect` anaerobic training effect (value between 0 and 5)
+    - `averageRunCadence` average number of steps per minute. Excludes time spent standing 
+    - `maxRunCadence` maximum number of steps per minute
+    - `strideLength` average length of the stride from one footfall to the next (in meters)
+    - `steps` number of steps
+    - `privacy` who can see your activity
+    - `fileFormat` the format of the original upload (fit, gpx or tcx)
+    - `locationName` location determined by Garmin
+    - `gear` the gear used (only tested for shoes); nickname if set, the brand/model otherwise
+    - `elevationCorrected` flag telling if the elevation correction is applied
+- changed: new default CSV template with different CSV output;
+  to get the old CSV format use `-t csv_header_moderation.properties`
+- added: Python version to the log file
+- changed: improved exception logging
+
+
 ## 2.1.5 - 2018-09-24
 
 - added: command line switches `-v` (verbosity) and `--desc` (description)
