@@ -41,7 +41,7 @@ import unicodedata
 import urllib2
 import zipfile
 
-SCRIPT_VERSION = '2.1.5'
+SCRIPT_VERSION = '2.2.0'
 
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
