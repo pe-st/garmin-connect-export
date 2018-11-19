@@ -226,9 +226,6 @@ URL_GC_USERSTATS = (
 )
 URL_GC_LIST = "https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?"
 URL_GC_ACTIVITY = "https://connect.garmin.com/modern/proxy/activity-service/activity/"
-URL_GC_ACTIVITY_DETAIL = (
-    "https://connect.garmin.com/modern/proxy/activity-service-1.3/json/activityDetails/"
-)
 URL_GC_GPX_ACTIVITY = (
     "https://connect.garmin.com/modern/proxy/download-service/export/gpx/activity/"
 )
@@ -493,9 +490,16 @@ activity...",
             print("Retrieving Device Details failed.")
             JSON_DEVICE = None
 
-        print("Activity details URL: " + URL_GC_ACTIVITY_DETAIL + str(a["activityId"]))
+        print(
+            "Activity details URL: "
+            + URL_GC_ACTIVITY
+            + str(a["activityId"])
+            + "/details"
+        )
         try:
-            ACTIVITY_DETAIL = http_req(URL_GC_ACTIVITY_DETAIL + str(a["activityId"]))
+            ACTIVITY_DETAIL = http_req(
+                URL_GC_ACTIVITY + str(a["activityId"]) + "/details"
+            )
             write_to_file(
                 ARGS.directory + "/" + str(a["activityId"]) + "_activity_detail.json",
                 ACTIVITY_DETAIL.decode(),
@@ -708,14 +712,8 @@ activity...",
         )
         csv_record += (
             empty_record
-            if not JSON_DETAIL or "metricsCount"
-            not in JSON_DETAIL["com.garmin.activity.details.json.ActivityDetails"]
-            else str(
-                JSON_DETAIL["com.garmin.activity.details.json.ActivityDetails"][
-                    "metricsCount"
-                ]
-            )
-            + ","
+            if not JSON_DETAIL or "metricsCount" not in JSON_DETAIL
+            else str(JSON_DETAIL["metricsCount"]) + ","
         )
         csv_record += "\n"
 
