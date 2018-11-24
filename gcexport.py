@@ -666,7 +666,7 @@ def main(argv):
         for a in activities:
             # Display which entry we're working on.
             print('Garmin Connect activity: [' + str(a['activityId']) + '] ', end='')
-            print(a['activityName'])
+            print(a['activityName'].encode('utf-8'))
 
             # Retrieve also the detail data from the activity (the one displayed on
             # the https://connect.garmin.com/modern/activity/xxx page), because some
