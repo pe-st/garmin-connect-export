@@ -117,7 +117,6 @@ URL_GC_PROFILE = 'https://connect.garmin.com/modern/profile'
 URL_GC_USERSTATS = 'https://connect.garmin.com/modern/proxy/userstats-service/statistics/'
 URL_GC_LIST = 'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
 URL_GC_ACTIVITY = 'https://connect.garmin.com/modern/proxy/activity-service/activity/'
-URL_GC_ACTIVITY_DETAIL = 'https://connect.garmin.com/modern/proxy/activity-service-1.3/json/activityDetails/'
 URL_GC_DEVICE = 'https://connect.garmin.com/modern/proxy/device-service/deviceservice/app-info/'
 URL_GC_GEAR = 'https://connect.garmin.com/modern/proxy/gear-service/gear/filterGear?activityId='
 URL_GC_ACT_PROPS = 'https://connect.garmin.com/modern/main/js/properties/activity_types/activity_types.properties'
@@ -179,7 +178,7 @@ def http_req(url, post=None, headers=None):
         response = OPENER.open(request, data=post)
     except urllib2.URLError as ex:
         if hasattr(ex, 'reason'):
-            logging.error('Failed to reach url %s, reason: %s.', url, ex.reason)
+            logging.error('Failed to reach url %s, error: %s', url, ex)
             raise
         else:
             raise
@@ -884,13 +883,12 @@ def main(argv):
             if csv_filter.is_column_active('sampleCount'):
                 try:
                     # TODO implement retries here, I have observed temporary failures
-                    activity_measurements = http_req(URL_GC_ACTIVITY_DETAIL + str(actvty['activityId']))
+                    activity_measurements = http_req(URL_GC_ACTIVITY + str(actvty['activityId']) + "/details")
                     write_to_file(args.directory + '/activity_' + str(actvty['activityId']) + '_samples.json',
                                   activity_measurements, 'w',
                                   start_time_seconds)
                     samples = json.loads(activity_measurements)
-                    if present('com.garmin.activity.details.json.ActivityDetails', samples):
-                        extract['samples'] = samples['com.garmin.activity.details.json.ActivityDetails']
+                    extract['samples'] = samples
                 except urllib2.HTTPError:
                     pass # don't abort just for missing samples...
                     # logging.info("Unable to get samples for %d", actvty['activityId'])
