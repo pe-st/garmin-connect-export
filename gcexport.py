@@ -456,7 +456,7 @@ def export_data_file(activity_id, activity_details, args, a, activity_type_name,
         # Rename fit file as DATE_Activity title_(activity type).fit
         yearly_folder = args.directory + '/' + start_time_with_offset.strftime('%Y')
         fit_filename = yearly_folder + '/' + start_time_with_offset.strftime('%Y%m%d') + '_'
-        fit_filename += activity_id if absent_or_null('activityName', a) else a['activityName'].encode('utf8').replace('/', '_') + '_'
+        fit_filename += activity_id if absent_or_null('activityName', a) else a['activityName'].encode('utf-8').replace('/', '_') + '_'
         fit_filename += '' if absent_or_null('activityType', a) else '(' + value_if_found_else_key(activity_type_name, 'activity_type_' + a['activityType']['typeKey']).replace('/', '_') + ')'
         fit_original_filename = args.directory + '/' + activity_id + '.fit'
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
