@@ -458,6 +458,7 @@ def export_data_file(activity_id, activity_details, args, a, activity_type_name,
         fit_filename = yearly_folder + '/' + start_time_with_offset.strftime('%Y%m%d') + '_'
         fit_filename += activity_id if absent_or_null('activityName', a) else a['activityName'].encode('utf-8').replace('/', '_') + '_'
         fit_filename += '' if absent_or_null('activityType', a) else '(' + value_if_found_else_key(activity_type_name, 'activity_type_' + a['activityType']['typeKey']).replace('/', '_') + ')'
+        print(fit_filename)
         fit_original_filename = args.directory + '/' + activity_id + '.fit'
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
@@ -536,10 +537,12 @@ def export_data_file(activity_id, activity_details, args, a, activity_type_name,
                 zip_file.close()
 
                 # renames extracted fit file to fit_filename format
-                print("Renaming " + args.directory + '/' + original_filename + '.' + original_extension + " to " + fit_filename + '.' + original_extension)
+                print('Renaming ' + args.directory + '/' + original_filename + '.' + original_extension + ' to ', end='')
+                print(fit_filename, end='')
+                print('.' + original_extension)
                 if not isdir(yearly_folder):
                     mkdir(yearly_folder)
-                rename(args.directory + '/' + original_filename + '.' + original_extension, fit_filename + '.' + original_extension)
+                rename(args.directory + '/' + original_filename + '.' + original_extension, fit_filename.decode('utf-8') + '.' + original_extension)
 
             else:
                 print('Skipping 0Kb zip file.')
