@@ -238,6 +238,9 @@ URL_GC_ORIGINAL_ACTIVITY = (
 URL_DEVICE_DETAIL = (
     "https://connect.garmin.com/modern/proxy/device-service/deviceservice/app-info/"
 )
+URL_GEAR_DETAIL = (
+    "https://connect.garmin.com/modern/proxy/gear-service/gear/filterGear?"
+)
 # Initially, we need to get a valid session cookie, so we pull the login page.
 print("Request login page")
 http_req(URL_GC_LOGIN)
@@ -287,6 +290,7 @@ if not CSV_EXISTED:
     CSV_FILE.write(
         "Activity name,\
 Description,\
+Bike,\
 Begin timestamp,\
 Duration (h:m:s),\
 Moving duration (h:m:s),\
@@ -511,6 +515,27 @@ activity...",
             print("Retrieving Activity Details failed.")
             JSON_DETAIL = None
 
+        print(
+            "Gear details URL: "
+            + URL_GEAR_DETAIL
+            + "activityId="
+            + str(a["activityId"])
+        )
+        try:
+            GEAR_DETAIL = http_req(
+                URL_GEAR_DETAIL + "activityId=" + str(a["activityId"])
+            )
+            write_to_file(
+                ARGS.directory + "/" + str(a["activityId"]) + "_gear_detail.json",
+                GEAR_DETAIL.decode(),
+                "a",
+            )
+            JSON_GEAR = json.loads(GEAR_DETAIL)
+            # print(JSON_GEAR)
+        except:
+            print("Retrieving Gear Details failed.")
+            # JSON_GEAR = None
+
         # Write stats to CSV.
         empty_record = ","
         csv_record = ""
@@ -529,6 +554,12 @@ activity...",
         else:
             csv_record += empty_record
 
+        # Gear detail returned as an array so pick the first one
+        csv_record += (
+            empty_record
+            if not JSON_GEAR or "customMakeModel" not in JSON_GEAR[0]
+            else JSON_GEAR[0]["customMakeModel"] + ","
+        )
         csv_record += (
             empty_record
             if "startTimeLocal" not in JSON_SUMMARY["summaryDTO"]
