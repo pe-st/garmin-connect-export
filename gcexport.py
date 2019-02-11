@@ -23,7 +23,7 @@ from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
 from os import mkdir, rename, remove, stat, utime
-from os.path import isdir, isfile, splitext
+from os.path import dirname, isdir, isfile, join, realpath, splitext
 from platform import python_version
 from subprocess import call
 from timeit import default_timer as timer
@@ -79,7 +79,7 @@ LIMIT_MAXIMUM = 1000
 
 MAX_TRIES = 3
 
-CSV_TEMPLATE = "csv_header_default.properties"
+CSV_TEMPLATE = join(dirname(realpath(__file__)), "csv_header_default.properties")
 
 WEBHOST = "https://connect.garmin.com"
 REDIRECT = "https://connect.garmin.com/post-auth/login"
