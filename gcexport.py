@@ -22,7 +22,7 @@ from __future__ import print_function
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
-from os import mkdir, rename, remove, stat, utime
+from os import makedirs, mkdir, rename, remove, stat, utime
 from os.path import dirname, isdir, isfile, join, realpath, splitext
 from platform import python_version
 from subprocess import call
@@ -386,6 +386,8 @@ def parse_arguments(argv):
         help='append the activity\'s description to the file name of the download; limit size if number is given')
     parser.add_argument('-t', '--template', default=CSV_TEMPLATE,
         help='template file with desired columns for CSV output')
+    parser.add_argument('-tp', '--timeprefix', action='count',
+        help="set the local time as activity file name prefix")
 
     return parser.parse_args(argv[1:])
 
@@ -597,26 +599,38 @@ def load_gear(activity_id, args):
         # logging.exception(e)
 
 
-def export_data_file(activity_id, activity_details, args, file_time, append_desc):
+def export_data_file(activity_id, activity_details, args, file_time, append_desc, start_time_locale):
     """
     Write the data of the activity to a file, depending on the chosen data format
     """
+    # timestamp as prefix for filename
+    if args.timeprefix > 0:
+        prefix = "{}-".format(start_time_locale.replace("-", "").replace(":", b"").replace(" ", "-"))
+    else:
+        prefix = ""
+
+    # Time dependent download path
+    directory = resolve_path(args.directory, args.subdir, start_time_locale)
+    # print("export_data_file directroy={}".format(directory))
+
+    if not isdir(directory):
+        makedirs(directory)
     if args.format == 'gpx':
-        data_filename = args.directory + '/activity_' + activity_id + append_desc + '.gpx'
+        data_filename = args.directory + '/' + prefix + 'activity_' + activity_id + append_desc + '.gpx'
         download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
         file_mode = 'w'
     elif args.format == 'tcx':
-        data_filename = args.directory + '/activity_' + activity_id + append_desc + '.tcx'
+        data_filename = args.directory + '/' + prefix + 'activity_' + activity_id + append_desc + '.tcx'
         download_url = URL_GC_TCX_ACTIVITY + activity_id + '?full=true'
         file_mode = 'w'
     elif args.format == 'original':
-        data_filename = args.directory + '/activity_' + activity_id + append_desc + '.zip'
+        data_filename = args.directory + '/' + prefix + 'activity_' + activity_id + append_desc + '.zip'
         # TODO not all 'original' files are in FIT format, some are GPX or TCX...
         fit_filename = args.directory + '/' + activity_id + '.fit'
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
     elif args.format == 'json':
-        data_filename = args.directory + '/activity_' + activity_id + append_desc + '.json'
+        data_filename = args.directory + '/' + prefix + 'activity_' + activity_id + append_desc + '.json'
         file_mode = 'w'
     else:
         raise Exception('Unrecognized format.')
@@ -672,10 +686,10 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                 zip_file = open(data_filename, 'rb')
                 zip_obj = zipfile.ZipFile(zip_file)
                 for name in zip_obj.namelist():
-                    unzipped_name = zip_obj.extract(name, args.directory)
+                    unzipped_name = zip_obj.extract(name, directory)
                     # prepend 'activity_' and append the description to the base name
                     name_base, name_ext = splitext(name)
-                    new_name = args.directory + '/activity_' + name_base + append_desc + name_ext
+                    new_name = directory + '/activity_' + name_base + append_desc + name_ext
                     logging.debug('renaming %s to %s', unzipped_name, new_name)
                     rename(unzipped_name, new_name)
                     if file_time:
@@ -716,6 +730,23 @@ def logging_verbosity(verbosity):
             level = logging.DEBUG if verbosity > 1 else (logging.INFO if verbosity > 0 else logging.WARN)
             handler.setLevel(level)
             logging.debug('New console log level: %s', logging.getLevelName(level))
+
+
+def resolve_path(directory, subdir, time):
+    """
+    Replace time variables and returns changed path. Supported place holders are {YYYY} and {MM}
+    :param directory: export root directory
+    :param subdir: subdirectory, can have place holders.
+    :param time: date-time-string
+    :return: Updated dictionary string
+    """
+    ret = join(directory, subdir)
+    if re.compile(".*{YYYY}.*").match(ret):
+        ret = ret.replace("{YYYY}", time[0:4])
+    if re.compile(".*{MM}.*").match(ret):
+        ret = ret.replace("{MM}", time[5:7])
+
+    return ret
 
 
 def main(argv):
