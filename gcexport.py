@@ -386,7 +386,7 @@ def parse_arguments(argv):
         help='append the activity\'s description to the file name of the download; limit size if number is given')
     parser.add_argument('-t', '--template', default=CSV_TEMPLATE,
         help='template file with desired columns for CSV output')
-    parser.add_argument('-tp', '--timeprefix', action='count',
+    parser.add_argument('-fp', '--fileprefix', action='count',
         help="set the local time as activity file name prefix")
 
     return parser.parse_args(argv[1:])
@@ -604,17 +604,11 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     Write the data of the activity to a file, depending on the chosen data format
     """
     # timestamp as prefix for filename
-    if args.timeprefix > 0:
+    if args.fileprefix > 0:
         prefix = "{}-".format(start_time_locale.replace("-", "").replace(":", b"").replace(" ", "-"))
     else:
         prefix = ""
 
-    # Time dependent download path
-    directory = resolve_path(args.directory, args.subdir, start_time_locale)
-    # print("export_data_file directroy={}".format(directory))
-
-    if not isdir(directory):
-        makedirs(directory)
     if args.format == 'gpx':
         data_filename = args.directory + '/' + prefix + 'activity_' + activity_id + append_desc + '.gpx'
         download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
@@ -686,10 +680,10 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                 zip_file = open(data_filename, 'rb')
                 zip_obj = zipfile.ZipFile(zip_file)
                 for name in zip_obj.namelist():
-                    unzipped_name = zip_obj.extract(name, directory)
+                    unzipped_name = zip_obj.extract(name, args.directory)
                     # prepend 'activity_' and append the description to the base name
                     name_base, name_ext = splitext(name)
-                    new_name = directory + '/activity_' + name_base + append_desc + name_ext
+                    new_name = args.directory + '/activity_' + name_base + append_desc + name_ext
                     logging.debug('renaming %s to %s', unzipped_name, new_name)
                     rename(unzipped_name, new_name)
                     if file_time:
@@ -932,7 +926,8 @@ def main(argv):
             # Write stats to CSV.
             csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name)
 
-            export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc)
+            export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc,
+                             actvty['startTimeLocal'])
 
             current_index += 1
         # End for loop for activities of chunk
