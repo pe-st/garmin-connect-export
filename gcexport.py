@@ -22,7 +22,7 @@ from __future__ import print_function
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
-from os import mkdir, rename, remove, stat, utime
+from os import mkdir, rename, remove, stat, utime, makedirs
 from os.path import dirname, isdir, isfile, join, realpath, splitext
 from platform import python_version
 from subprocess import call
@@ -125,6 +125,22 @@ URL_GC_GPX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/
 URL_GC_TCX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
 URL_GC_ORIGINAL_ACTIVITY = 'http://connect.garmin.com/proxy/download-service/files/activity/'
 
+
+def resolve_path(directory, subdir, time):
+    """
+    Replace time variables and returns changed path. Supported place holders are {YYYY} and {MM}
+    :param directory: export root directory
+    :param subdir: subdirectory, can have place holders.
+    :param time: date-time-string
+    :return: Updated dictionary string
+    """
+    ret = join(directory, subdir)
+    if re.compile(".*{YYYY}.*").match(ret):
+        ret = ret.replace("{YYYY}", time[0:4])
+    if re.compile(".*{MM}.*").match(ret):
+        ret = ret.replace("{MM}", time[5:7])
+
+    return ret
 
 
 def hhmmss_from_seconds(sec):
@@ -378,6 +394,9 @@ def parse_arguments(argv):
         help="export format; can be 'gpx', 'tcx', 'original' or 'json' (default: 'gpx')")
     parser.add_argument('-d', '--directory', default=activities_directory,
         help='the directory to export to (default: \'./YYYY-MM-DD_garmin_connect_export\')')
+    parser.add_argument('-s', "--subdir",
+        help="the subdirectory for activity files (tcx, gpx etc.), supported placeholders are {YYYY} and {MM}"
+                        " (default: export directory)" )
     parser.add_argument('-u', '--unzip', action='store_true',
         help='if downloading ZIP files (format: \'original\'), unzip the file and remove the ZIP file')
     parser.add_argument('-ot', '--originaltime', action='store_true',
@@ -597,26 +616,34 @@ def load_gear(activity_id, args):
         # logging.exception(e)
 
 
-def export_data_file(activity_id, activity_details, args, file_time, append_desc):
+def export_data_file(activity_id, activity_details, args, file_time, append_desc, start_time_locale):
     """
     Write the data of the activity to a file, depending on the chosen data format
     """
+
+    # Time dependent download path
+    directory = resolve_path(args.directory, args.subdir, start_time_locale)
+    # print("export_data_file directroy={}".format(directory))
+
+    if not isdir(directory):
+        makedirs(directory)
+
     if args.format == 'gpx':
-        data_filename = args.directory + '/activity_' + activity_id + append_desc + '.gpx'
+        data_filename = directory + '/' + 'activity_' + activity_id + append_desc + '.gpx'
         download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
         file_mode = 'w'
     elif args.format == 'tcx':
-        data_filename = args.directory + '/activity_' + activity_id + append_desc + '.tcx'
+        data_filename = directory + '/' +  'activity_' + activity_id + append_desc + '.tcx'
         download_url = URL_GC_TCX_ACTIVITY + activity_id + '?full=true'
         file_mode = 'w'
     elif args.format == 'original':
-        data_filename = args.directory + '/activity_' + activity_id + append_desc + '.zip'
+        data_filename = directory + '/' + 'activity_' + activity_id + append_desc + '.zip'
         # TODO not all 'original' files are in FIT format, some are GPX or TCX...
-        fit_filename = args.directory + '/' + activity_id + '.fit'
+        fit_filename = directory + '/' + activity_id + '.fit'
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
     elif args.format == 'json':
-        data_filename = args.directory + '/activity_' + activity_id + append_desc + '.json'
+        data_filename = directory + '/' + 'activity_' + activity_id + append_desc + '.json'
         file_mode = 'w'
     else:
         raise Exception('Unrecognized format.')
@@ -672,10 +699,10 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                 zip_file = open(data_filename, 'rb')
                 zip_obj = zipfile.ZipFile(zip_file)
                 for name in zip_obj.namelist():
-                    unzipped_name = zip_obj.extract(name, args.directory)
+                    unzipped_name = zip_obj.extract(name, directory)
                     # prepend 'activity_' and append the description to the base name
                     name_base, name_ext = splitext(name)
-                    new_name = args.directory + '/activity_' + name_base + append_desc + name_ext
+                    new_name = directory + '/activity_' + name_base + append_desc + name_ext
                     logging.debug('renaming %s to %s', unzipped_name, new_name)
                     rename(unzipped_name, new_name)
                     if file_time:
@@ -901,7 +928,8 @@ def main(argv):
             # Write stats to CSV.
             csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name)
 
-            export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc)
+            export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc,
+                             actvty['startTimeLocal'])
 
             current_index += 1
         # End for loop for activities of chunk
