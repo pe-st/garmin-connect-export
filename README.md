@@ -47,7 +47,7 @@ You will need a little experience running things from the command line to use th
 usage: gcexport.py [-h] [--version] [-v] [--username USERNAME]
                    [--password PASSWORD] [-c COUNT] [-e EXTERNAL] [-a ARGS]
                    [-f {gpx,tcx,original,json}] [-d DIRECTORY] [-u] [-ot]
-                   [--desc [DESC]] [-t TEMPLATE]
+                   [--desc [DESC]] [-t TEMPLATE] [-fp]
 
 Garmin Connect Exporter
 
@@ -79,6 +79,7 @@ optional arguments:
                         the download; limit size if number is given
   -t TEMPLATE, --template TEMPLATE
                         template file with desired columns for CSV output
+  -fp, --fileprefix     set the local time as activity file name prefix
 ```
 
 Examples:
@@ -159,7 +160,7 @@ Contributions
 -------------
 Contributions are welcome, particularly if this script stops working with Garmin Connect. You may consider opening a GitHub Issue first. New features, however simple, are encouraged.
 
-Contributors as of 2018-09 (Hope I didn't forget anyone):
+Contributors as of 2019-03 (Hope I didn't forget anyone):
 
 - Kyle Krafka @kjkjava
 - Jochem Wichers Hoeth @jowiho
@@ -175,6 +176,7 @@ Contributors as of 2018-09 (Hope I didn't forget anyone):
 - @TheKiteRunning
 - Jens Diemer @jedie
 - Christian Moelders @chmoelders
+- Christian Schulzendorff @chs8691
 
 
 License
