@@ -3,13 +3,20 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 2.2.1 - 2019-03-30
+
+- added: new command line switch `--fileprefix` / `-fp` (courtesy of Christian Schulzendorff @chs8691):
+  A downloaded activity file can now have a date/time prefix, e.g. "20190301-065831-activity_3424910202.tcx". This works for all export types (tcx, gpx, json and original).
+  Existing downloaded files will not be touched. If downloaded twice, once with and once without the parameter, two files will be created.
+
+
 ## 2.2.0 - 2018-11-09
 
 - added: new exported fields
     - `vo2max` the VO2 Max (maximum volume of oxygen, cardiovascular fitness indicator)
     - `aerobicEffect` aerobic training effect (value between 0 and 5)
     - `aneerobicEffect` anaerobic training effect (value between 0 and 5)
-    - `averageRunCadence` average number of steps per minute. Excludes time spent standing 
+    - `averageRunCadence` average number of steps per minute. Excludes time spent standing
     - `maxRunCadence` maximum number of steps per minute
     - `strideLength` average length of the stride from one footfall to the next (in meters)
     - `steps` number of steps

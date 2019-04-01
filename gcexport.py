@@ -22,7 +22,7 @@ from __future__ import print_function
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
-from os import mkdir, rename, remove, stat, utime, makedirs
+from os import makedirs, mkdir, rename, remove, stat, utime
 from os.path import dirname, isdir, isfile, join, realpath, splitext
 from platform import python_version
 from subprocess import call
@@ -41,7 +41,7 @@ import unicodedata
 import urllib2
 import zipfile
 
-SCRIPT_VERSION = '2.2.0'
+SCRIPT_VERSION = '2.2.1'
 
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
@@ -405,6 +405,8 @@ def parse_arguments(argv):
         help='append the activity\'s description to the file name of the download; limit size if number is given')
     parser.add_argument('-t', '--template', default=CSV_TEMPLATE,
         help='template file with desired columns for CSV output')
+    parser.add_argument('-fp', '--fileprefix', action='count',
+        help="set the local time as activity file name prefix")
 
     return parser.parse_args(argv[1:])
 
@@ -620,30 +622,38 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     """
     Write the data of the activity to a file, depending on the chosen data format
     """
-
-    # Time dependent download path
-    directory = resolve_path(args.directory, args.subdir, start_time_locale)
-    # print("export_data_file directroy={}".format(directory))
+    # Time dependent subdirectory for activity files, e.g. '{YYYY}
+    if not args.subdir is None:
+        directory = resolve_path(args.directory, args.subdir, start_time_locale)
+    # export activities to root directory
+    else:
+        directory = args.directory
 
     if not isdir(directory):
         makedirs(directory)
 
+    # timestamp as prefix for filename
+    if args.fileprefix > 0:
+        prefix = "{}-".format(start_time_locale.replace("-", "").replace(":", b"").replace(" ", "-"))
+    else:
+        prefix = ""
+
     if args.format == 'gpx':
-        data_filename = directory + '/' + 'activity_' + activity_id + append_desc + '.gpx'
+        data_filename = directory + '/' + prefix + 'activity_' + activity_id + append_desc + '.gpx'
         download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
         file_mode = 'w'
     elif args.format == 'tcx':
-        data_filename = directory + '/' +  'activity_' + activity_id + append_desc + '.tcx'
+        data_filename = directory + '/' + prefix + 'activity_' + activity_id + append_desc + '.tcx'
         download_url = URL_GC_TCX_ACTIVITY + activity_id + '?full=true'
         file_mode = 'w'
     elif args.format == 'original':
-        data_filename = directory + '/' + 'activity_' + activity_id + append_desc + '.zip'
+        data_filename = directory + '/' + prefix + 'activity_' + activity_id + append_desc + '.zip'
         # TODO not all 'original' files are in FIT format, some are GPX or TCX...
         fit_filename = directory + '/' + activity_id + '.fit'
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
     elif args.format == 'json':
-        data_filename = directory + '/' + 'activity_' + activity_id + append_desc + '.json'
+        data_filename = directory + '/' + prefix + 'activity_' + activity_id + append_desc + '.json'
         file_mode = 'w'
     else:
         raise Exception('Unrecognized format.')
@@ -743,6 +753,23 @@ def logging_verbosity(verbosity):
             level = logging.DEBUG if verbosity > 1 else (logging.INFO if verbosity > 0 else logging.WARN)
             handler.setLevel(level)
             logging.debug('New console log level: %s', logging.getLevelName(level))
+
+
+def resolve_path(directory, subdir, time):
+    """
+    Replace time variables and returns changed path. Supported place holders are {YYYY} and {MM}
+    :param directory: export root directory
+    :param subdir: subdirectory, can have place holders.
+    :param time: date-time-string
+    :return: Updated dictionary string
+    """
+    ret = join(directory, subdir)
+    if re.compile(".*{YYYY}.*").match(ret):
+        ret = ret.replace("{YYYY}", time[0:4])
+    if re.compile(".*{MM}.*").match(ret):
+        ret = ret.replace("{MM}", time[5:7])
+
+    return ret
 
 
 def main(argv):
