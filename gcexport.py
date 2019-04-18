@@ -41,10 +41,10 @@ import unicodedata
 import urllib2
 import zipfile
 
-SCRIPT_VERSION = '2.2.1'
+SCRIPT_VERSION = '2.3.0'
 
 COOKIE_JAR = cookielib.CookieJar()
-OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
+OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR), urllib2.HTTPSHandler(debuglevel=0))
 
 # this is almost the datetime format Garmin used in the activity-search-service
 # JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
@@ -82,8 +82,8 @@ MAX_TRIES = 3
 CSV_TEMPLATE = join(dirname(realpath(__file__)), "csv_header_default.properties")
 
 WEBHOST = "https://connect.garmin.com"
-REDIRECT = "https://connect.garmin.com/post-auth/login"
-BASE_URL = "http://connect.garmin.com/en-US/signin"
+REDIRECT = "https://connect.garmin.com/modern/"
+BASE_URL = "https://connect.garmin.com/en-US/signin"
 SSO = "https://sso.garmin.com/sso"
 CSS = "https://static.garmincdn.com/com.garmin.connect/ui/css/gauth-custom-v1.2-min.css"
 
@@ -102,16 +102,23 @@ DATA = {
     'rememberMeChecked': 'false',
     'createAccountShown': 'true',
     'openCreateAccount': 'false',
-    'usernameShown': 'false',
     'displayNameShown': 'false',
     'consumeServiceTicket': 'false',
     'initialFocus': 'true',
     'embedWidget': 'false',
-    'generateExtraServiceTicket': 'false'
+    'generateExtraServiceTicket': 'true',
+    'generateTwoExtraServiceTickets': 'false',
+    'generateNoServiceTicket': 'false',
+    'globalOptInShown': 'true',
+    'globalOptInChecked': 'false',
+    'mobile': 'false',
+    'connectLegalTerms': 'true',
+    'locationPromptShown': 'true',
+    'showPassword': 'true'
 }
 
 # URLs for various services.
-URL_GC_LOGIN = 'https://sso.garmin.com/sso/login?' + urlencode(DATA)
+URL_GC_LOGIN = 'https://sso.garmin.com/sso/signin?' + urlencode(DATA)
 URL_GC_POST_AUTH = 'https://connect.garmin.com/modern/activities?'
 URL_GC_PROFILE = 'https://connect.garmin.com/modern/profile'
 URL_GC_USERSTATS = 'https://connect.garmin.com/modern/proxy/userstats-service/statistics/'
@@ -404,7 +411,10 @@ def login_to_garmin_connect(args):
     # Initially, we need to get a valid session cookie, so we pull the login page.
     print('Connecting to Garmin Connect...', end='')
     logging.info('Connecting to %s', URL_GC_LOGIN)
-    http_req(URL_GC_LOGIN)
+    connect_response = http_req(URL_GC_LOGIN)
+    # write_to_file('connect_response.html', connect_response, 'w')
+    for cookie in COOKIE_JAR:
+        logging.debug("Cookie %s : %s", cookie.name, cookie.value)
     print(' Done.')
 
     # Now we'll actually login.
@@ -412,22 +422,26 @@ def login_to_garmin_connect(args):
     post_data = {
         'username': username,
         'password': password,
-        'embed': 'true',
-        'lt': 'e1s1',
-        '_eventId': 'submit',
-        'displayNameRequired': 'false'
+        'embed': 'false',
+        'rememberme': 'on'
+    }
+
+    headers = {
+        'referer': URL_GC_LOGIN
     }
 
     print('Requesting Login ticket...', end='')
-    login_response = http_req(URL_GC_LOGIN, post_data)
-    # write_to_file(args.directory + '/login-response.html', login_response, 'w')
+    login_response = http_req(URL_GC_LOGIN + '#', post_data, headers)
+    for cookie in COOKIE_JAR:
+        logging.debug("Cookie %s : %s", cookie.name, cookie.value)
+    # write_to_file('login-response.html', login_response, 'w')
 
     # extract the ticket from the login response
     pattern = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE | re.DOTALL)
     match = pattern.match(login_response)
     if not match:
-        raise Exception('Did not get a ticket in the login response. Cannot log in. Did \
-    you enter the correct username and password?')
+        raise Exception('Couldn\'t find ticket in the login response. Cannot log in. '
+                        'Did you enter the correct username and password?')
     login_ticket = match.group(1)
     print(' Done. Ticket=' + login_ticket)
 

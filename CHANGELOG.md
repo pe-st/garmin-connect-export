@@ -3,6 +3,11 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 2.3.0 - 2019-04-18
+
+- changed: the HTTP request to login to Garmin Connect (the old one didn't work anymore)
+
+
 ## 2.2.1 - 2019-03-30
 
 - added: new command line switch `--fileprefix` / `-fp` (courtesy of Christian Schulzendorff @chs8691):
