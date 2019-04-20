@@ -187,8 +187,8 @@ PASSWORD = ARGS.password if ARGS.password else getpass()
 LIMIT_MAXIMUM = 1000
 
 WEBHOST = "https://connect.garmin.com"
-REDIRECT = "https://connect.garmin.com/post-auth/login"
-BASE_URL = "http://connect.garmin.com/en-US/signin"
+REDIRECT = "https://connect.garmin.com/modern/"
+BASE_URL = "https://connect.garmin.com/en-US/signin"
 SSO = "https://sso.garmin.com/sso"
 CSS = "https://static.garmincdn.com/com.garmin.connect/ui/css/gauth-custom-v1.2-min.css"
 
@@ -207,18 +207,25 @@ DATA = {
     "rememberMeChecked": "false",
     "createAccountShown": "true",
     "openCreateAccount": "false",
-    "usernameShown": "false",
     "displayNameShown": "false",
     "consumeServiceTicket": "false",
     "initialFocus": "true",
     "embedWidget": "false",
-    "generateExtraServiceTicket": "false",
+    "generateExtraServiceTicket": "true",
+    "generateTwoExtraServiceTickets": "false",
+    "generateNoServiceTicket": "false",
+    "globalOptInShown": "true",
+    "globalOptInChecked": "false",
+    "mobile": "false",
+    "connectLegalTerms": "true",
+    "locationPromptShown": "true",
+    "showPassword": "true",
 }
 
 print(urllib.parse.urlencode(DATA))
 
 # URLs for various services.
-URL_GC_LOGIN = "https://sso.garmin.com/sso/login?" + urllib.parse.urlencode(DATA)
+URL_GC_LOGIN = "https://sso.garmin.com/sso/signin?" + urllib.parse.urlencode(DATA)
 URL_GC_POST_AUTH = "https://connect.garmin.com/modern/activities?"
 URL_GC_PROFILE = "https://connect.garmin.com/modern/profile"
 URL_GC_USERSTATS = (
@@ -251,14 +258,14 @@ print("Finish login page")
 POST_DATA = {
     "username": USERNAME,
     "password": PASSWORD,
-    "embed": "true",
-    "lt": "e1s1",
-    "_eventId": "submit",
-    "displayNameRequired": "false",
+    "embed": "false",
+    "rememberme": "on",
 }
 
+HEADERS = {"referer": URL_GC_LOGIN}
+
 print("Post login data")
-LOGIN_RESPONSE = http_req(URL_GC_LOGIN, POST_DATA).decode()
+LOGIN_RESPONSE = http_req(URL_GC_LOGIN + "#", POST_DATA, HEADERS).decode()
 print("Finish login post")
 
 # extract the ticket from the login response
