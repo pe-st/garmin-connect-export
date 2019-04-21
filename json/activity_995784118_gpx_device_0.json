@@ -1,0 +1,100 @@
+{
+  "activityId": 995784118,
+  "activityName": "Cournillens (Runkeeper)",
+  "userProfileId": 2836200,
+  "isMultiSportParent": false,
+  "activityTypeDTO": {
+    "typeId": 12,
+    "typeKey": "uncategorized",
+    "parentTypeId": 17,
+    "sortOrder": 2
+  },
+  "eventTypeDTO": {
+    "typeId": 9,
+    "typeKey": "uncategorized",
+    "sortOrder": 10
+  },
+  "accessControlRuleDTO": {
+    "typeId": 4,
+    "typeKey": "groups"
+  },
+  "timeZoneUnitDTO": {
+    "unitId": 124,
+    "unitKey": "Europe/Paris",
+    "factor": 0.0,
+    "timeZone": "Europe/Paris"
+  },
+  "metadataDTO": {
+    "isOriginal": true,
+    "deviceApplicationInstallationId": 756265,
+    "agentApplicationInstallationId": null,
+    "agentString": null,
+    "fileFormat": {
+      "formatId": 2,
+      "formatKey": "gpx"
+    },
+    "associatedCourseId": null,
+    "lastUpdateDate": "2016-02-06T17:42:12.0",
+    "uploadedDate": "2015-12-28T23:18:11.0",
+    "videoUrl": null,
+    "hasPolyline": true,
+    "hasChartData": true,
+    "hasHrTimeInZones": false,
+    "hasPowerTimeInZones": false,
+    "userInfoDto": {
+      "userProfilePk": 2836200,
+      "displayname": "eschep",
+      "fullname": "Peter Steiner",
+      "profileImageUrlLarge": null,
+      "profileImageUrlMedium": "https://s3.amazonaws.com/garmin-connect-prod/profile_images/1a8b37ca-2cd1-47bf-a191-9326dd26949f-2836200.png",
+      "profileImageUrlSmall": "https://s3.amazonaws.com/garmin-connect-prod/profile_images/c957e6a9-adb2-4cdb-8105-bf0739323504-2836200.png",
+      "userPro": false
+    },
+    "chartAvailability": {
+      "showDistance": true,
+      "showDuration": true,
+      "showElevation": true,
+      "showHeartRate": true,
+      "showMovingDuration": true,
+      "showMovingSpeed": true,
+      "showSpeed": true,
+      "showTimestamp": true
+    },
+    "childIds": [],
+    "sensors": null,
+    "activityImages": [],
+    "manufacturer": "",
+    "diveNumber": null,
+    "lapCount": 1,
+    "associatedWorkoutId": null,
+    "isAtpActivity": null,
+    "deviceMetaDataDTO": {
+      "deviceId": "0",
+      "deviceTypePk": 19,
+      "deviceVersionPk": 756265
+    },
+    "gcj02": false,
+    "favorite": false,
+    "autoCalcCalories": false,
+    "elevationCorrected": true,
+    "personalRecord": false,
+    "manualActivity": false
+  },
+  "summaryDTO": {
+    "startTimeLocal": "2015-12-27T13:05:44.0",
+    "startTimeGMT": "2015-12-27T12:05:44.0",
+    "distance": 9943.03,
+    "duration": 3620.0,
+    "movingDuration": 3543.0,
+    "elapsedDuration": 3620.0,
+    "elevationGain": 104.05,
+    "elevationLoss": 108.5,
+    "maxElevation": 646.57,
+    "minElevation": 570.99,
+    "averageSpeed": 2.746692120858901,
+    "averageMovingSpeed": 2.806385965991877,
+    "maxSpeed": 7.874701976886471,
+    "averageHR": 149.0,
+    "maxHR": 182.0
+  }
+}

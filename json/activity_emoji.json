@@ -1,13 +1,13 @@
 {
-  "activityId": 2541953812,
-  "activityName": "Reckingen Augenstern-Ulrichen Langlauf",
+  "activityId": 2958378924,
+  "activityName": "Biel 🏛 Pavillon",
   "userProfileId": 2836200,
   "isMultiSportParent": false,
   "activityTypeDTO": {
-    "typeId": 81,
-    "typeKey": "cross_country_skiing",
-    "parentTypeId": 4,
-    "sortOrder": 39
+    "typeId": 1,
+    "typeKey": "running",
+    "parentTypeId": 17,
+    "sortOrder": 3
   },
   "eventTypeDTO": {
     "typeId": 9,
@@ -26,7 +26,7 @@
   },
   "metadataDTO": {
     "isOriginal": true,
-    "deviceApplicationInstallationId": 845288,
+    "deviceApplicationInstallationId": 856399,
     "agentApplicationInstallationId": null,
     "agentString": null,
     "fileFormat": {
@@ -34,8 +34,8 @@
       "formatKey": "fit"
     },
     "associatedCourseId": null,
-    "lastUpdateDate": "2018-03-08T11:35:20.0",
-    "uploadedDate": "2018-03-08T06:09:54.0",
+    "lastUpdateDate": "2018-08-24T05:54:31.0",
+    "uploadedDate": "2018-08-24T05:38:55.0",
     "videoUrl": null,
     "hasPolyline": true,
     "hasChartData": true,
@@ -58,6 +58,7 @@
       "showHeartRate": true,
       "showMovingDuration": true,
       "showMovingSpeed": true,
+      "showRunCadence": true,
       "showSpeed": true,
       "showTimestamp": true
     },
@@ -66,23 +67,24 @@
       {
         "sku": "006-B2697-00",
         "sourceType": "LOCAL",
-        "softwareVersion": 8.0
+        "softwareVersion": 10.0
       },
       {
         "sku": "006-B2697-00",
         "sourceType": "LOCAL",
         "localDeviceType": "BAROMETER",
-        "softwareVersion": 8.0
+        "softwareVersion": 10.0
       },
       {
         "sku": "006-B1621-00",
         "sourceType": "LOCAL",
         "localDeviceType": "GPS",
-        "softwareVersion": 4.3
+        "softwareVersion": 4.4
       },
       {
         "sourceType": "LOCAL",
-        "localDeviceType": "ACCELEROMETER"
+        "localDeviceType": "ACCELEROMETER",
+        "softwareVersion": 0.0
       },
       {
         "sku": "006-B0000-00",
@@ -93,56 +95,59 @@
       {
         "sourceType": "LOCAL",
         "localDeviceType": "WHR",
-        "softwareVersion": 3.23
+        "softwareVersion": 3.31
       }
     ],
     "activityImages": [],
     "manufacturer": "GARMIN",
     "diveNumber": null,
-    "lapCount": 9,
+    "lapCount": 5,
     "associatedWorkoutId": null,
     "isAtpActivity": null,
     "deviceMetaDataDTO": {
       "deviceId": "3946806421",
       "deviceTypePk": 34236,
-      "deviceVersionPk": 845288
+      "deviceVersionPk": 856399
     },
     "gcj02": false,
-    "favorite": false,
     "autoCalcCalories": false,
     "elevationCorrected": false,
+    "favorite": false,
     "manualActivity": false,
     "personalRecord": false
   },
   "summaryDTO": {
-    "startTimeLocal": "2018-03-08T12:23:22.0",
-    "startTimeGMT": "2018-03-08T11:23:22.0",
-    "startLatitude": 46.46675166673958,
-    "startLongitude": 8.243478052318096,
-    "distance": 8225.53,
-    "duration": 2627.38,
-    "movingDuration": 2614.0,
-    "elapsedDuration": 2627.38,
-    "elevationGain": 106.0,
-    "elevationLoss": 73.0,
-    "maxElevation": 1374.8,
-    "minElevation": 1326.0,
-    "averageSpeed": 3.13100004196167,
-    "averageMovingSpeed": 3.146721604222456,
-    "maxSpeed": 10.51200008392334,
-    "calories": 319.0915556488991,
-    "averageHR": 110.0,
-    "maxHR": 146.0,
-    "averageTemperature": 24.846973734297677,
-    "maxTemperature": 28.0,
-    "minTemperature": 21.0,
-    "trainingEffect": 1.399999976158142,
+    "startTimeLocal": "2018-08-24T12:01:50.0",
+    "startTimeGMT": "2018-08-24T10:01:50.0",
+    "startLatitude": 47.13532981462777,
+    "startLongitude": 7.243065973743796,
+    "distance": 4146.45,
+    "duration": 2147.244,
+    "movingDuration": 1844.0,
+    "elapsedDuration": 2147.244,
+    "elevationGain": 101.0,
+    "elevationLoss": 99.0,
+    "maxElevation": 545.6,
+    "minElevation": 444.2,
+    "averageSpeed": 1.9309999942779543,
+    "averageMovingSpeed": 2.2486172425772777,
+    "maxSpeed": 3.6579999923706055,
+    "calories": 357.0388685495535,
+    "averageHR": 132.0,
+    "maxHR": 160.0,
+    "averageRunCadence": 124.03125,
+    "maxRunCadence": 187.0,
+    "averageTemperature": 26.007921714818266,
+    "maxTemperature": 29.0,
+    "minTemperature": 24.0,
+    "strideLength": 92.05550090389445,
+    "trainingEffect": 2.4000000953674316,
     "anaerobicTrainingEffect": 0.10000000149011612,
-    "aerobicTrainingEffectMessage": "MINOR_AEROBIC_BENEFIT_0",
+    "aerobicTrainingEffectMessage": "MAINTAINING_AEROBIC_FITNESS_1",
     "anaerobicTrainingEffectMessage": "NO_ANAEROBIC_BENEFIT_0",
-    "endLatitude": 46.469942070543766,
-    "endLongitude": 8.248067228123546,
-    "maxVerticalSpeed": 0.5999755859375
+    "endLatitude": 47.133489567786455,
+    "endLongitude": 7.231966909021139,
+    "maxVerticalSpeed": 0.600006103515625
   },
-  "locationName": "Goms"
+  "locationName": "Biel/Bienne"
 }
