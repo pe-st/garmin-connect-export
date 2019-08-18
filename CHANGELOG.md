@@ -3,6 +3,35 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 2.3.1 - 2019-08-18
+
+- added: new command line switch `--subdir` / `-s` (courtesy of Christian Schulzendorff @chs8691):
+  Exported activity files now can be saved in subdirectories, optionally grouped by year (and/or month) of the activity start time. Usually this is used together with the parameter `directory`, which is the root directory for DIR. `--subdir` supports the two placeholders `{YYYY}` and `{MM}` which can be used within DIR. Examples:
+  ```
+  --directory downloads --subdir {YYYY} --> downloads/2019/
+  --directory downloads --subdir {YYYY}/{MM} --> downloads/2019/03/
+  --directory downloads --subdir myTcxFiles/{YYYY} -f tcx --> downloads/myTcxFiles/2019/
+  --directory downloads --subdir activities{YYYY}/GPX -f gpx --> downloads/activities2019/GPX/
+  ```
+  Note that only the activity files go into the subdirectory, the CSV and other files remain in the main directory
+- added: new command line switch `--start_activity_no` / `-sa` (courtesy of Josef K @jkall):
+  This is a minor fix to allow user to restart downloading where it crashed. Example:
+
+  First download:
+  ```
+  $ python gcexport.py --count all ~/Downloads/garmin
+  Garmin Connect activity (657/2098) [activity_id] ...
+  ...some error...
+  ```
+  Second run:
+  ```
+  $ python gcexport.py --count all --start_activity_no 657 ~/Downloads/garmin
+  ...
+  Skipping Garmin Connect activity (656/2098) [activity_id]
+  Garmin Connect activity (657/2098) [activity_id]
+  ```
+
+
 ## 2.3.0 - 2019-04-18
 
 - changed: the HTTP request to login to Garmin Connect (the old one didn't work anymore)
@@ -20,7 +49,7 @@ This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1
 - added: new exported fields
     - `vo2max` the VO2 Max (maximum volume of oxygen, cardiovascular fitness indicator)
     - `aerobicEffect` aerobic training effect (value between 0 and 5)
-    - `aneerobicEffect` anaerobic training effect (value between 0 and 5)
+    - `anaerobicEffect` anaerobic training effect (value between 0 and 5)
     - `averageRunCadence` average number of steps per minute. Excludes time spent standing
     - `maxRunCadence` maximum number of steps per minute
     - `strideLength` average length of the stride from one footfall to the next (in meters)
