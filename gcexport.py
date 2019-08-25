@@ -7,6 +7,8 @@ Original author: Kyle Krafka (https://github.com/kjkjava/)
 Date: April 28, 2015
 Fork author: Michael P (https://github.com/moderation/)
 Date: February 21, 2016
+Fork author: Peter Steiner (https://github.com/pe-st/)
+Date: June 2017
 
 Description:    Use this script to export your fitness data from Garmin Connect.
                 See README.md for more information.
@@ -41,7 +43,7 @@ import unicodedata
 import urllib2
 import zipfile
 
-SCRIPT_VERSION = '2.3.0'
+SCRIPT_VERSION = '2.3.2'
 
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR), urllib2.HTTPSHandler(debuglevel=0))
@@ -66,7 +68,8 @@ PARENT_TYPE_ID = {
     71: 'motorcycling',
     83: 'transition',
     144: 'diving',
-    149: 'yoga'
+    149: 'yoga',
+    165: 'winter_sports'
 }
 
 # typeId values using pace instead of speed
@@ -895,7 +898,7 @@ def main(argv):
 
         # Process each activity.
         for actvty in activities:
-            if args.start_activity_no and current_index < args.start_activity_no: 
+            if args.start_activity_no and current_index < args.start_activity_no:
                 pass
                 # Display which entry we're skipping.
                 print('Skipping Garmin Connect activity ', end='')

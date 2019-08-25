@@ -3,6 +3,11 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 2.3.2 - 2019-08-25
+
+- added: parent activity type "Winter Sports"
+
+
 ## 2.3.1 - 2019-08-18
 
 - added: new command line switch `--subdir` / `-s` (courtesy of Christian Schulzendorff @chs8691):
