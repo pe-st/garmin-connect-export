@@ -38,8 +38,9 @@ You will need a little experience running things from the command line to use th
 ```
 usage: gcexport.py [-h] [--version] [-v] [--username USERNAME]
                    [--password PASSWORD] [-c COUNT] [-e EXTERNAL] [-a ARGS]
-                   [-f {gpx,tcx,original,json}] [-d DIRECTORY] [-u] [-ot]
-                   [--desc [DESC]] [-t TEMPLATE] [-fp]
+                   [-f {gpx,tcx,original,json}] [-d DIRECTORY] [-s SUBDIR]
+                   [-u] [-ot] [--desc [DESC]] [-t TEMPLATE] [-fp]
+                   [-sa START_ACTIVITY_NO]
 
 Garmin Connect Exporter
 
@@ -63,6 +64,10 @@ optional arguments:
   -d DIRECTORY, --directory DIRECTORY
                         the directory to export to (default: './YYYY-MM-
                         DD_garmin_connect_export')
+  -s SUBDIR, --subdir SUBDIR
+                        the subdirectory for activity files (tcx, gpx etc.),
+                        supported placeholders are {YYYY} and {MM} (default:
+                        export directory)
   -u, --unzip           if downloading ZIP files (format: 'original'), unzip
                         the file and remove the ZIP file
   -ot, --originaltime   will set downloaded (and possibly unzipped) file time
@@ -72,6 +77,9 @@ optional arguments:
   -t TEMPLATE, --template TEMPLATE
                         template file with desired columns for CSV output
   -fp, --fileprefix     set the local time as activity file name prefix
+  -sa START_ACTIVITY_NO, --start_activity_no START_ACTIVITY_NO
+                        give index for first activity to import, i.e. skipping
+                        the newest activites
 ```
 
 Examples:
@@ -152,7 +160,7 @@ Contributions
 -------------
 Contributions are welcome, particularly if this script stops working with Garmin Connect. You may consider opening a GitHub Issue first. New features, however simple, are encouraged.
 
-Contributors as of 2019-03 (Hope I didn't forget anyone):
+Contributors as of 2019-08 (Hope I didn't forget anyone):
 
 - Kyle Krafka @kjkjava
 - Jochem Wichers Hoeth @jowiho
@@ -169,6 +177,7 @@ Contributors as of 2019-03 (Hope I didn't forget anyone):
 - Jens Diemer @jedie
 - Christian Moelders @chmoelders
 - Christian Schulzendorff @chs8691
+- Josef K @jkall
 
 
 License

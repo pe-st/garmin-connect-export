@@ -57,8 +57,8 @@ def test_load_properties_keys():
     csv_columns = []
     csv_headers = load_properties(csv_header_props, keys=csv_columns)
 
-    assert csv_columns[0] == 'activityName'
-    assert csv_headers['activityName'] == "Activity name"
+    assert csv_columns[0] == 'startTimeIso'
+    assert csv_headers['startTimeIso'] == "Start Time"
 
 
 def test_csv_write_record():
@@ -80,11 +80,12 @@ def test_csv_write_record():
     extract['elapsed_seconds'] = 42
     extract['samples'] = None
     extract['device'] = "some device"
+    extract['gear'] = "some gear"
 
     csv_file = StringIO()
     csv_filter = CsvFilter(csv_file, 'csv_header_default.properties')
     csv_write_record(csv_filter, extract, activities[0], details, activity_type_name, event_type_name)
-    assert csv_file.getvalue()[:20] == '"Biel 🏛 Pavillon"'
+    assert csv_file.getvalue()[69:89] == '"Biel 🏛 Pavillon"'
 
 
 def write_to_file_mock(filename, content, mode, file_time=None):
