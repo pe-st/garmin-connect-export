@@ -12,7 +12,6 @@ Forked from [pe-st](https://github.com/pe-st)'s repository, [develop](https://gi
 Personal modifications compared to the original fork and branch include:
 
 - Tracking of the latest Garmin download date and download newer data only.
-- Make JSON files not persistent.
 - Create yearly subfolders to store activities original files.
 - Rename original file as `DATE_Activity title_(activity type)`.
 - Daemon file to automatically launch the syncronization once per week (you need to update the files with your user data)

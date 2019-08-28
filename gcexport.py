@@ -726,7 +726,8 @@ def export_data_file(activity_id, activity_details, args, actvty, activity_type_
 def setup_logging():
     """Setup logging"""
     logging.basicConfig(
-        filename='gcexport.log',
+        # Complete path to log file is needed or else launchd will get IOError: [Errno 13] Permission denied when trying to write to the root folder
+        filename='/Users/cralvarez/Documents/CartoGPS/Data/gcexport.log',
         level=logging.DEBUG,
         format='%(asctime)s [%(levelname)-7.7s] %(message)s'
     )

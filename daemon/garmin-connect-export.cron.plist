@@ -14,9 +14,9 @@
     <string>/Users/cralvarez/Documents/CartoGPS/Data/garmin-connect-export.sh</string>
 <!--
     <key>StandardOutPath</key>
-    <string>/Users/cralvarez/Documents/CartoGPS/Data/log/python_script.out</string>
+    <string>/Users/cralvarez/Documents/CartoGPS/Data/python_script.out</string>
     <key>StandardErrorPath</key>
-    <string>/Users/cralvarez/Documents/CartoGPS/Data/log/python_script.error</string>
+    <string>/Users/cralvarez/Documents/CartoGPS/Data/python_script.error</string>
 -->
     <key>StartCalendarInterval</key>
     <array>
