@@ -315,7 +315,7 @@ def offset_date_time(time_local, time_gmt):
     local_dt = datetime.strptime(time_local, "%Y-%m-%d %H:%M:%S")
     gmt_dt = datetime.strptime(time_gmt, "%Y-%m-%d %H:%M:%S")
     offset = local_dt - gmt_dt
-    offset_tz = FixedOffset(offset.seconds / 60, "LCL")
+    offset_tz = FixedOffset(offset.seconds // 60, "LCL")
     return local_dt.replace(tzinfo=offset_tz)
 
 
@@ -590,7 +590,7 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
     metadata = details['metadataDTO']
     device_app_inst_id = metadata['deviceApplicationInstallationId'] if present('deviceApplicationInstallationId', metadata) else None
     if device_app_inst_id:
-        if not device_dict.has_key(device_app_inst_id):
+        if device_app_inst_id not in device_dict:
             # observed from my stock of activities:
             # details['metadataDTO']['deviceMetaDataDTO']['deviceId'] == null -> device unknown
             # details['metadataDTO']['deviceMetaDataDTO']['deviceId'] == '0' -> device unknown
@@ -598,7 +598,7 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
             device_dict[device_app_inst_id] = None
             device_meta = metadata['deviceMetaDataDTO'] if present('deviceMetaDataDTO', metadata) else None
             device_id = device_meta['deviceId'] if present('deviceId', device_meta) else None
-            if not device_meta.has_key('deviceId') or device_id and device_id != '0':
+            if 'deviceId' not in device_meta or device_id and device_id != '0':
                 device_json = http_caller(URL_GC_DEVICE + str(device_app_inst_id))
                 file_writer(args.directory + '/device_' + str(device_app_inst_id) + '.json',
                             device_json, 'w',
@@ -652,7 +652,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
         makedirs(directory)
 
     # timestamp as prefix for filename
-    if args.fileprefix > 0:
+    if args.fileprefix and args.fileprefix > 0:
         prefix = "{}-".format(start_time_locale.replace("-", "").replace(":", b"").replace(" ", "-"))
     else:
         prefix = ""
@@ -765,12 +765,12 @@ def logging_verbosity(verbosity):
     for handler in logger.handlers:
         if isinstance(handler, logging.FileHandler):
             # this is the logfile handler
-            level = logging.DEBUG if verbosity > 0 else logging.INFO
+            level = logging.DEBUG if verbosity and verbosity > 0 else logging.INFO
             handler.setLevel(level)
             logging.info('New logfile level: %s', logging.getLevelName(level))
         elif isinstance(handler, logging.StreamHandler):
             # this is the console handler
-            level = logging.DEBUG if verbosity > 1 else (logging.INFO if verbosity > 0 else logging.WARN)
+            level = logging.DEBUG if verbosity and verbosity > 1 else (logging.INFO if verbosity and verbosity > 0 else logging.WARN)
             handler.setLevel(level)
             logging.debug('New console log level: %s', logging.getLevelName(level))
 
