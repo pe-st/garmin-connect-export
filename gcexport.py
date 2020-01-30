@@ -43,7 +43,7 @@ import unicodedata
 import urllib2
 import zipfile
 
-SCRIPT_VERSION = '2.3.2'
+SCRIPT_VERSION = '2.3.3'
 
 COOKIE_JAR = cookielib.CookieJar()
 OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR), urllib2.HTTPSHandler(debuglevel=0))
@@ -657,6 +657,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     else:
         prefix = ""
 
+    fit_filename = None
     if args.format == 'gpx':
         data_filename = directory + '/' + prefix + 'activity_' + activity_id + append_desc + '.gpx'
         download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
@@ -668,7 +669,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     elif args.format == 'original':
         data_filename = directory + '/' + prefix + 'activity_' + activity_id + append_desc + '.zip'
         # TODO not all 'original' files are in FIT format, some are GPX or TCX...
-        fit_filename = directory + '/' + activity_id + '.fit'
+        fit_filename = directory + '/' + prefix + 'activity_' + activity_id + append_desc + '.fit'
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
     elif args.format == 'json':

@@ -3,6 +3,11 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 2.3.3 - 2020-01-30
+
+- fixed: skipping existing `.fit` files didn't work (reported by @fellrnr, issue #25)
+
+
 ## 2.3.2 - 2019-08-25
 
 - added: parent activity type "Winter Sports"
