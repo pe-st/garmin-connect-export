@@ -34,7 +34,7 @@ from os.path import sep
 
 import argparse
 #import cookielib
-import http.cookiejar
+#import http.cookiejar
 
 import csv
 import json
@@ -66,6 +66,7 @@ if python3:
 else:
     import cookielib
     import urllib2
+    from urllib import urlencode
     COOKIE_JAR = cookielib.CookieJar()
     OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR), urllib2.HTTPSHandler(debuglevel=0))
 
@@ -884,12 +885,14 @@ def logging_verbosity(verbosity):
     for handler in logger.handlers:
         if isinstance(handler, logging.FileHandler):
             # this is the logfile handler
-            level = logging.DEBUG if verbosity and verbosity > 0 else logging.INFO
+            level = logging.DEBUG if verbosity > 0 else logging.INFO
+            ### level = logging.DEBUG if verbosity and verbosity > 0 else logging.INFO
             handler.setLevel(level)
             logging.info('New logfile level: %s', logging.getLevelName(level))
         elif isinstance(handler, logging.StreamHandler):
             # this is the console handler
-            level = logging.DEBUG if verbosity and verbosity > 1 else (logging.INFO if verbosity and verbosity > 0 else logging.WARN)
+            level = logging.DEBUG if verbosity > 1 else (logging.INFO if verbosity > 0 else logging.WARN)
+            ### level = logging.DEBUG if verbosity and verbosity > 1 else (logging.INFO if verbosity and verbosity > 0 else logging.WARN)
             handler.setLevel(level)
             logging.debug('New console log level: %s', logging.getLevelName(level))
 
@@ -919,6 +922,9 @@ def main(argv):
     logging.info("Starting %s version %s, using Python version %s", argv[0], SCRIPT_VERSION, python_version())
     args = parse_arguments(argv)
     logging_verbosity(args.verbosity)
+    
+    print('verbosity: ' , args.verbosity)
+    logging_verbosity(0)
 
     print('Welcome to Garmin Connect Exporter!')
 
