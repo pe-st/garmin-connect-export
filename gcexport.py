@@ -210,7 +210,14 @@ def sanitize_filename(name, max_length=0):
 
 def write_to_file(filename, content, mode, file_time=None):
     """Helper function that persists content to file."""
-    write_file = open(filename, mode)
+    print('print to file: ', filename)
+    if python3 and filename.endswith('.json'):
+        write_file = open(filename, mode, encoding="utf-8")
+        content=content.replace('\u0113','e') #for umlaut e in fEnix
+        #write_file.write(content.decode('utf-8'))
+    else:
+        write_file = open(filename, mode)
+        #write_file.write(content)
     write_file.write(content)
     write_file.close()
     if file_time:
@@ -326,32 +333,43 @@ def http_req(url, post=None, headers=None):
 
 
 # idea stolen from https://stackoverflow.com/a/31852401/3686
-def load_properties(multiline, sep='=', comment_char='#', keys=None):
+def load_properties(multiline, separator='=', comment_char='#', keys=None):
     """
-    Read a multiline string of properties (key/value pair separated by *sep*) into a dict
+    Read a multiline string of properties (key/value pair separated by *separator*) into a dict
 
     :param multiline:    input string of properties
-    :param sep:          separator between key and value
+    :param separator:    separator between key and value
     :param comment_char: lines starting with this char are considered comments, not key/value pairs
     :param keys:         list to append the keys to
     :return:
     """
+    ##if python3:
+      ##  multiline=multiline.decode("utf-8")
+
     props = {}
     for line in multiline.splitlines():
         stripped_line = line.strip()
         if python3:
-            if stripped_line and not bytes(stripped_line).startswith(comment_char.encode()):
-                key_value = stripped_line.split(sep)
-                key = key_value[0].strip()
-                value = sep.join(key_value[1:]).strip().strip('"')
-                props[key] = value
-                if keys != None:
-                    keys.append(key)
+            stripped_line = line.strip()
+            if stripped_line:
+                if (isinstance(stripped_line,bytes)):
+                    stripped_line = stripped_line.decode('utf8')
+                if (isinstance(comment_char,bytes)):
+                    comment_char=comment_char.decode('utf8')             
+                if not stripped_line.startswith(comment_char):
+                    #https://python-forum.io/Thread-Diff-between-Py-2-7-and-3--14749
+                    key_value = stripped_line.split(separator)
+                    key = key_value[0].strip()
+                    value = separator.join(key_value[1:]).strip().strip('"')
+                    props[key] = value
+                    if keys != None:
+                        keys.append(key)
         else:
+            stripped_line = line.strip()
             if stripped_line and not stripped_line.startswith(comment_char):
-                key_value = stripped_line.split(sep)
+                key_value = stripped_line.split(separator)
                 key = key_value[0].strip()
-                value = sep.join(key_value[1:]).strip().strip('"')
+                value = separator.join(key_value[1:]).strip().strip('"')
                 props[key] = value
                 if keys != None:
                     keys.append(key)
