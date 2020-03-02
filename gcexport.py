@@ -210,10 +210,11 @@ def sanitize_filename(name, max_length=0):
 
 def write_to_file(filename, content, mode, file_time=None):
     """Helper function that persists content to file."""
-    print('print to file: ', filename)
+    #print('write to file: ', filename)
     if python3 and filename.endswith('.json'):
         write_file = open(filename, mode, encoding="utf-8")
-        content=content.replace('\u0113','e') #for umlaut e in fEnix
+        #content=content.decode("utf-8")
+        #content=content.replace('\u0113','e') #for umlaut e in fEnix
         #write_file.write(content.decode('utf-8'))
     else:
         write_file = open(filename, mode)
@@ -903,14 +904,14 @@ def logging_verbosity(verbosity):
     for handler in logger.handlers:
         if isinstance(handler, logging.FileHandler):
             # this is the logfile handler
-            level = logging.DEBUG if verbosity > 0 else logging.INFO
-            ### level = logging.DEBUG if verbosity and verbosity > 0 else logging.INFO
+            ###level = logging.DEBUG if verbosity > 0 else logging.INFO
+            level = logging.DEBUG if verbosity and verbosity > 0 else logging.INFO
             handler.setLevel(level)
             logging.info('New logfile level: %s', logging.getLevelName(level))
         elif isinstance(handler, logging.StreamHandler):
             # this is the console handler
-            level = logging.DEBUG if verbosity > 1 else (logging.INFO if verbosity > 0 else logging.WARN)
-            ### level = logging.DEBUG if verbosity and verbosity > 1 else (logging.INFO if verbosity and verbosity > 0 else logging.WARN)
+            ###level = logging.DEBUG if verbosity > 1 else (logging.INFO if verbosity > 0 else logging.WARN)
+            level = logging.DEBUG if verbosity and verbosity > 1 else (logging.INFO if verbosity and verbosity > 0 else logging.WARN)
             handler.setLevel(level)
             logging.debug('New console log level: %s', logging.getLevelName(level))
 
