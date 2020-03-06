@@ -46,9 +46,10 @@ import unicodedata
 #import urllib2
 import zipfile
 
+# first check if running on python3
 python3 = True
 try: # for python3
-    from urllib.request import urlopen, Request
+    from urllib.request import urlopen, Request, HTTPError
 except ImportError: # or python2
     from urllib2 import urlopen, Request, HTTPError
     python3 = False
@@ -80,7 +81,12 @@ SCRIPT_VERSION = '2.3.3'
 ALMOST_RFC_1123 = "%a, %d %b %Y %H:%M"
 
 # used by sanitize_filename()
-VALID_FILENAME_CHARS = "-_.() %s%s" % (string.ascii_letters, string.digits)
+if python3:
+    VALID_FILENAME_CHARS = "-_.() %s" % (string.ascii_letters)
+else:
+    VALID_FILENAME_CHARS = "-_.() %s%s" % (string.ascii_letters, string.digits)
+print('valid_chars: ' , VALID_FILENAME_CHARS)
+#sys.exit(0)
 
 # map the numeric parentTypeId to its name for the CSV output
 PARENT_TYPE_ID = {
@@ -204,6 +210,14 @@ def sanitize_filename(name, max_length=0):
     """
     # inspired by https://stackoverflow.com/a/698714/3686
     cleaned_filename = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore') if name else ''
+    
+    #if python3:
+    #    if (isinstance(cleaned_filename,int)):
+    #        cleaned_filename = str(cleaned_filename)
+    
+    print('cleaned_filename: ' , cleaned_filename)
+    print('VALID_FILENAME_CHARS: ' , VALID_FILENAME_CHARS)
+    #print('c: ' , c)
     stripped_filename = ''.join(c for c in cleaned_filename if c in VALID_FILENAME_CHARS).replace(' ', '_')
     return stripped_filename[:max_length] if max_length > 0 else stripped_filename
 
@@ -211,7 +225,7 @@ def sanitize_filename(name, max_length=0):
 def write_to_file(filename, content, mode, file_time=None):
     """Helper function that persists content to file."""
     #print('write to file: ', filename, ' content: ', content)
-    if python3 and filename.endswith('.json'):
+    if python3 and (filename.endswith('.json') or filename.endswith('.gpx') or filename.endswith('.tcx')):
         #write_file = open(filename, mode)
         write_file = open(filename, mode, encoding="utf-8")
         content=content.decode("utf-8")
@@ -771,7 +785,7 @@ def load_gear(activity_id, args):
             logging.debug("Gear for %s = %s/%s", activity_id, gear_display_name, gear_model)
             return gear_display_name if gear_display_name else gear_model
         return None
-    except urllib2.HTTPError:
+    except HTTPError:
         pass  # don't abort just for missing gear...
         # logging.info("Unable to get gear for %d", activity_id)
         # logging.exception(e)
@@ -781,6 +795,10 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     """
     Write the data of the activity to a file, depending on the chosen data format
     """
+    #if python3:
+    #    if (isinstance(start_time_locale,bytes)):
+    #        start_time_locale = start_time_locale.decode('utf8')
+    
     # Time dependent subdirectory for activity files, e.g. '{YYYY}
     if not args.subdir is None:
         directory = resolve_path(args.directory, args.subdir, start_time_locale)
@@ -793,7 +811,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
 
     # timestamp as prefix for filename
     if args.fileprefix and args.fileprefix > 0:
-        prefix = "{}-".format(start_time_locale.replace("-", "").replace(":", b"").replace(" ", "-"))
+        prefix = "{}-".format(start_time_locale.replace("-", "").replace(":", "").replace(" ", "-"))
     else:
         prefix = ""
 
@@ -836,7 +854,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
 
         try:
             data = http_req(download_url)
-        except urllib2.HTTPError as ex:
+        except HTTPError as ex:
             # Handle expected (though unfortunate) error codes; die on unexpected ones.
             if ex.code == 500 and args.format == 'tcx':
                 # Garmin will give an internal server error (HTTP 500) when downloading TCX files
@@ -1124,7 +1142,7 @@ def main(argv):
                                       start_time_seconds)
                         samples = json.loads(activity_measurements)
                         extract['samples'] = samples
-                    except urllib2.HTTPError:
+                    except HTTPError:
                         pass # don't abort just for missing samples...
                         # logging.info("Unable to get samples for %d", actvty['activityId'])
                         # logging.exception(e)
