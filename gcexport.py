@@ -264,7 +264,7 @@ def http_req(url, post=None, headers=None):
         if response.getcode() == 204:
             # For activities without GPS coordinates, there is no GPX download (204 = no content).
             # Write an empty file to prevent redownloading it.
-            log.info("Writing empty file since there was no GPX activity data...")
+            logging.info("Writing empty file since there was no GPX activity data...")
             return ""
         elif response.getcode() != 200:
             raise Exception("Bad return code (" + str(response.getcode()) + ") for: " + url)
