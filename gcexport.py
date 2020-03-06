@@ -228,7 +228,8 @@ def write_to_file(filename, content, mode, file_time=None):
     if python3 and (filename.endswith('.json') or filename.endswith('.gpx') or filename.endswith('.tcx')):
         #write_file = open(filename, mode)
         write_file = open(filename, mode, encoding="utf-8")
-        content=content.decode("utf-8")
+        if not isinstance(content,str):
+            content=content.decode("utf-8")
         content=content.replace('\u0113','e') #for umlaut e in fEnix
         write_file.write(content)
     else:
