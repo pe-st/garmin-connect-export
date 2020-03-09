@@ -81,10 +81,7 @@ SCRIPT_VERSION = '2.3.3'
 ALMOST_RFC_1123 = "%a, %d %b %Y %H:%M"
 
 # used by sanitize_filename()
-if python3:
-    VALID_FILENAME_CHARS = "-_.() %s" % (string.ascii_letters)
-else:
-    VALID_FILENAME_CHARS = "-_.() %s%s" % (string.ascii_letters, string.digits)
+VALID_FILENAME_CHARS = "-_.() %s%s" % (string.ascii_letters, string.digits)
 print('valid_chars: ' , VALID_FILENAME_CHARS)
 #sys.exit(0)
 
@@ -208,17 +205,12 @@ def sanitize_filename(name, max_length=0):
     """
     Remove or replace characters that are unsafe for filename
     """
-    # inspired by https://stackoverflow.com/a/698714/3686
-    cleaned_filename = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore') if name else ''
-    
-    #if python3:
-    #    if (isinstance(cleaned_filename,int)):
-    #        cleaned_filename = str(cleaned_filename)
-    
-    print('cleaned_filename: ' , cleaned_filename)
-    print('VALID_FILENAME_CHARS: ' , VALID_FILENAME_CHARS)
-    #print('c: ' , c)
-    stripped_filename = ''.join(c for c in cleaned_filename if c in VALID_FILENAME_CHARS).replace(' ', '_')
+    for c in name:
+        if not c in VALID_FILENAME_CHARS:
+            logging.warning("This activity ('" + name + "') contains forbidden character these will be removed")
+            logging.warning("allowed characters: " + VALID_FILENAME_CHARS)
+            break
+    stripped_filename = "".join([c for c in name if c in VALID_FILENAME_CHARS]).replace(' ', '_')
     return stripped_filename[:max_length] if max_length > 0 else stripped_filename
 
 
