@@ -21,6 +21,7 @@ Activity & event types:
 # this avoids different pylint behaviour for python 2 and 3
 from __future__ import print_function
 
+import pickle
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
@@ -533,7 +534,8 @@ def parse_arguments(argv):
     parser.add_argument('--password',
         help='your Garmin Connect password (otherwise, you will be prompted)')
     parser.add_argument('-c', '--count', default='1',
-        help='number of recent activities to download, or \'all\' (default: 1)')
+        help="number of recent activities to download, or \'all\' or \'new\' (default: 1), "
+             "\'new\' or \'number\' downloads the latest activities by activity's date/time")
     parser.add_argument('-e', '--external',
         help='path to external program to pass CSV file too')
     parser.add_argument('-a', '--args',
@@ -881,9 +883,9 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                 zip_obj = zipfile.ZipFile(zip_file)
                 for name in zip_obj.namelist():
                     unzipped_name = zip_obj.extract(name, directory)
-                    # prepend 'activity_' and append the description to the base name
-                    name_base, name_ext = splitext(name)
-                    new_name = directory + '/activity_' + name_base + append_desc + name_ext
+                    name_unzipped_base, name_unzipped_ext = splitext(name)
+                    fit_filename_name_base, name_ext = splitext(fit_filename)
+                    new_name = fit_filename_name_base + name_unzipped_ext
                     logging.debug('renaming %s to %s', unzipped_name, new_name)
                     rename(unzipped_name, new_name)
                     if file_time:
@@ -926,6 +928,42 @@ def logging_verbosity(verbosity):
             level = logging.DEBUG if verbosity and verbosity > 1 else (logging.INFO if verbosity and verbosity > 0 else logging.WARN)
             handler.setLevel(level)
             logging.debug('New console log level: %s', logging.getLevelName(level))
+
+
+def write_last_activity_index(settings_dir, activity_index, format):
+    """
+    Persists the index of the last exported activity for the given export format
+    (see also method read_settings())
+    :param settings_dir: Path to the pickle file
+    :param activity_index: Positive integer
+    :param format: Value of args.format
+    """
+    settings = read_settings(settings_dir)
+    settings['activity_indices'][format] = activity_index
+
+    file_name = join(settings_dir, ".settings")
+
+    with open(file_name, "wb") as f:
+        pickle.dump(settings, f)
+
+
+def read_settings(settings_dir):
+    """
+    Reads the stored settings from the given download dir
+    Expected pickle format is for instance {activity_indices={tcx=10, gpx=42, json=2, original=0}}
+    :param settings_dir: Path to the settings file
+    :return: dictionary with one key 'activity_indices', which is a dictionary of integer values for keys tcx, gpx,
+    json and original. If settings are not found an initialized dictionary will be returned:
+    dict(activity_indices=(tcx=0, gps=0, json=0, original=0))
+    """
+    file_name = join(settings_dir, ".settings")
+
+    try:
+        with open(file_name, "rb") as f:
+            pick = pickle.load(f)
+            return pick
+    except IOError:
+        return dict(activity_indices=dict(tcx=0, gpx=0, json=0, original=0))
 
 
 def resolve_path(directory, subdir, time):
@@ -981,7 +1019,7 @@ def main(argv):
     if not csv_existed:
         csv_filter.write_header()
 
-    if args.count == 'all':
+    if args.count == 'all' or args.count == 'new':
         # If the user wants to download all activities, query the userstats
         # on the profile page to know how many are available
         print('Getting display name...', end='')
@@ -1008,7 +1046,11 @@ def main(argv):
 
         # Modify total_to_download based on how many activities the server reports.
         json_results = json.loads(result)
-        total_to_download = int(json_results['userMetrics'][0]['totalActivities'])
+        if args.count == 'all':
+            total_to_download = int(json_results['userMetrics'][0]['totalActivities'])
+        if args.count == 'new':
+            total_to_download = int(json_results['userMetrics'][0]['totalActivities']) -\
+                                read_settings(args.directory)['activity_indices'][args.format]
     else:
         total_to_download = int(args.count)
     total_downloaded = 0
@@ -1149,6 +1191,12 @@ def main(argv):
 
                 export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc,
                                  actvty['startTimeLocal'])
+
+            # Regardless if file was written or already exists
+            write_last_activity_index(args.directory,
+                                      int(json_results['userMetrics'][0]['totalActivities']) -
+                                      total_to_download + current_index,
+                                      args.format)
 
             current_index += 1
         # End for loop for activities of chunk
