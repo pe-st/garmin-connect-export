@@ -604,7 +604,7 @@ def login_to_garmin_connect(args):
         login_response = http_req(URL_GC_LOGIN + "#", post_data, headers).decode()
     else:
         login_response = http_req(URL_GC_LOGIN + '#', post_data, headers)
-    
+
     for cookie in COOKIE_JAR:
         logging.debug("Cookie %s : %s", cookie.name, cookie.value)
     # write_to_file('login-response.html', login_response, 'w')
@@ -769,7 +769,7 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
 def load_gear(activity_id, args):
     """Retrieve the gear/equipment for an activity"""
     try:
-        gear_json = http_req(URL_GC_GEAR + activity_id)
+        gear_json = http_req(URL_GC_GEAR + activity_id).decode()
         gear = json.loads(gear_json)
         if gear:
             del args # keep 'args' argument in case you need to uncomment write_to_file
@@ -1019,38 +1019,37 @@ def main(argv):
     if not csv_existed:
         csv_filter.write_header()
 
-    if args.count == 'all' or args.count == 'new':
-        # If the user wants to download all activities, query the userstats
-        # on the profile page to know how many are available
-        print('Getting display name...', end='')
-        logging.info('Profile page %s', URL_GC_PROFILE)
-        profile_page = http_req(URL_GC_PROFILE)
-        # write_to_file(args.directory + '/profile.html', profile_page, 'a')
+    # If the user wants to download all activities, query the userstats
+    # on the profile page to know how many are available
+    print('Getting display name...', end='')
+    logging.info('Profile page %s', URL_GC_PROFILE)
+    profile_page = http_req(URL_GC_PROFILE).decode()
+    # write_to_file(args.directory + '/profile.html', profile_page, 'a')
 
-        # extract the display name from the profile page, it should be in there as
-        # \"displayName\":\"John.Doe\"
-        pattern = re.compile(r".*\\\"displayName\\\":\\\"([-.\w]+)\\\".*", re.MULTILINE | re.DOTALL)
-        match = pattern.match(profile_page)
-        if not match:
-            raise Exception('Did not find the display name in the profile page.')
-        display_name = match.group(1)
-        print(' Done. displayName=' + display_name)
+    # extract the display name from the profile page, it should be in there as
+    # \"displayName\":\"John.Doe\"
+    pattern = re.compile(r".*\\\"displayName\\\":\\\"([-.\w]+)\\\".*", re.MULTILINE | re.DOTALL)
+    match = pattern.match(profile_page)
+    if not match:
+        raise Exception('Did not find the display name in the profile page.')
+    display_name = match.group(1)
+    print(' Done. displayName=' + display_name)
 
-        print('Fetching user stats...', end='')
-        logging.info('Userstats page %s', URL_GC_USERSTATS + display_name)
-        result = http_req(URL_GC_USERSTATS + display_name)
-        print(' Done.')
+    print('Fetching user stats...', end='')
+    logging.info('Userstats page %s', URL_GC_USERSTATS + display_name)
+    result = http_req(URL_GC_USERSTATS + display_name).decode()
+    print(' Done.')
 
-        # Persist JSON
-        write_to_file(args.directory + '/userstats.json', result, 'w')
+    # Persist JSON
+    write_to_file(args.directory + '/userstats.json', result, 'w')
 
-        # Modify total_to_download based on how many activities the server reports.
-        json_results = json.loads(result)
-        if args.count == 'all':
-            total_to_download = int(json_results['userMetrics'][0]['totalActivities'])
-        if args.count == 'new':
-            total_to_download = int(json_results['userMetrics'][0]['totalActivities']) -\
-                                read_settings(args.directory)['activity_indices'][args.format]
+    # Modify total_to_download based on how many activities the server reports.
+    json_results = json.loads(result)
+    if args.count == 'all':
+        total_to_download = int(json_results['userMetrics'][0]['totalActivities'])
+    elif args.count == 'new':
+        total_to_download = int(json_results['userMetrics'][0]['totalActivities']) -\
+                            read_settings(args.directory)['activity_indices'][args.format]
     else:
         total_to_download = int(args.count)
     total_downloaded = 0
@@ -1058,10 +1057,10 @@ def main(argv):
     device_dict = dict()
 
     # load some dictionaries with lookup data from REST services
-    activity_type_props = http_req(URL_GC_ACT_PROPS)
+    activity_type_props = http_req(URL_GC_ACT_PROPS).decode()
     # write_to_file(args.directory + '/activity_types.properties', activity_type_props, 'a')
     activity_type_name = load_properties(activity_type_props)
-    event_type_props = http_req(URL_GC_EVT_PROPS)
+    event_type_props = http_req(URL_GC_EVT_PROPS).decode()
     # write_to_file(args.directory + '/event_types.properties', event_type_props, 'a')
     event_type_name = load_properties(event_type_props)
 
@@ -1083,14 +1082,11 @@ def main(argv):
         
         if python3:
             logging.info('Activity list URL %s', URL_GC_LIST + urllib.parse.urlencode(search_params))
-            result = http_req(URL_GC_LIST + urllib.parse.urlencode(search_params))
+            result = http_req(URL_GC_LIST + urllib.parse.urlencode(search_params)).decode()
         else:
             logging.info('Activity list URL %s', URL_GC_LIST + urlencode(search_params))
             result = http_req(URL_GC_LIST + urlencode(search_params))
-        
 
-        
-        
         print(' Done.')
 
         # Persist JSON activities list
@@ -1127,7 +1123,7 @@ def main(argv):
                 details = None
                 tries = MAX_TRIES
                 while tries > 0:
-                    activity_details = http_req(URL_GC_ACTIVITY + str(actvty['activityId']))
+                    activity_details = http_req(URL_GC_ACTIVITY + str(actvty['activityId'])).decode()
                     details = json.loads(activity_details)
                     # I observed a failure to get a complete JSON detail in about 5-10 calls out of 1000
                     # retrying then statistically gets a better JSON ;-)
@@ -1171,7 +1167,7 @@ def main(argv):
                 if csv_filter.is_column_active('sampleCount'):
                     try:
                         # TODO implement retries here, I have observed temporary failures
-                        activity_measurements = http_req(URL_GC_ACTIVITY + str(actvty['activityId']) + "/details")
+                        activity_measurements = http_req(URL_GC_ACTIVITY + str(actvty['activityId']) + "/details").decode()
                         write_to_file(args.directory + '/activity_' + str(actvty['activityId']) + '_samples.json',
                                       activity_measurements, 'w',
                                       start_time_seconds)
