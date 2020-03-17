@@ -3,6 +3,7 @@ __pycache__/
 .idea/
 .DS_Store
 extras/
+venv/
 *_garmin_connect_export/
 *.pyc
 *.log
