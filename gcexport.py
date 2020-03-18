@@ -192,7 +192,7 @@ def sanitize_filename(name, max_length=0):
     Remove or replace characters that are unsafe for filename
     """
     # inspired by https://stackoverflow.com/a/698714/3686
-    cleaned_filename = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore') if name else ''
+    cleaned_filename = unicodedata.normalize('NFKD', name) if name else ''
     stripped_filename = ''.join(c for c in cleaned_filename if c in VALID_FILENAME_CHARS).replace(' ', '_')
     return stripped_filename[:max_length] if max_length > 0 else stripped_filename
 
