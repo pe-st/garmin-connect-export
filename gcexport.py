@@ -10,7 +10,7 @@ Date: February 21, 2016
 Fork author: Peter Steiner (https://github.com/pe-st/)
 Date: June 2017
 Porting to Python3 started from Thomas Th. (https://github.com/telemaxx/)
-DAte: March 2020
+Date: March 2020
 
 Description:    Use this script to export your fitness data from Garmin Connect.
                 See README.md for more information.
