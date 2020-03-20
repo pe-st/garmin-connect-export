@@ -9,8 +9,6 @@ Fork author: Michael P (https://github.com/moderation/)
 Date: February 21, 2016
 Fork author: Peter Steiner (https://github.com/pe-st/)
 Date: June 2017
-Porting to Python3 started from Thomas Th. (https://github.com/telemaxx/)
-DAte: March 2020
 
 Description:    Use this script to export your fitness data from Garmin Connect.
                 See README.md for more information.
@@ -32,8 +30,11 @@ from platform import python_version
 from subprocess import call
 from timeit import default_timer as timer
 from os.path import sep
+#from urllib import urlencode
 
 import argparse
+#import cookielib
+#import http.cookiejar
 
 import csv
 import json
@@ -42,6 +43,7 @@ import re
 import string
 import sys
 import unicodedata
+#import urllib2
 import zipfile
 
 # first check if running on python3
@@ -58,7 +60,8 @@ if python3:
     import urllib.parse
     import urllib.request
     import urllib
-    from urllib.parse import urlencode
+    #from urllib.request import HTTPCookieProcessor, ProxyHandler
+    #from urllib.request import HTTPRedirectHandler, HTTPSHandler
     COOKIE_JAR = http.cookiejar.CookieJar()
     OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
 else:
@@ -69,6 +72,9 @@ else:
     OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR), urllib2.HTTPSHandler(debuglevel=0))
 
 SCRIPT_VERSION = '2.3.3'
+
+#COOKIE_JAR = cookielib.CookieJar()
+#OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR), urllib2.HTTPSHandler(debuglevel=0))
 
 # this is almost the datetime format Garmin used in the activity-search-service
 # JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
@@ -148,8 +154,11 @@ DATA = {
 }
 
 # URLs for various services.
+if python3:
+    URL_GC_LOGIN = "https://sso.garmin.com/sso/signin?" + urllib.parse.urlencode(DATA)
+else:
+    URL_GC_LOGIN = 'https://sso.garmin.com/sso/signin?' + urlencode(DATA)
 
-URL_GC_LOGIN = 'https://sso.garmin.com/sso/signin?' + urlencode(DATA)
 URL_GC_POST_AUTH = 'https://connect.garmin.com/modern/activities?'
 URL_GC_PROFILE = 'https://connect.garmin.com/modern/profile'
 URL_GC_USERSTATS = 'https://connect.garmin.com/modern/proxy/userstats-service/statistics/'
@@ -236,7 +245,7 @@ def write_to_file(filename, content, mode, file_time=None):
 def http_req(url, post=None, headers=None):
     """Helper function that makes the HTTP requests."""
     if python3:
-        request = Request(url)
+        request = urllib.request.Request(url)
         # Tell Garmin we're some supported browser.
         request.add_header(
             "User-Agent",
@@ -247,7 +256,7 @@ def http_req(url, post=None, headers=None):
             for header_key, header_value in headers.items():
                 request.add_header(header_key, header_value)
         if post:
-            post = urlencode(post)
+            post = urllib.parse.urlencode(post)
             post = post.encode("utf-8")  # Convert dictionary to POST parameter string.
         # print("request.headers: " + str(request.headers) + " COOKIE_JAR: " + str(COOKIE_JAR))
         # print("post: " + str(post) + "request: " + str(request))
@@ -264,7 +273,7 @@ def http_req(url, post=None, headers=None):
 
         return response.read()
     else:
-        request = Request(url)
+        request = urllib2.Request(url)
         # Tell Garmin we're some supported browser.
         request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, \
             like Gecko) Chrome/54.0.2816.0 Safari/537.36')
@@ -309,7 +318,12 @@ def http_req(url, post=None, headers=None):
             for header_key, header_value in headers.iteritems():
                 request.add_header(header_key, header_value)
     if post:
-        post = urlencode(post)  # Convert dictionary to POST parameter string.
+#        post = urlencode(post)  # Convert dictionary to POST parameter string.
+        if python3:
+            post = urllib.parse.urlencode(post)  # Convert dictionary to POST parameter string.
+        else:
+            post = urlencode(post)  # Convert dictionary to POST parameter string.
+        
 
     start_time = timer()
     try:
@@ -562,7 +576,12 @@ def login_to_garmin_connect(args):
     username = args.username if args.username else raw_input('Username: ')
     password = args.password if args.password else getpass()
 
-    logging.debug("Login params: %s", urlencode(DATA))
+    if python3:
+        logging.debug("Login params: %s", urllib.parse.urlencode(DATA))
+    else:
+        logging.debug("Login params: %s", urlencode(DATA))
+
+#    logging.debug("Login params: %s", urlencode(DATA))
 
     # Initially, we need to get a valid session cookie, so we pull the login page.
     print('Connecting to Garmin Connect...', end='')
@@ -1028,10 +1047,16 @@ def main(argv):
               + '..' + str(total_downloaded + num_to_download) \
               + '...', end='')
         
-        logging.info('Activity list URL %s', URL_GC_LIST + urlencode(search_params))
-        result = http_req(URL_GC_LIST + urlencode(search_params))
+        if python3:
+            logging.info('Activity list URL %s', URL_GC_LIST + urllib.parse.urlencode(search_params))
+            result = http_req(URL_GC_LIST + urllib.parse.urlencode(search_params))
+        else:
+            logging.info('Activity list URL %s', URL_GC_LIST + urlencode(search_params))
+            result = http_req(URL_GC_LIST + urlencode(search_params))
+        
 
-  
+        
+        
         print(' Done.')
 
         # Persist JSON activities list
