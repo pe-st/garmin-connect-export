@@ -6,7 +6,12 @@ py.test gcexport_test.py
 """
 
 from gcexport import *
-from StringIO import StringIO
+try:
+    ## for Python 2
+    from StringIO import StringIO
+except ImportError:
+    ## for Python 3
+    from io import StringIO
 
 
 def test_pace_or_speed_raw_cycling():
