@@ -421,8 +421,11 @@ class CsvFilter(object):
         the record prepared for the next write_row call
         """
         if value and name in self.__csv_columns:
-            # must encode in UTF-8 because the Python 'csv' module doesn't support unicode
-            self.__current_row[self.__csv_headers[name]] = value.encode('utf8')
+            if python3:
+                self.__current_row[self.__csv_headers[name]] = value
+            else:
+                # must encode in UTF-8 because the Python 2 'csv' module doesn't support unicode
+                self.__current_row[self.__csv_headers[name]] = value.encode('utf8')
 
     def is_column_active(self, name):
         """Return True if the column is present in the header template"""
@@ -874,7 +877,10 @@ def main(argv):
     csv_filename = args.directory + '/activities.csv'
     csv_existed = isfile(csv_filename)
 
-    csv_file = open(csv_filename, 'a')
+    if python3:
+        csv_file = open(csv_filename, mode='a', encoding='utf-8')
+    else:
+        csv_file = open(csv_filename, 'a')
     csv_filter = CsvFilter(csv_file, args.template)
 
     # Write header to CSV file

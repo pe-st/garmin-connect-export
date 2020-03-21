@@ -90,7 +90,8 @@ def test_csv_write_record():
     csv_file = StringIO()
     csv_filter = CsvFilter(csv_file, 'csv_header_default.properties')
     csv_write_record(csv_filter, extract, activities[0], details, activity_type_name, event_type_name)
-    assert csv_file.getvalue()[69:89] == '"Biel 🏛 Pavillon"'
+    expected = '"Biel 🏛 Pavillon"'
+    assert csv_file.getvalue()[69:69 + len(expected)] == expected
 
 
 def write_to_file_mock(filename, content, mode, file_time=None):
