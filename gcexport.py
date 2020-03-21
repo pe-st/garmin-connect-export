@@ -199,18 +199,13 @@ def sanitize_filename(name, max_length=0):
 
 def write_to_file(filename, content, mode, file_time=None):
     """Helper function that persists content to file."""
-    #print('write to file: ', filename, ' content: ', content)
     if python3 and (filename.endswith('.json') or filename.endswith('.gpx') or filename.endswith('.tcx')):
-        #write_file = open(filename, mode)
         write_file = open(filename, mode, encoding="utf-8")
-        if not isinstance(content,str):
+        if not isinstance(content, str):
             content=content.decode("utf-8")
-        content=content.replace('\u0113','e') #for umlaut e in fEnix
-        write_file.write(content)
     else:
         write_file = open(filename, mode)
-        write_file.write(content)
-    #write_file.write(content)
+    write_file.write(content)
     write_file.close()
     if file_time:
         utime(filename, (file_time, file_time))
