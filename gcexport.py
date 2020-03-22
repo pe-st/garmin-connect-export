@@ -246,11 +246,18 @@ def http_req(url, post=None, headers=None):
         # 204 = no content, e.g. for activities without GPS coordinates there is no GPX download.
         # Write an empty file to prevent redownloading it.
         logging.info('Got 204 for %s, returning empty response', url)
-        return ''
+        return b''
     elif response.getcode() != 200:
         raise Exception('Bad return code (' + str(response.getcode()) + ') for: ' + url)
 
     return response.read()
+
+def http_req_as_string(url, post=None, headers=None):
+    """Helper function that makes the HTTP requests, returning a string instead of bytes."""
+    if python3:
+        return http_req(url, post, headers).decode()
+    else:
+        return http_req(url, post, headers)
 
 
 # idea stolen from https://stackoverflow.com/a/31852401/3686
@@ -477,7 +484,10 @@ def login_to_garmin_connect(args):
     """
     Perform all HTTP requests to login to Garmin Connect.
     """
-    username = args.username if args.username else raw_input('Username: ')
+    if python3:
+        username = args.username if args.username else input('Username: ')
+    else:
+        username = args.username if args.username else raw_input('Username: ')
     password = args.password if args.password else getpass()
 
     logging.debug("Login params: %s", urlencode(DATA))
@@ -485,7 +495,7 @@ def login_to_garmin_connect(args):
     # Initially, we need to get a valid session cookie, so we pull the login page.
     print('Connecting to Garmin Connect...', end='')
     logging.info('Connecting to %s', URL_GC_LOGIN)
-    connect_response = http_req(URL_GC_LOGIN)
+    connect_response = http_req_as_string(URL_GC_LOGIN)
     # write_to_file('connect_response.html', connect_response, 'w')
     for cookie in COOKIE_JAR:
         logging.debug("Cookie %s : %s", cookie.name, cookie.value)
@@ -505,10 +515,7 @@ def login_to_garmin_connect(args):
     }
 
     print('Requesting Login ticket...', end='')
-    if python3:
-        login_response = http_req(URL_GC_LOGIN + "#", post_data, headers).decode()
-    else:
-        login_response = http_req(URL_GC_LOGIN + '#', post_data, headers)
+    login_response = http_req_as_string(URL_GC_LOGIN + '#', post_data, headers)
     
     for cookie in COOKIE_JAR:
         logging.debug("Cookie %s : %s", cookie.name, cookie.value)
@@ -674,7 +681,7 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
 def load_gear(activity_id, args):
     """Retrieve the gear/equipment for an activity"""
     try:
-        gear_json = http_req(URL_GC_GEAR + activity_id)
+        gear_json = http_req_as_string(URL_GC_GEAR + activity_id)
         gear = json.loads(gear_json)
         if gear:
             del args # keep 'args' argument in case you need to uncomment write_to_file
@@ -887,7 +894,7 @@ def main(argv):
         # on the profile page to know how many are available
         print('Getting display name...', end='')
         logging.info('Profile page %s', URL_GC_PROFILE)
-        profile_page = http_req(URL_GC_PROFILE)
+        profile_page = http_req_as_string(URL_GC_PROFILE)
         # write_to_file(args.directory + '/profile.html', profile_page, 'a')
 
         # extract the display name from the profile page, it should be in there as
@@ -901,7 +908,7 @@ def main(argv):
 
         print('Fetching user stats...', end='')
         logging.info('Userstats page %s', URL_GC_USERSTATS + display_name)
-        result = http_req(URL_GC_USERSTATS + display_name)
+        result = http_req_as_string(URL_GC_USERSTATS + display_name)
         print(' Done.')
 
         # Persist JSON
@@ -917,10 +924,10 @@ def main(argv):
     device_dict = dict()
 
     # load some dictionaries with lookup data from REST services
-    activity_type_props = http_req(URL_GC_ACT_PROPS)
+    activity_type_props = http_req_as_string(URL_GC_ACT_PROPS)
     # write_to_file(args.directory + '/activity_types.properties', activity_type_props, 'a')
     activity_type_name = load_properties(activity_type_props)
-    event_type_props = http_req(URL_GC_EVT_PROPS)
+    event_type_props = http_req_as_string(URL_GC_EVT_PROPS)
     # write_to_file(args.directory + '/event_types.properties', event_type_props, 'a')
     event_type_name = load_properties(event_type_props)
 
@@ -941,7 +948,7 @@ def main(argv):
               + '...', end='')
         
         logging.info('Activity list URL %s', URL_GC_LIST + urlencode(search_params))
-        result = http_req(URL_GC_LIST + urlencode(search_params))
+        result = http_req_as_string(URL_GC_LIST + urlencode(search_params))
 
         print(' Done.')
 
@@ -979,7 +986,7 @@ def main(argv):
                 details = None
                 tries = MAX_TRIES
                 while tries > 0:
-                    activity_details = http_req(URL_GC_ACTIVITY + str(actvty['activityId']))
+                    activity_details = http_req_as_string(URL_GC_ACTIVITY + str(actvty['activityId']))
                     details = json.loads(activity_details)
                     # I observed a failure to get a complete JSON detail in about 5-10 calls out of 1000
                     # retrying then statistically gets a better JSON ;-)
@@ -1015,7 +1022,7 @@ def main(argv):
                 else:
                     start_time_seconds = None
 
-                extract['device'] = extract_device(device_dict, details, start_time_seconds, args, http_req, write_to_file)
+                extract['device'] = extract_device(device_dict, details, start_time_seconds, args, http_req_as_string, write_to_file)
 
                 # try to get the JSON with all the samples (not all activities have it...),
                 # but only if it's really needed for the CSV output
@@ -1023,7 +1030,7 @@ def main(argv):
                 if csv_filter.is_column_active('sampleCount'):
                     try:
                         # TODO implement retries here, I have observed temporary failures
-                        activity_measurements = http_req(URL_GC_ACTIVITY + str(actvty['activityId']) + "/details")
+                        activity_measurements = http_req_as_string(URL_GC_ACTIVITY + str(actvty['activityId']) + "/details")
                         write_to_file(args.directory + '/activity_' + str(actvty['activityId']) + '_samples.json',
                                       activity_measurements, 'w',
                                       start_time_seconds)
