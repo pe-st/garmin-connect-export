@@ -6,7 +6,12 @@ py.test gcexport_test.py
 """
 
 from gcexport import *
-from StringIO import StringIO
+try:
+    ## for Python 2
+    from StringIO import StringIO
+except ImportError:
+    ## for Python 3
+    from io import StringIO
 
 
 def test_pace_or_speed_raw_cycling():
@@ -85,7 +90,8 @@ def test_csv_write_record():
     csv_file = StringIO()
     csv_filter = CsvFilter(csv_file, 'csv_header_default.properties')
     csv_write_record(csv_filter, extract, activities[0], details, activity_type_name, event_type_name)
-    assert csv_file.getvalue()[69:89] == '"Biel 🏛 Pavillon"'
+    expected = '"Biel 🏛 Pavillon"'
+    assert csv_file.getvalue()[69:69 + len(expected)] == expected
 
 
 def write_to_file_mock(filename, content, mode, file_time=None):

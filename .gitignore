@@ -3,11 +3,8 @@ __pycache__/
 .idea/
 .DS_Store
 extras/
+venv/
 *_garmin_connect_export/
 *.pyc
 *.log
 lint*.txt
-csv_header_default - Kopie.properties
-csv_header_default.properties
-tp.py
-csv_header_default.properties
