@@ -9,7 +9,7 @@ Fork author: Michael P (https://github.com/moderation/)
 Date: February 21, 2016
 Fork author: Peter Steiner (https://github.com/pe-st/)
 Date: June 2017
-Porting to Python3 started from Thomas Th. (https://github.com/telemaxx/)
+Porting to Python3 started by Thomas Th. (https://github.com/telemaxx/)
 Date: March 2020
 
 Description:    Use this script to export your fitness data from Garmin Connect.
@@ -27,14 +27,12 @@ from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
 from os import makedirs, mkdir, rename, remove, stat, utime
-from os.path import dirname, isdir, isfile, join, realpath, splitext
+from os.path import dirname, isdir, isfile, join, realpath, sep, splitext
 from platform import python_version
 from subprocess import call
 from timeit import default_timer as timer
-from os.path import sep
 
 import argparse
-
 import csv
 import json
 import logging
@@ -201,18 +199,13 @@ def sanitize_filename(name, max_length=0):
 
 def write_to_file(filename, content, mode, file_time=None):
     """Helper function that persists content to file."""
-    #print('write to file: ', filename, ' content: ', content)
     if python3 and (filename.endswith('.json') or filename.endswith('.gpx') or filename.endswith('.tcx')):
-        #write_file = open(filename, mode)
         write_file = open(filename, mode, encoding="utf-8")
-        if not isinstance(content,str):
+        if not isinstance(content, str):
             content=content.decode("utf-8")
-        content=content.replace('\u0113','e') #for umlaut e in fEnix
-        write_file.write(content)
     else:
         write_file = open(filename, mode)
-        write_file.write(content)
-    #write_file.write(content)
+    write_file.write(content)
     write_file.close()
     if file_time:
         utime(filename, (file_time, file_time))
@@ -223,9 +216,8 @@ def http_req(url, post=None, headers=None):
     """Helper function that makes the HTTP requests."""
     request = Request(url)
     # Tell Garmin we're some supported browser.
-    request.add_header("User-Agent","Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, \
-    like Gecko) Chrome/54.0.2816.0 Safari/537.36",
-    )
+    request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, \
+        like Gecko) Chrome/54.0.2816.0 Safari/537.36')
     if headers:
         if python3:
             for header_key, header_value in headers.items():
@@ -246,7 +238,7 @@ def http_req(url, post=None, headers=None):
             raise
         else:
             raise
-        logging.debug('Got %s in %s s from %s', response.getcode(), timer() - start_time, url)
+    logging.debug('Got %s in %s s from %s', response.getcode(), timer() - start_time, url)
 
     # N.B. urllib2 will follow any 302 redirects.
     # print(response.getcode())
@@ -254,11 +246,18 @@ def http_req(url, post=None, headers=None):
         # 204 = no content, e.g. for activities without GPS coordinates there is no GPX download.
         # Write an empty file to prevent redownloading it.
         logging.info('Got 204 for %s, returning empty response', url)
-        return ''
+        return b''
     elif response.getcode() != 200:
         raise Exception('Bad return code (' + str(response.getcode()) + ') for: ' + url)
 
     return response.read()
+
+def http_req_as_string(url, post=None, headers=None):
+    """Helper function that makes the HTTP requests, returning a string instead of bytes."""
+    if python3:
+        return http_req(url, post, headers).decode()
+    else:
+        return http_req(url, post, headers)
 
 
 # idea stolen from https://stackoverflow.com/a/31852401/3686
@@ -272,9 +271,6 @@ def load_properties(multiline, separator='=', comment_char='#', keys=None):
     :param keys:         list to append the keys to
     :return:
     """
-    ##if python3:
-      ##  multiline=multiline.decode("utf-8")
-
     props = {}
     for line in multiline.splitlines():
         stripped_line = line.strip()
@@ -427,8 +423,11 @@ class CsvFilter(object):
         the record prepared for the next write_row call
         """
         if value and name in self.__csv_columns:
-            # must encode in UTF-8 because the Python 'csv' module doesn't support unicode
-            self.__current_row[self.__csv_headers[name]] = value.encode('utf8')
+            if python3:
+                self.__current_row[self.__csv_headers[name]] = value
+            else:
+                # must encode in UTF-8 because the Python 2 'csv' module doesn't support unicode
+                self.__current_row[self.__csv_headers[name]] = value.encode('utf8')
 
     def is_column_active(self, name):
         """Return True if the column is present in the header template"""
@@ -485,7 +484,10 @@ def login_to_garmin_connect(args):
     """
     Perform all HTTP requests to login to Garmin Connect.
     """
-    username = args.username if args.username else raw_input('Username: ')
+    if python3:
+        username = args.username if args.username else input('Username: ')
+    else:
+        username = args.username if args.username else raw_input('Username: ')
     password = args.password if args.password else getpass()
 
     logging.debug("Login params: %s", urlencode(DATA))
@@ -493,7 +495,7 @@ def login_to_garmin_connect(args):
     # Initially, we need to get a valid session cookie, so we pull the login page.
     print('Connecting to Garmin Connect...', end='')
     logging.info('Connecting to %s', URL_GC_LOGIN)
-    connect_response = http_req(URL_GC_LOGIN)
+    connect_response = http_req_as_string(URL_GC_LOGIN)
     # write_to_file('connect_response.html', connect_response, 'w')
     for cookie in COOKIE_JAR:
         logging.debug("Cookie %s : %s", cookie.name, cookie.value)
@@ -513,10 +515,7 @@ def login_to_garmin_connect(args):
     }
 
     print('Requesting Login ticket...', end='')
-    if python3:
-        login_response = http_req(URL_GC_LOGIN + "#", post_data, headers).decode()
-    else:
-        login_response = http_req(URL_GC_LOGIN + '#', post_data, headers)
+    login_response = http_req_as_string(URL_GC_LOGIN + '#', post_data, headers)
     
     for cookie in COOKIE_JAR:
         logging.debug("Cookie %s : %s", cookie.name, cookie.value)
@@ -682,7 +681,7 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
 def load_gear(activity_id, args):
     """Retrieve the gear/equipment for an activity"""
     try:
-        gear_json = http_req(URL_GC_GEAR + activity_id)
+        gear_json = http_req_as_string(URL_GC_GEAR + activity_id)
         gear = json.loads(gear_json)
         if gear:
             del args # keep 'args' argument in case you need to uncomment write_to_file
@@ -703,10 +702,6 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     """
     Write the data of the activity to a file, depending on the chosen data format
     """
-    #if python3:
-    #    if (isinstance(start_time_locale,bytes)):
-    #        start_time_locale = start_time_locale.decode('utf8')
-    
     # Time dependent subdirectory for activity files, e.g. '{YYYY}
     if not args.subdir is None:
         directory = resolve_path(args.directory, args.subdir, start_time_locale)
@@ -831,13 +826,11 @@ def logging_verbosity(verbosity):
     for handler in logger.handlers:
         if isinstance(handler, logging.FileHandler):
             # this is the logfile handler
-            ###level = logging.DEBUG if verbosity > 0 else logging.INFO
             level = logging.DEBUG if verbosity and verbosity > 0 else logging.INFO
             handler.setLevel(level)
             logging.info('New logfile level: %s', logging.getLevelName(level))
         elif isinstance(handler, logging.StreamHandler):
             # this is the console handler
-            ###level = logging.DEBUG if verbosity > 1 else (logging.INFO if verbosity > 0 else logging.WARN)
             level = logging.DEBUG if verbosity and verbosity > 1 else (logging.INFO if verbosity and verbosity > 0 else logging.WARN)
             handler.setLevel(level)
             logging.debug('New console log level: %s', logging.getLevelName(level))
@@ -868,9 +861,6 @@ def main(argv):
     logging.info("Starting %s version %s, using Python version %s", argv[0], SCRIPT_VERSION, python_version())
     args = parse_arguments(argv)
     logging_verbosity(args.verbosity)
-    
-    print('verbosity: ' , args.verbosity)
-    logging_verbosity(0)
 
     print('Welcome to Garmin Connect Exporter!')
 
@@ -889,7 +879,10 @@ def main(argv):
     csv_filename = args.directory + '/activities.csv'
     csv_existed = isfile(csv_filename)
 
-    csv_file = open(csv_filename, 'a')
+    if python3:
+        csv_file = open(csv_filename, mode='a', encoding='utf-8')
+    else:
+        csv_file = open(csv_filename, 'a')
     csv_filter = CsvFilter(csv_file, args.template)
 
     # Write header to CSV file
@@ -901,7 +894,7 @@ def main(argv):
         # on the profile page to know how many are available
         print('Getting display name...', end='')
         logging.info('Profile page %s', URL_GC_PROFILE)
-        profile_page = http_req(URL_GC_PROFILE)
+        profile_page = http_req_as_string(URL_GC_PROFILE)
         # write_to_file(args.directory + '/profile.html', profile_page, 'a')
 
         # extract the display name from the profile page, it should be in there as
@@ -915,7 +908,7 @@ def main(argv):
 
         print('Fetching user stats...', end='')
         logging.info('Userstats page %s', URL_GC_USERSTATS + display_name)
-        result = http_req(URL_GC_USERSTATS + display_name)
+        result = http_req_as_string(URL_GC_USERSTATS + display_name)
         print(' Done.')
 
         # Persist JSON
@@ -931,10 +924,10 @@ def main(argv):
     device_dict = dict()
 
     # load some dictionaries with lookup data from REST services
-    activity_type_props = http_req(URL_GC_ACT_PROPS)
+    activity_type_props = http_req_as_string(URL_GC_ACT_PROPS)
     # write_to_file(args.directory + '/activity_types.properties', activity_type_props, 'a')
     activity_type_name = load_properties(activity_type_props)
-    event_type_props = http_req(URL_GC_EVT_PROPS)
+    event_type_props = http_req_as_string(URL_GC_EVT_PROPS)
     # write_to_file(args.directory + '/event_types.properties', event_type_props, 'a')
     event_type_name = load_properties(event_type_props)
 
@@ -955,9 +948,8 @@ def main(argv):
               + '...', end='')
         
         logging.info('Activity list URL %s', URL_GC_LIST + urlencode(search_params))
-        result = http_req(URL_GC_LIST + urlencode(search_params))
+        result = http_req_as_string(URL_GC_LIST + urlencode(search_params))
 
-  
         print(' Done.')
 
         # Persist JSON activities list
@@ -994,7 +986,7 @@ def main(argv):
                 details = None
                 tries = MAX_TRIES
                 while tries > 0:
-                    activity_details = http_req(URL_GC_ACTIVITY + str(actvty['activityId']))
+                    activity_details = http_req_as_string(URL_GC_ACTIVITY + str(actvty['activityId']))
                     details = json.loads(activity_details)
                     # I observed a failure to get a complete JSON detail in about 5-10 calls out of 1000
                     # retrying then statistically gets a better JSON ;-)
@@ -1030,7 +1022,7 @@ def main(argv):
                 else:
                     start_time_seconds = None
 
-                extract['device'] = extract_device(device_dict, details, start_time_seconds, args, http_req, write_to_file)
+                extract['device'] = extract_device(device_dict, details, start_time_seconds, args, http_req_as_string, write_to_file)
 
                 # try to get the JSON with all the samples (not all activities have it...),
                 # but only if it's really needed for the CSV output
@@ -1038,7 +1030,7 @@ def main(argv):
                 if csv_filter.is_column_active('sampleCount'):
                     try:
                         # TODO implement retries here, I have observed temporary failures
-                        activity_measurements = http_req(URL_GC_ACTIVITY + str(actvty['activityId']) + "/details")
+                        activity_measurements = http_req_as_string(URL_GC_ACTIVITY + str(actvty['activityId']) + "/details")
                         write_to_file(args.directory + '/activity_' + str(actvty['activityId']) + '_samples.json',
                                       activity_measurements, 'w',
                                       start_time_seconds)
