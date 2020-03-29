@@ -108,7 +108,7 @@ def test_extract_device():
 
     with open('json/activity_2541953812.json') as json_detail:
         details = json.load(json_detail)
-    assert 'fēnix 5 10.0.0.0' == extract_device({}, details, None, args, http_req_mock, write_to_file_mock).encode('utf8')
+    assert u'fēnix 5 10.0.0.0' == extract_device({}, details, None, args, http_req_mock, write_to_file_mock)
 
     with open('json/activity_154105348_gpx_device_null.json') as json_detail:
         details = json.load(json_detail)

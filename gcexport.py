@@ -643,6 +643,13 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
 def extract_device(device_dict, details, start_time_seconds, args, http_caller, file_writer):
     """
     Try to get the device details (and cache them, as they're used for multiple activities)
+
+    :param device_dict:  cache (dict) of already known devices
+    :param details:      dict with the details of an activity, should contain a device ID
+    :param args:         command-line arguments (for the file_writer callback)
+    :param http_caller:  callback to perform the HTTP call for downloading the device details
+    :param file_writer:  callback that saves the device details in a file
+    :return: string with the device name
     """
     if not present('metadataDTO', details):
         logging.warning("no metadataDTO")
