@@ -484,7 +484,11 @@ def parse_arguments(argv):
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
         help="give index for first activity to import, i.e. skipping the newest activites")
     parser.add_argument('-w', '--workflowdirectory', nargs='?', default="",
-        help="if downloading activity(format: 'original' and --unzip): copy the file, given a friendly filename, to this directory (default: not copying)") 
+        help="if downloading activity(format: 'original' and --unzip): copy the file, given a friendly filename, to this directory (default: not copying)")
+    parser.add_argument('--wdesc', type=int, nargs='?', const=20, default=None,
+        help='append the activity\'s description to the file name of the workflow file; limit size if number is given, default 20') 
+    parser.add_argument('--wdevice', type=int, nargs='?', const=10, default=None,
+        help='append the activity\'s device-name to the file name of the workflow file; limit size if number is given, default 10')     
     return parser.parse_args(argv[1:])
 
 
