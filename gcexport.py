@@ -738,7 +738,6 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
         prefix = "{}-".format(start_time_locale.replace("-", "").replace(":", "").replace(" ", "-"))
     else:
         prefix = ""
-    #workflow_prefix = prefix
 
     fit_filename = None
     if args.format == 'gpx':
