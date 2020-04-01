@@ -485,9 +485,9 @@ def parse_arguments(argv):
         help="give index for first activity to import, i.e. skipping the newest activites")
     parser.add_argument('-w', '--workflowdirectory', nargs='?', default="",
         help="if downloading activity(format: 'original' and --unzip): copy the file, given a friendly filename, to this directory (default: not copying)")
-    parser.add_argument('--wdesc', type=int, nargs='?', const=20, default=None,
+    parser.add_argument('--wdesc', type=int, nargs='?', const=20, default=20,
         help='append the activity\'s description to the file name of the workflow file; limit size if number is given, default 20') 
-    parser.add_argument('--wdevice', type=int, nargs='?', const=10, default=None,
+    parser.add_argument('--wdevice', type=int, nargs='?', const=10, default=10,
         help='append the activity\'s device-name to the file name of the workflow file; limit size if number is given, default 10')     
     return parser.parse_args(argv[1:])
 
@@ -718,7 +718,6 @@ def load_gear(activity_id, args):
 
 
 def export_data_file(activity_id, activity_details, args, file_time, append_desc, start_time_locale, friendly_filename):
-    global prefix
     """
     Write the data of the activity to a file, depending on the chosen data format
     """
@@ -739,6 +738,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
         prefix = "{}-".format(start_time_locale.replace("-", "").replace(":", "").replace(" ", "-"))
     else:
         prefix = ""
+    #workflow_prefix = prefix
 
     fit_filename = None
     if args.format == 'gpx':
@@ -820,8 +820,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                     new_name = directory + sep + prefix + 'activity_' + name_base + append_desc + name_ext
                     logging.debug('renaming %s to %s', unzipped_name, new_name)
                     if len(args.workflowdirectory) and join(args.directory, name) != join(args.workflowdirectory, name):
-                        #friendly_filename = name  # todo implement friendly_filename()
-                        copyfile(join(args.directory, name), join(args.workflowdirectory, friendly_filename))
+                        copyfile(join(args.directory, name), join(args.workflowdirectory, friendly_filename + name_ext))
                         logging.info('copy file to: ' + args.workflowdirectory + '/' + friendly_filename)
                         copied_files = 1
                     move (unzipped_name, new_name)
@@ -887,7 +886,6 @@ def main(argv):
     """
     Main entry point for gcexport.py
     """
-    global prefix
     setup_logging()
     logging.info("Starting %s version %s, using Python version %s", argv[0], SCRIPT_VERSION, python_version())
     args = parse_arguments(argv)
@@ -1056,13 +1054,12 @@ def main(argv):
                     start_time_seconds = None
 
                 extract['device'] = extract_device(device_dict, details, start_time_seconds, args, http_req_as_string, write_to_file)
-                if args.workflowdirectory !=0:
-                    #prefix = "{}-".format(actvty['startTimeLocal'].replace("-", b"").replace(":", b"").replace(" ", b"-"))
-                    #prefix = "{}-".format(start_time_locale.replace("-", "").replace(":", "").replace(" ", "-"))
-                    #prefix = "2020_04_01_"
-                    friendly_filename = prefix + sanitize_filename(actvty['activityName'] , 30) + '_' + sanitize_filename(extract['device'] , 20)
-                else:
-                    friendly_filename = ''
+
+                workflow_prefix = "{}-".format(actvty['startTimeLocal'])
+                if (isinstance(workflow_prefix,bytes)):
+                    workflow_prefix = workflow_prefix.decode('utf8')
+                workflow_prefix = "{}-".format(actvty['startTimeLocal'].replace("-", "").replace(":", "").replace(" ", "-"))
+                friendly_filename = workflow_prefix + sanitize_filename(actvty['activityName'] , args.wdesc) + '_' + sanitize_filename(extract['device'] , args.wdevice)
 
                 # try to get the JSON with all the samples (not all activities have it...),
                 # but only if it's really needed for the CSV output
