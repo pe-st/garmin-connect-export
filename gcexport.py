@@ -643,6 +643,13 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
 def extract_device(device_dict, details, start_time_seconds, args, http_caller, file_writer):
     """
     Try to get the device details (and cache them, as they're used for multiple activities)
+
+    :param device_dict:  cache (dict) of already known devices
+    :param details:      dict with the details of an activity, should contain a device ID
+    :param args:         command-line arguments (for the file_writer callback)
+    :param http_caller:  callback to perform the HTTP call for downloading the device details
+    :param file_writer:  callback that saves the device details in a file
+    :return: string with the device name
     """
     if not present('metadataDTO', details):
         logging.warning("no metadataDTO")
@@ -793,7 +800,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                     unzipped_name = zip_obj.extract(name, directory)
                     # prepend 'activity_' and append the description to the base name
                     name_base, name_ext = splitext(name)
-                    new_name = directory + '/activity_' + name_base + append_desc + name_ext
+                    new_name = directory + sep + prefix + 'activity_' + name_base + append_desc + name_ext
                     logging.debug('renaming %s to %s', unzipped_name, new_name)
                     rename(unzipped_name, new_name)
                     if file_time:
