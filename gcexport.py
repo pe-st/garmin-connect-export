@@ -32,6 +32,8 @@ from platform import python_version
 from subprocess import call
 from timeit import default_timer as timer
 
+from shutil import copyfile, move
+
 import argparse
 import csv
 import json
@@ -41,6 +43,8 @@ import string
 import sys
 import unicodedata
 import zipfile
+
+prefix = ''
 
 python3 = True
 try: # for python3
@@ -140,7 +144,6 @@ DATA = {
 }
 
 # URLs for various services.
-
 URL_GC_LOGIN = 'https://sso.garmin.com/sso/signin?' + urlencode(DATA)
 URL_GC_POST_AUTH = 'https://connect.garmin.com/modern/activities?'
 URL_GC_PROFILE = 'https://connect.garmin.com/modern/profile'
@@ -232,6 +235,10 @@ def http_req(url, post=None, headers=None):
     start_time = timer()
     try:
         response = OPENER.open(request, data=post)
+    except HTTPError as ex:
+        if ex.code == 429:
+            print('\ntoo many requests, try again later')
+            sys.exit(1)
     except URLError as ex:
         if hasattr(ex, 'reason'):
             logging.error('Failed to reach url %s, error: %s', url, ex)
@@ -476,7 +483,8 @@ def parse_arguments(argv):
         help="set the local time as activity file name prefix")
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
         help="give index for first activity to import, i.e. skipping the newest activites")
-
+    parser.add_argument('-w', '--workflowdirectory', nargs='?', default="",
+        help="if downloading activity(format: 'original' and --unzip): copy the file, given a friendly filename, to this directory (default: not copying)") 
     return parser.parse_args(argv[1:])
 
 
@@ -705,10 +713,13 @@ def load_gear(activity_id, args):
         # logging.exception(e)
 
 
-def export_data_file(activity_id, activity_details, args, file_time, append_desc, start_time_locale):
+def export_data_file(activity_id, activity_details, args, file_time, append_desc, start_time_locale, friendly_filename):
+    global prefix
     """
     Write the data of the activity to a file, depending on the chosen data format
     """
+    copied_files = 0
+    skipped_files = 0
     # Time dependent subdirectory for activity files, e.g. '{YYYY}
     if not args.subdir is None:
         directory = resolve_path(args.directory, args.subdir, start_time_locale)
@@ -749,13 +760,15 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     if isfile(data_filename):
         logging.debug('Data file for %s already exists', activity_id)
         print('\tData file already exists; skipping...')
-        return
+        skipped_files = 1
+        return copied_files, skipped_files
 
     # Regardless of unzip setting, don't redownload if the ZIP or FIT file exists.
     if args.format == 'original' and isfile(fit_filename):
         logging.debug('Original data file for %s already exists', activity_id)
         print('\tFIT data file already exists; skipping...')
-        return
+        skipped_files = 1
+        return copied_files, skipped_files
 
     if args.format != 'json':
         # Download the data file from Garmin Connect. If the download fails (e.g., due to timeout),
@@ -802,14 +815,20 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                     name_base, name_ext = splitext(name)
                     new_name = directory + sep + prefix + 'activity_' + name_base + append_desc + name_ext
                     logging.debug('renaming %s to %s', unzipped_name, new_name)
-                    rename(unzipped_name, new_name)
+                    if len(args.workflowdirectory) and join(args.directory, name) != join(args.workflowdirectory, name):
+                        #friendly_filename = name  # todo implement friendly_filename()
+                        copyfile(join(args.directory, name), join(args.workflowdirectory, friendly_filename))
+                        logging.info('copy file to: ' + args.workflowdirectory + '/' + friendly_filename)
+                        copied_files = 1
+                    move (unzipped_name, new_name)
+                    logging.info('renaming %s to %s', unzipped_name, new_name)
                     if file_time:
                         utime(new_name, (file_time, file_time))
                 zip_file.close()
             else:
                 print('\tSkipping 0Kb zip file.')
             remove(data_filename)
-
+    return copied_files, skipped_files
 
 def setup_logging():
     """Setup logging"""
@@ -864,6 +883,7 @@ def main(argv):
     """
     Main entry point for gcexport.py
     """
+    global prefix
     setup_logging()
     logging.info("Starting %s version %s, using Python version %s", argv[0], SCRIPT_VERSION, python_version())
     args = parse_arguments(argv)
@@ -927,6 +947,8 @@ def main(argv):
     else:
         total_to_download = int(args.count)
     total_downloaded = 0
+    total_copied = 0
+    total_skipped = 0
 
     device_dict = dict()
 
@@ -1030,6 +1052,13 @@ def main(argv):
                     start_time_seconds = None
 
                 extract['device'] = extract_device(device_dict, details, start_time_seconds, args, http_req_as_string, write_to_file)
+                if args.workflowdirectory !=0:
+                    #prefix = "{}-".format(actvty['startTimeLocal'].replace("-", b"").replace(":", b"").replace(" ", b"-"))
+                    #prefix = "{}-".format(start_time_locale.replace("-", "").replace(":", "").replace(" ", "-"))
+                    #prefix = "2020_04_01_"
+                    friendly_filename = prefix + sanitize_filename(actvty['activityName'] , 30) + '_' + sanitize_filename(extract['device'] , 20)
+                else:
+                    friendly_filename = ''
 
                 # try to get the JSON with all the samples (not all activities have it...),
                 # but only if it's really needed for the CSV output
@@ -1055,15 +1084,20 @@ def main(argv):
                 # Write stats to CSV.
                 csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name)
 
-                export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc,
-                                 actvty['startTimeLocal'])
-
+                copied_files, skipped_files = export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc,
+                                 actvty['startTimeLocal'], friendly_filename)
+                total_copied += copied_files
+                total_skipped += skipped_files
             current_index += 1
         # End for loop for activities of chunk
         total_downloaded += num_to_download
     # End while loop for multiple chunks.
 
     csv_file.close()
+    print("Total Requested...." + str(total_to_download))
+    print("Total Downloaded..." + str(total_downloaded))
+    print("Total Copied......." + str(total_copied))
+    print("Total Skipped......" + str(total_skipped))
 
     if args.external:
         print('Open CSV output.')
