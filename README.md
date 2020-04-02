@@ -88,6 +88,16 @@ optional arguments:
   -sa START_ACTIVITY_NO, --start_activity_no START_ACTIVITY_NO
                         give index for first activity to import, i.e. skipping
                         the newest activites
+  -w [WORKFLOWDIRECTORY], --workflowdirectory [WORKFLOWDIRECTORY]
+                        if downloading activity(format: 'original' and
+                        --unzip): copy the file, given a friendly filename, to
+                        this directory (default: not copying)
+  --wdesc [WDESC]       append the activity's description to the file name of
+                        the workflow file; limit size if number is given,
+                        default 20
+  --wdevice [WDEVICE]   append the activity's device-name to the file name of
+                        the workflow file; limit size if number is given,
+                        default 10
 ```
 
 Examples:
@@ -186,6 +196,7 @@ Contributors as of 2019-08 (Hope I didn't forget anyone):
 - Christian Moelders @chmoelders
 - Christian Schulzendorff @chs8691
 - Josef K @jkall
+- Thomas Th @telemaxx
 
 
 License
