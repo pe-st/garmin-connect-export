@@ -48,7 +48,8 @@ usage: gcexport.py [-h] [--version] [-v] [--username USERNAME]
                    [--password PASSWORD] [-c COUNT] [-e EXTERNAL] [-a ARGS]
                    [-f {gpx,tcx,original,json}] [-d DIRECTORY] [-s SUBDIR]
                    [-u] [-ot] [--desc [DESC]] [-t TEMPLATE] [-fp]
-                   [-sa START_ACTIVITY_NO]
+                   [-sa START_ACTIVITY_NO] [-w [WORKFLOWDIRECTORY]]
+                   [--wdesc [WDESC]] [--wdevice [WDEVICE]]
 
 Garmin Connect Exporter
 
