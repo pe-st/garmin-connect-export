@@ -9,11 +9,10 @@ Fork author: Michael P (https://github.com/moderation/)
 Date: February 21, 2016
 Fork author: Peter Steiner (https://github.com/pe-st/)
 Date: June 2017
-Porting to Python3 started by Thomas Th. (https://github.com/telemaxx/)
-Date: March 2020
+Date: March 2020 - Python3 support by Thomas Th. (https://github.com/telemaxx/)
 
 Description:    Use this script to export your fitness data from Garmin Connect.
-                See README.md for more information.
+                See README.md for more information, CHANGELOG.md for a history of the changes
 
 Activity & event types:
     https://connect.garmin.com/modern/main/js/properties/event_types/event_types.properties
@@ -65,7 +64,7 @@ else:
     COOKIE_JAR = cookielib.CookieJar()
     OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR), urllib2.HTTPSHandler(debuglevel=0))
 
-SCRIPT_VERSION = '2.3.3'
+SCRIPT_VERSION = '3.0.0'
 
 # this is almost the datetime format Garmin used in the activity-search-service
 # JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
