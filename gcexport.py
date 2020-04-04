@@ -948,6 +948,7 @@ def main(argv):
     else:
         total_to_download = int(args.count)
     total_downloaded = 0
+    total_successfully_downloaded = 0
     total_copied = 0
     total_skipped = 0
 
@@ -1086,18 +1087,20 @@ def main(argv):
 
                 copied_files, skipped_files = export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc,
                                  actvty['startTimeLocal'], friendly_filename)
+                if skipped_files == 0: total_successfully_downloaded += 1
                 total_copied += copied_files
                 total_skipped += skipped_files
+                
             current_index += 1
         # End for loop for activities of chunk
         total_downloaded += num_to_download
     # End while loop for multiple chunks.
 
     csv_file.close()
-    print("Total Requested...." + str(total_to_download))
-    print("Total Downloaded..." + str(total_downloaded))
-    print("Total Copied......." + str(total_copied))
-    print("Total Skipped......" + str(total_skipped))
+    print("Total Requested.........." + str(total_to_download))
+    print("Total Downloaded........." + str(total_successfully_downloaded))
+    print("Total Copied(workflow)..." + str(total_copied))
+    print("Total Skipped............" + str(total_skipped))
 
     if args.external:
         print('Open CSV output.')
