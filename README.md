@@ -92,21 +92,21 @@ optional arguments:
 
 Examples:
 
-- `python gcexport.py --count all`  
+- `python3 gcexport.py --count all`  
   will download all of your data to a dated directory.
 
-- `python gcexport.py -c all -f gpx -ot --desc 20`  
+- `python3 gcexport.py -c all -f gpx -ot --desc 20`  
   will export all of your data in GPX format, set the timestamp of the GPX files to the start time of the activity and append the 20 first characters of the activity's description to the file name.
 
-- `python gcexport.py -c all -e /Applications/LibreOffice.app/Contents/MacOS/soffice -a calc`  
+- `python3 gcexport.py -c all -e /Applications/LibreOffice.app/Contents/MacOS/soffice -a calc`  
   will download all of your data and then use LibreOffice to open the CSV file with the list of your activities (the path to LibreOffice is platform-specific; the example is for macOS).
 
-- `python gcexport.py -d ~/MyActivities -c 3 -f original -u --username bobbyjoe --password bestpasswordever1`  
+- `python3 gcexport.py -d ~/MyActivities -c 3 -f original -u --username bobbyjoe --password bestpasswordever1`  
   will download your three most recent activities in the FIT file format (or whatever they were uploaded as) into the `~/MyActivities` directory (unless they already exist). Using the `--password` flags is not recommended because your password will be stored in your command line history. Instead, omit it to be prompted (and note that nothing will be displayed when you type your password). Equally you might not want to have the username stored in your command line history; in this case avoid also to give the `--username` option, and you'll be prompted for it. Note also that depending on the age of your garmin account your username is the email address (I myself still can login both with username and email address, but I've had a report that for some users the email address is mandatory to login).
 
 Alternatively, you may run it with `./gcexport.py` if you set the file as executable (i.e., `chmod u+x gcexport.py`).
 
-Of course, you must have Python installed to run this, any recent 2.7.x or 3.x version should work. Most Mac and Linux users should already have it. Note that if you run into the [TLSV1 ALERT problem](https://github.com/pe-st/garmin-connect-export/issues/16), your Python installation might not be recent enough, e.g. macOS Sierra and High Sierra come with Python 2.7.10 which suffers from this problem (macOS Mojave's Python is recent enough though). In this case you can install a more recent Python on your Mac using [Homebrew](https://docs.brew.sh/Homebrew-and-Python) and MUSTN'T run the script with `./gcexport.py`, but with `python gcexport.py`.
+Of course, you must have Python installed to run this, any recent 2.7.x or 3.x version should work (if you use Python 2.x, replace `python3` in the examples above with `python` or `python2`). Most Mac and Linux users should already have it. Note that if you run into the [TLSV1 ALERT problem](https://github.com/pe-st/garmin-connect-export/issues/16), your Python installation might not be recent enough, e.g. macOS Sierra and High Sierra come with Python 2.7.10 which suffers from this problem (macOS Mojave's Python is recent enough though). In this case you can install a more recent Python on your Mac using [Homebrew](https://docs.brew.sh/Homebrew-and-Python) and MUSTN'T run the script with `./gcexport.py`, but with `python3 gcexport.py`.
 
 Also, as stated above, you should have some basic command line experience.
 
@@ -168,6 +168,7 @@ Contributors as of 2020-04 (Hope I didn't forget anyone):
 - Christian Schulzendorff @chs8691
 - Josef K @jkall
 - Thomas Th @telemaxx
+- Bart Skowron @bartskowron
 
 License
 -------
