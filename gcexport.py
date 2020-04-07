@@ -198,7 +198,7 @@ def sanitize_filename(name, max_length=0):
 
 def write_to_file(filename, content, mode, file_time=None):
     """Helper function that persists content to file."""
-    if python3 and (filename.endswith('.json') or filename.endswith('.gpx') or filename.endswith('.tcx')):
+    if python3 and any((filename.endswith('.json'), filename.endswith('.gpx'), filename.endswith('.tcx'))):
         write_file = open(filename, mode, encoding="utf-8")
         if not isinstance(content, str):
             content=content.decode("utf-8")
@@ -667,7 +667,7 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
             device_id = device_meta['deviceId'] if present('deviceId', device_meta) else None
             if 'deviceId' not in device_meta or device_id and device_id != '0':
                 device_json = http_caller(URL_GC_DEVICE + str(device_app_inst_id))
-                file_writer(args.directory + sep + 'device_' + str(device_app_inst_id) + '.json',
+                file_writer(join(args.directory, 'device_' + str(device_app_inst_id) + '.json'),
                             device_json, 'w',
                             start_time_seconds)
                 if not device_json:
@@ -691,7 +691,7 @@ def load_gear(activity_id, args):
         gear = json.loads(gear_json)
         if gear:
             del args # keep 'args' argument in case you need to uncomment write_to_file
-            # write_to_file(args.directory + sep + 'activity_' + activity_id + '-gear.json',
+            # write_to_file(join(args.directory, 'activity_' + activity_id + '-gear.json'),
             #               gear_json, 'w')
             gear_display_name = gear[0]['displayName'] if present('displayName', gear[0]) else None
             gear_model = gear[0]['customMakeModel'] if present('customMakeModel', gear[0]) else None
@@ -726,21 +726,21 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
 
     fit_filename = None
     if args.format == 'gpx':
-        data_filename = directory + sep + prefix + 'activity_' + activity_id + append_desc + '.gpx'
+        data_filename = join(directory, prefix + 'activity_' + activity_id + append_desc + '.gpx')
         download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
         file_mode = 'w'
     elif args.format == 'tcx':
-        data_filename = directory + sep + prefix + 'activity_' + activity_id + append_desc + '.tcx'
+        data_filename = join(directory, prefix + 'activity_' + activity_id + append_desc + '.tcx')
         download_url = URL_GC_TCX_ACTIVITY + activity_id + '?full=true'
         file_mode = 'w'
     elif args.format == 'original':
-        data_filename = directory + sep + prefix + 'activity_' + activity_id + append_desc + '.zip'
+        data_filename = join(directory, prefix + 'activity_' + activity_id + append_desc + '.zip')
         # TODO not all 'original' files are in FIT format, some are GPX or TCX...
-        fit_filename = directory + sep + prefix + 'activity_' + activity_id + append_desc + '.fit'
+        fit_filename = join(directory, prefix + 'activity_' + activity_id + append_desc + '.fit')
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
     elif args.format == 'json':
-        data_filename = directory + sep + prefix + 'activity_' + activity_id + append_desc + '.json'
+        data_filename = join(directory, prefix + 'activity_' + activity_id + append_desc + '.json')
         file_mode = 'w'
     else:
         raise Exception('Unrecognized format.')
@@ -799,7 +799,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                     unzipped_name = zip_obj.extract(name, directory)
                     # prepend 'activity_' and append the description to the base name
                     name_base, name_ext = splitext(name)
-                    new_name = directory + sep + prefix + 'activity_' + name_base + append_desc + name_ext
+                    new_name = join(directory, prefix + 'activity_' + name_base + append_desc + name_ext)
                     logging.debug('renaming %s to %s', unzipped_name, new_name)
                     rename(unzipped_name, new_name)
                     if file_time:
