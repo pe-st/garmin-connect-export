@@ -26,7 +26,7 @@ from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
 from os import makedirs, mkdir, rename, remove, stat, utime
-from os.path import dirname, isdir, isfile, join, realpath, sep, splitext
+from os.path import dirname, isdir, isfile, join, realpath, splitext
 from platform import python_version
 from subprocess import call
 from timeit import default_timer as timer
@@ -975,12 +975,12 @@ def main(argv):
                 pass
                 # Display which entry we're skipping.
                 print('Skipping Garmin Connect activity ', end='')
-                print('(' + str(current_index) + sep + str(total_to_download) + ') ', end='')
+                print('(' + str(current_index) + '/' + str(total_to_download) + ') ', end='')
                 print('[' + str(actvty['activityId']) + '] \n', end='')
             else:
                 # Display which entry we're working on.
                 print('Garmin Connect activity ', end='')
-                print('(' + str(current_index) + sep + str(total_to_download) + ') ', end='')
+                print('(' + str(current_index) + '/' + str(total_to_download) + ') ', end='')
                 print('[' + str(actvty['activityId']) + '] ', end='')
                 print(actvty['activityName'])
 
