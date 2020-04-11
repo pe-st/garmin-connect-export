@@ -274,7 +274,6 @@ def load_properties(multiline, separator='=', comment_char='#', keys=None):
     for line in multiline.splitlines():
         stripped_line = line.strip()
         if python3:
-            stripped_line = line.strip()
             if stripped_line:
                 if (isinstance(stripped_line,bytes)):
                     stripped_line = stripped_line.decode('utf8')
@@ -289,7 +288,6 @@ def load_properties(multiline, separator='=', comment_char='#', keys=None):
                     if keys != None:
                         keys.append(key)
         else:
-            stripped_line = line.strip()
             if stripped_line and not stripped_line.startswith(comment_char):
                 key_value = stripped_line.split(separator)
                 key = key_value[0].strip()
@@ -840,23 +838,6 @@ def logging_verbosity(verbosity):
             level = logging.DEBUG if verbosity > 1 else (logging.INFO if verbosity > 0 else logging.WARN)
             handler.setLevel(level)
             logging.debug('New console log level: %s', logging.getLevelName(level))
-
-
-def resolve_path(directory, subdir, time):
-    """
-    Replace time variables and returns changed path. Supported place holders are {YYYY} and {MM}
-    :param directory: export root directory
-    :param subdir: subdirectory, can have place holders.
-    :param time: date-time-string
-    :return: Updated dictionary string
-    """
-    ret = join(directory, subdir)
-    if re.compile(".*{YYYY}.*").match(ret):
-        ret = ret.replace("{YYYY}", time[0:4])
-    if re.compile(".*{MM}.*").match(ret):
-        ret = ret.replace("{MM}", time[5:7])
-
-    return ret
 
 
 def main(argv):
