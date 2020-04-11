@@ -444,7 +444,7 @@ def parse_arguments(argv):
 
     parser.add_argument('--version', action='version', version='%(prog)s ' + SCRIPT_VERSION,
         help='print version and exit')
-    parser.add_argument('-v', '--verbosity', action='count',
+    parser.add_argument('-v', '--verbosity', action='count', default=0,
         help='increase output verbosity')
     parser.add_argument('--username',
         help='your Garmin Connect username or email address (otherwise, you will be prompted)')
@@ -471,7 +471,7 @@ def parse_arguments(argv):
         help='append the activity\'s description to the file name of the download; limit size if number is given')
     parser.add_argument('-t', '--template', default=CSV_TEMPLATE,
         help='template file with desired columns for CSV output')
-    parser.add_argument('-fp', '--fileprefix', action='count',
+    parser.add_argument('-fp', '--fileprefix', action='count', default=0,
         help="set the local time as activity file name prefix")
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
         help="give index for first activity to import, i.e. skipping the newest activites")
@@ -719,7 +719,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
         makedirs(directory)
 
     # timestamp as prefix for filename
-    if args.fileprefix and args.fileprefix > 0:
+    if args.fileprefix > 0:
         prefix = "{}-".format(start_time_locale.replace("-", "").replace(":", "").replace(" ", "-"))
     else:
         prefix = ""
@@ -832,12 +832,12 @@ def logging_verbosity(verbosity):
     for handler in logger.handlers:
         if isinstance(handler, logging.FileHandler):
             # this is the logfile handler
-            level = logging.DEBUG if verbosity and verbosity > 0 else logging.INFO
+            level = logging.DEBUG if verbosity > 0 else logging.INFO
             handler.setLevel(level)
             logging.info('New logfile level: %s', logging.getLevelName(level))
         elif isinstance(handler, logging.StreamHandler):
             # this is the console handler
-            level = logging.DEBUG if verbosity and verbosity > 1 else (logging.INFO if verbosity and verbosity > 0 else logging.WARN)
+            level = logging.DEBUG if verbosity > 1 else (logging.INFO if verbosity > 0 else logging.WARN)
             handler.setLevel(level)
             logging.debug('New console log level: %s', logging.getLevelName(level))
 
