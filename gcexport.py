@@ -510,7 +510,7 @@ def login_to_garmin_connect(args):
         raise Exception('Couldn\'t find ticket in the login response. Cannot log in. '
                         'Did you enter the correct username and password?')
     login_ticket = match.group(1)
-    print(' Done. Ticket=' + login_ticket)
+    print(' Done. Ticket=', login_ticket, sep='')
 
     print("Authenticating...", end='')
     logging.info('Authentication URL %s', URL_GC_POST_AUTH + 'ticket=' + login_ticket)
@@ -876,7 +876,7 @@ def main(argv):
         if not match:
             raise Exception('Did not find the display name in the profile page.')
         display_name = match.group(1)
-        print(' Done. displayName=' + display_name)
+        print(' Done. displayName=', display_name, sep='')
 
         print('Fetching user stats...', end='')
         logging.info('Userstats page %s', URL_GC_USERSTATS + display_name)
@@ -915,9 +915,9 @@ def main(argv):
 
         search_params = {'start': total_downloaded, 'limit': num_to_download}
         # Query Garmin Connect
-        print('Querying list of activities ' + str(total_downloaded + 1) \
-              + '..' + str(total_downloaded + num_to_download) \
-              + '...', end='')
+        print('Querying list of activities ', total_downloaded + 1,
+              '..', total_downloaded + num_to_download,
+              '...', sep='', end='')
         
         logging.info('Activity list URL %s', URL_GC_LIST + urlencode(search_params))
         result = http_req_as_string(URL_GC_LIST + urlencode(search_params))
@@ -941,13 +941,13 @@ def main(argv):
                 pass
                 # Display which entry we're skipping.
                 print('Skipping Garmin Connect activity ', end='')
-                print('(' + str(current_index) + '/' + str(total_to_download) + ') ', end='')
-                print('[' + str(actvty['activityId']) + '] \n', end='')
+                print('(', current_index, '/', total_to_download, ') ', sep='', end='')
+                print('[', actvty['activityId'], ']', sep='')
             else:
                 # Display which entry we're working on.
                 print('Garmin Connect activity ', end='')
-                print('(' + str(current_index) + '/' + str(total_to_download) + ') ', end='')
-                print('[' + str(actvty['activityId']) + '] ', end='')
+                print('(', current_index, '/', total_to_download, ') ', sep='', end='')
+                print('[', actvty['activityId'], '] ', sep='', end='')
                 print(actvty['activityName'])
 
                 # Retrieve also the detail data from the activity (the one displayed on
@@ -977,10 +977,10 @@ def main(argv):
                 extract['elapsed_seconds'] = int(round(extract['elapsed_duration']))
                 extract['end_time_with_offset'] = extract['start_time_with_offset'] + timedelta(seconds=extract['elapsed_seconds'])
 
-                print('\t' + extract['start_time_with_offset'].isoformat() + ', ', end='')
-                print(hhmmss_from_seconds(extract['elapsed_seconds']) + ', ', end='')
+                print('\t', extract['start_time_with_offset'].isoformat(), ', ', sep='', end='')
+                print(hhmmss_from_seconds(extract['elapsed_seconds']), ', ', sep='', end='')
                 if 'distance' in actvty and isinstance(actvty['distance'], (float)):
-                    print("{0:.3f}".format(actvty['distance'] / 1000) + 'km')
+                    print("{0:.3f}".format(actvty['distance'] / 1000), 'km', sep='')
                 else:
                     print('0.000 km')
 
