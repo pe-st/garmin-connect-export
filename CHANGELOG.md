@@ -3,6 +3,19 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 3.0.0 - 2020-04-19
+
+- added: support for Python 3, thanks to @telemaxx
+- added: file `CONTRIBUTING.md` and moved some parts of `README.md` into it
+- changed: with Windows the script now uses backslashes as path separator
+- fixed: `-fp` option for `original` format
+
+
+## 2.3.3 - 2020-01-30
+
+- fixed: skipping existing `.fit` files didn't work (reported by @fellrnr, issue #25)
+
+
 ## 2.3.2 - 2019-08-25
 
 - added: parent activity type "Winter Sports"
