@@ -273,28 +273,13 @@ def load_properties(multiline, separator='=', comment_char='#', keys=None):
     props = {}
     for line in multiline.splitlines():
         stripped_line = line.strip()
-        if python3:
-            if stripped_line:
-                if (isinstance(stripped_line,bytes)):
-                    stripped_line = stripped_line.decode('utf8')
-                if (isinstance(comment_char,bytes)):
-                    comment_char=comment_char.decode('utf8')             
-                if not stripped_line.startswith(comment_char):
-                    #https://python-forum.io/Thread-Diff-between-Py-2-7-and-3--14749
-                    key_value = stripped_line.split(separator)
-                    key = key_value[0].strip()
-                    value = separator.join(key_value[1:]).strip().strip('"')
-                    props[key] = value
-                    if keys != None:
-                        keys.append(key)
-        else:
-            if stripped_line and not stripped_line.startswith(comment_char):
-                key_value = stripped_line.split(separator)
-                key = key_value[0].strip()
-                value = separator.join(key_value[1:]).strip().strip('"')
-                props[key] = value
-                if keys != None:
-                    keys.append(key)
+        if stripped_line and not stripped_line.startswith(comment_char):
+            key_value = stripped_line.split(separator)
+            key = key_value[0].strip()
+            value = separator.join(key_value[1:]).strip().strip('"')
+            props[key] = value
+            if keys != None:
+                keys.append(key)
     return props
 
 
