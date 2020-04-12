@@ -7,3 +7,4 @@ extras/
 *.pyc
 *.log
 lint*.txt
+.vscode/
