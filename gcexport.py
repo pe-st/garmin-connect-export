@@ -746,13 +746,15 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     if isfile(data_filename):
         logging.debug('Data file for %s already exists', activity_id)
         print('\tData file already exists; skipping...')
-        return
+        # Inform the main program that the file already exists
+        return False
 
     # Regardless of unzip setting, don't redownload if the ZIP or FIT file exists.
     if args.format == 'original' and isfile(fit_filename):
         logging.debug('Original data file for %s already exists', activity_id)
         print('\tFIT data file already exists; skipping...')
-        return
+        # Inform the main program that the file already exists
+        return False
 
     if args.format != 'json':
         # Download the data file from Garmin Connect. If the download fails (e.g., due to timeout),
@@ -806,6 +808,9 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
             else:
                 print('\tSkipping 0Kb zip file.')
             remove(data_filename)
+
+    # Inform the main program that the file is new
+    return True
 
 
 def setup_logging():
@@ -1032,11 +1037,11 @@ def main(argv):
                 if csv_filter.is_column_active('gear'):
                     extract['gear'] = load_gear(str(actvty['activityId']), args)
 
-                # Write stats to CSV.
-                csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name)
-
-                export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc,
-                                 actvty['startTimeLocal'])
+                # Save the file and inform if it already existed. If the file already existed, do not apped the record to the csv
+                if export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc,
+                                 actvty['startTimeLocal']):
+                    # Write stats to CSV.
+                    csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name)
 
             current_index += 1
         # End for loop for activities of chunk
