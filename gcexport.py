@@ -25,8 +25,6 @@ from __future__ import print_function
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
-from os import makedirs, mkdir, rename, remove, stat, utime
-from os.path import dirname, isdir, isfile, join, realpath, splitext
 from platform import python_version
 from subprocess import call
 from timeit import default_timer as timer
@@ -35,6 +33,8 @@ import argparse
 import csv
 import json
 import logging
+import os
+import os.path
 import re
 import string
 import sys
@@ -100,7 +100,7 @@ LIMIT_MAXIMUM = 1000
 
 MAX_TRIES = 3
 
-CSV_TEMPLATE = join(dirname(realpath(__file__)), "csv_header_default.properties")
+CSV_TEMPLATE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "csv_header_default.properties")
 
 WEBHOST = "https://connect.garmin.com"
 REDIRECT = "https://connect.garmin.com/modern/"
@@ -207,7 +207,7 @@ def write_to_file(filename, content, mode, file_time=None):
     write_file.write(content)
     write_file.close()
     if file_time:
-        utime(filename, (file_time, file_time))
+        os.utime(filename, (file_time, file_time))
 
 
 # url is a string, post is a dictionary of POST parameters, headers is a dictionary of headers.
@@ -650,7 +650,7 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
             device_id = device_meta['deviceId'] if present('deviceId', device_meta) else None
             if 'deviceId' not in device_meta or device_id and device_id != '0':
                 device_json = http_caller(URL_GC_DEVICE + str(device_app_inst_id))
-                file_writer(join(args.directory, 'device_' + str(device_app_inst_id) + '.json'),
+                file_writer(os.path.join(args.directory, 'device_' + str(device_app_inst_id) + '.json'),
                             device_json, 'w',
                             start_time_seconds)
                 if not device_json:
@@ -698,8 +698,8 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     else:
         directory = args.directory
 
-    if not isdir(directory):
-        makedirs(directory)
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
 
     # timestamp as prefix for filename
     if args.fileprefix > 0:
@@ -709,32 +709,32 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
 
     fit_filename = None
     if args.format == 'gpx':
-        data_filename = join(directory, prefix + 'activity_' + activity_id + append_desc + '.gpx')
+        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.gpx')
         download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
         file_mode = 'w'
     elif args.format == 'tcx':
-        data_filename = join(directory, prefix + 'activity_' + activity_id + append_desc + '.tcx')
+        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.tcx')
         download_url = URL_GC_TCX_ACTIVITY + activity_id + '?full=true'
         file_mode = 'w'
     elif args.format == 'original':
-        data_filename = join(directory, prefix + 'activity_' + activity_id + append_desc + '.zip')
+        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.zip')
         # TODO not all 'original' files are in FIT format, some are GPX or TCX...
-        fit_filename = join(directory, prefix + 'activity_' + activity_id + append_desc + '.fit')
+        fit_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.fit')
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
     elif args.format == 'json':
-        data_filename = join(directory, prefix + 'activity_' + activity_id + append_desc + '.json')
+        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.json')
         file_mode = 'w'
     else:
         raise Exception('Unrecognized format.')
 
-    if isfile(data_filename):
+    if os.path.isfile(data_filename):
         logging.debug('Data file for %s already exists', activity_id)
         print('\tData file already exists; skipping...')
         return
 
     # Regardless of unzip setting, don't redownload if the ZIP or FIT file exists.
-    if args.format == 'original' and isfile(fit_filename):
+    if args.format == 'original' and os.path.isfile(fit_filename):
         logging.debug('Original data file for %s already exists', activity_id)
         print('\tFIT data file already exists; skipping...')
         return
@@ -774,23 +774,23 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     if args.format == 'original':
         # Even manual upload of a GPX file is zipped, but we'll validate the extension.
         if args.unzip and data_filename[-3:].lower() == 'zip':
-            logging.debug('Unzipping and removing original file, size is %s', stat(data_filename).st_size)
-            if stat(data_filename).st_size > 0:
+            logging.debug('Unzipping and removing original file, size is %s', os.stat(data_filename).st_size)
+            if os.stat(data_filename).st_size > 0:
                 zip_file = open(data_filename, 'rb')
                 zip_obj = zipfile.ZipFile(zip_file)
                 for name in zip_obj.namelist():
                     unzipped_name = zip_obj.extract(name, directory)
                     # prepend 'activity_' and append the description to the base name
-                    name_base, name_ext = splitext(name)
-                    new_name = join(directory, prefix + 'activity_' + name_base + append_desc + name_ext)
+                    name_base, name_ext = os.path.splitext(name)
+                    new_name = os.path.join(directory, prefix + 'activity_' + name_base + append_desc + name_ext)
                     logging.debug('renaming %s to %s', unzipped_name, new_name)
-                    rename(unzipped_name, new_name)
+                    os.rename(unzipped_name, new_name)
                     if file_time:
-                        utime(new_name, (file_time, file_time))
+                        os.utime(new_name, (file_time, file_time))
                 zip_file.close()
             else:
                 print('\tSkipping 0Kb zip file.')
-            remove(data_filename)
+            os.remove(data_filename)
 
 
 def setup_logging():
@@ -837,7 +837,7 @@ def main(argv):
     print('Welcome to Garmin Connect Exporter!')
 
     # Create directory for data files.
-    if isdir(args.directory):
+    if os.path.isdir(args.directory):
         logging.warning("Output directory %s already exists. "
                         "Will skip already-downloaded files and append to the CSV file.",
                         args.directory)
@@ -845,11 +845,11 @@ def main(argv):
     login_to_garmin_connect(args)
 
     # We should be logged in now.
-    if not isdir(args.directory):
-        mkdir(args.directory)
+    if not os.path.isdir(args.directory):
+        os.mkdir(args.directory)
 
     csv_filename = args.directory + '/activities.csv'
-    csv_existed = isfile(csv_filename)
+    csv_existed = os.path.isfile(csv_filename)
 
     if python3:
         csv_file = open(csv_filename, mode='a', encoding='utf-8')
