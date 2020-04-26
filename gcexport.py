@@ -31,6 +31,7 @@ from timeit import default_timer as timer
 
 import argparse
 import csv
+import io
 import json
 import logging
 import os
@@ -197,22 +198,37 @@ def sanitize_filename(name, max_length=0):
 
 
 def write_to_file(filename, content, mode, file_time=None):
-    """Helper function that persists content to file."""
-    if python3 and any((filename.endswith('.json'), filename.endswith('.gpx'), filename.endswith('.tcx'))):
-        write_file = open(filename, mode, encoding="utf-8")
-        if not isinstance(content, str):
-            content=content.decode("utf-8")
-    else:
-        write_file = open(filename, mode)
+    """
+    Helper function that persists content to a file.
+
+    :param filename:     name of the file to write
+    :param content:      content to write; with Python 2 always of type 'str',
+                         with Python 3 it can be 'bytes' or 'str'. If it's
+                         'bytes' and the mode 'w', it will be converted/decoded
+    :param mode:         'w' or 'wb'
+    :param file_time:    if given use as timestamp for the file written
+    """
+    if mode == 'w':
+        write_file = io.open(filename, mode, encoding="utf-8")
+        if isinstance(content, bytes):
+            content = content.decode("utf-8")
+    else: # 'wb'
+        write_file = io.open(filename, mode)
     write_file.write(content)
     write_file.close()
     if file_time:
         os.utime(filename, (file_time, file_time))
 
 
-# url is a string, post is a dictionary of POST parameters, headers is a dictionary of headers.
 def http_req(url, post=None, headers=None):
-    """Helper function that makes the HTTP requests."""
+    """
+    Helper function that makes the HTTP requests.
+
+    :param url:          URL for the request
+    :param post:         dictionary of POST parameters
+    :param headers:      dictionary of headers
+    :return: response body (type 'str' with Python 2, type 'bytes' with Python 3
+    """
     request = Request(url)
     # Tell Garmin we're some supported browser.
     request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, \
