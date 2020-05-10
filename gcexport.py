@@ -42,13 +42,7 @@ import sys
 import unicodedata
 import zipfile
 
-python3 = True
-try: # for python3
-    from urllib.request import urlopen, Request, HTTPError, URLError
-except ImportError: # or python2
-    from urllib2 import urlopen, Request, HTTPError, URLError
-    python3 = False
-
+python3 = sys.version_info.major == 3
 if python3:
     import http.cookiejar
     import urllib.error
@@ -56,12 +50,14 @@ if python3:
     import urllib.request
     import urllib
     from urllib.parse import urlencode
+    from urllib.request import Request, HTTPError, URLError
     COOKIE_JAR = http.cookiejar.CookieJar()
     OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
 else:
     import cookielib
     import urllib2
     from urllib import urlencode
+    from urllib2 import Request, HTTPError, URLError
     COOKIE_JAR = cookielib.CookieJar()
     OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR), urllib2.HTTPSHandler(debuglevel=0))
 
