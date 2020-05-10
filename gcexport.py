@@ -197,7 +197,7 @@ def sanitize_filename(name, max_length=0):
     return stripped_filename[:max_length] if max_length > 0 else stripped_filename
 
 
-def write_to_file(filename, content, mode, file_time=None):
+def write_to_file(filename, content, mode='w', file_time=None):
     """
     Helper function that persists content to a file.
 
@@ -212,8 +212,10 @@ def write_to_file(filename, content, mode, file_time=None):
         write_file = io.open(filename, mode, encoding="utf-8")
         if isinstance(content, bytes):
             content = content.decode("utf-8")
-    else: # 'wb'
+    elif mode == 'wb':
         write_file = io.open(filename, mode)
+    else:
+        raise Exception('Unsupported file mode: ', mode)
     write_file.write(content)
     write_file.close()
     if file_time:
