@@ -91,7 +91,10 @@ PARSER.add_argument(
 PARSER.add_argument(
     "-u",
     "--unzip",
-    help="if downloading ZIP files (format: 'original'), unzip the file and removes the ZIP file",
+    help=(
+        "if downloading ZIP files (format: 'original'), unzip the file and removes the"
+        " ZIP file"
+    ),
     action="store_true",
 )
 
@@ -108,7 +111,7 @@ OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_J
 
 def hhmmss_from_seconds(sec):
     """Helper function that converts seconds to HH:MM:SS time format."""
-    if isinstance(sec, (float)):
+    if isinstance(sec, float):
         formatted_time = str(timedelta(seconds=int(sec))).zfill(8)
     else:
         formatted_time = "0.000"
@@ -146,8 +149,8 @@ def http_req(url, post=None, headers=None):
     # Tell Garmin we're some supported browser.
     request.add_header(
         "User-Agent",
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, \
-        like Gecko) Chrome/54.0.2816.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)"
+        " Chrome/54.0.2816.0 Safari/537.36",
     )
     if headers:
         for header_key, header_value in headers.items():
@@ -157,7 +160,7 @@ def http_req(url, post=None, headers=None):
         post = post.encode("utf-8")  # Convert dictionary to POST parameter string.
     # print("request.headers: " + str(request.headers) + " COOKIE_JAR: " + str(COOKIE_JAR))
     # print("post: " + str(post) + "request: " + str(request))
-    response = OPENER.open((request), data=post)
+    response = OPENER.open(request, data=post)
 
     if response.getcode() == 204:
         # For activities without GPS coordinates, there is no GPX download (204 = no content).
@@ -176,8 +179,8 @@ print("Welcome to Garmin Connect Exporter!")
 # Create directory for data files.
 if isdir(ARGS.directory):
     print(
-        "Warning: Output directory already exists. Will skip already-downloaded files and \
-append to the CSV file."
+        "Warning: Output directory already exists. Will skip already-downloaded files"
+        " and append to the CSV file."
     )
 
 USERNAME = ARGS.username if ARGS.username else input("Username: ")
@@ -273,8 +276,8 @@ PATTERN = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE | re.DOTALL)
 MATCH = PATTERN.match(LOGIN_RESPONSE)
 if not MATCH:
     raise Exception(
-        "Did not get a ticket in the login response. Cannot log in. Did \
-you enter the correct username and password?"
+        "Did not get a ticket in the login response. Cannot log in. Did you enter the"
+        " correct username and password?"
     )
 LOGIN_TICKET = MATCH.group(1)
 print("Login ticket=" + LOGIN_TICKET)
@@ -295,47 +298,17 @@ CSV_FILE = open(CSV_FILENAME, "a")
 # Write header to CSV file
 if not CSV_EXISTED:
     CSV_FILE.write(
-        "Activity name,\
-Description,\
-Bike,\
-Begin timestamp,\
-Duration (h:m:s),\
-Moving duration (h:m:s),\
-Distance (km),\
-Average speed (km/h),\
-Average moving speed (km/h),\
-Max. speed (km/h),\
-Elevation loss uncorrected (m),\
-Elevation gain uncorrected (m),\
-Elevation min. uncorrected (m),\
-Elevation max. uncorrected (m),\
-Min. heart rate (bpm),\
-Max. heart rate (bpm),\
-Average heart rate (bpm),\
-Calories,\
-Avg. cadence (rpm),\
-Max. cadence (rpm),\
-Strokes,\
-Avg. temp (°C),\
-Min. temp (°C),\
-Max. temp (°C),\
-Map,\
-End timestamp,\
-Begin timestamp (ms),\
-End timestamp (ms),\
-Device,\
-Activity type,\
-Event type,\
-Time zone,\
-Begin latitude (°DD),\
-Begin longitude (°DD),\
-End latitude (°DD),\
-End longitude (°DD),\
-Elevation gain corrected (m),\
-Elevation loss corrected (m),\
-Elevation max. corrected (m),\
-Elevation min. corrected (m),\
-Sample count\n"
+        "Activity name,Description,Bike,Begin timestamp,Duration (h:m:s),Moving"
+        " duration (h:m:s),Distance (km),Average speed (km/h),Average moving speed"
+        " (km/h),Max. speed (km/h),Elevation loss uncorrected (m),Elevation gain"
+        " uncorrected (m),Elevation min. uncorrected (m),Elevation max. uncorrected"
+        " (m),Min. heart rate (bpm),Max. heart rate (bpm),Average heart rate"
+        " (bpm),Calories,Avg. cadence (rpm),Max. cadence (rpm),Strokes,Avg. temp"
+        " (°C),Min. temp (°C),Max. temp (°C),Map,End timestamp,Begin timestamp (ms),End"
+        " timestamp (ms),Device,Activity type,Event type,Time zone,Begin latitude"
+        " (°DD),Begin longitude (°DD),End latitude (°DD),End longitude (°DD),Elevation"
+        " gain corrected (m),Elevation loss corrected (m),Elevation max. corrected"
+        " (m),Elevation min. corrected (m),Sample count\n"
     )
 
 DOWNLOAD_ALL = False
@@ -446,8 +419,8 @@ while TOTAL_DOWNLOADED < TOTAL_TO_DOWNLOAD:
                 # format if you want actual data in every file, as I believe Garmin provides a GPX
                 # file for every activity.
                 print(
-                    "Writing empty file since Garmin did not generate a TCX file for this \
-activity...",
+                    "Writing empty file since Garmin did not generate a TCX file for"
+                    " this activity...",
                     end=" ",
                 )
                 data = ""
