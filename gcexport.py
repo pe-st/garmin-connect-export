@@ -160,7 +160,7 @@ def resolve_path(directory, subdir, time):
     :param time: date-time-string
     :return: Updated dictionary string
     """
-    ret = join(directory, subdir)
+    ret = os.path.join(directory, subdir)
     if re.compile(".*{YYYY}.*").match(ret):
         ret = ret.replace("{YYYY}", time[0:4])
     if re.compile(".*{MM}.*").match(ret):
