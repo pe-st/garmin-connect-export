@@ -452,7 +452,7 @@ def parse_arguments(argv):
 
     parser.add_argument('--version', action='version', version='%(prog)s ' + SCRIPT_VERSION,
         help='print version and exit')
-    parser.add_argument('-v', '--verbosity', action='count',
+    parser.add_argument('-v', '--verbosity', action='count', default=0,
         help='increase output verbosity')
     parser.add_argument('--username',
         help='your Garmin Connect username or email address (otherwise, you will be prompted)')
@@ -854,12 +854,12 @@ def logging_verbosity(verbosity):
     for handler in logger.handlers:
         if isinstance(handler, logging.FileHandler):
             # this is the logfile handler
-            level = logging.DEBUG if verbosity and verbosity > 0 else logging.INFO
+            level = logging.DEBUG if verbosity > 0 else logging.INFO
             handler.setLevel(level)
             logging.info('New logfile level: %s', logging.getLevelName(level))
         elif isinstance(handler, logging.StreamHandler):
             # this is the console handler
-            level = logging.DEBUG if verbosity and verbosity > 1 else (logging.INFO if verbosity and verbosity > 0 else logging.WARN)
+            level = logging.DEBUG if verbosity > 1 else (logging.INFO if verbosity > 0 else logging.WARN)
             handler.setLevel(level)
             logging.debug('New console log level: %s', logging.getLevelName(level))
 
