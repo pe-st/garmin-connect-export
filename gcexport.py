@@ -61,7 +61,7 @@ else:
     COOKIE_JAR = cookielib.CookieJar()
     OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR), urllib2.HTTPSHandler(debuglevel=0))
 
-SCRIPT_VERSION = '3.0.0'
+SCRIPT_VERSION = '3.0.1'
 
 # this is almost the datetime format Garmin used in the activity-search-service
 # JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
@@ -160,7 +160,7 @@ def resolve_path(directory, subdir, time):
     :param time: date-time-string
     :return: Updated dictionary string
     """
-    ret = join(directory, subdir)
+    ret = os.path.join(directory, subdir)
     if re.compile(".*{YYYY}.*").match(ret):
         ret = ret.replace("{YYYY}", time[0:4])
     if re.compile(".*{MM}.*").match(ret):

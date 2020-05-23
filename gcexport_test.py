@@ -117,3 +117,12 @@ def test_extract_device():
     with open('json/activity_995784118_gpx_device_0.json') as json_detail:
         details = json.load(json_detail)
     assert None == extract_device({}, details, None, args, http_req_mock, write_to_file_mock)
+
+
+def test_resolve_path():
+    assert resolve_path('root', 'sub/{YYYY}', '2018-03-08 12:23:22') == 'root/sub/2018'
+    assert resolve_path('root', 'sub/{MM}', '2018-03-08 12:23:22') == 'root/sub/03'
+    assert resolve_path('root', 'sub/{YYYY}/{MM}', '2018-03-08 12:23:22') == 'root/sub/2018/03'
+    assert resolve_path('root', 'sub/{yyyy}', '2018-03-08 12:23:22') == 'root/sub/{yyyy}'
+    assert resolve_path('root', 'sub/{YYYYMM}', '2018-03-08 12:23:22') == 'root/sub/{YYYYMM}'
+    assert resolve_path('root', 'sub/all', '2018-03-08 12:23:22') == 'root/sub/all'
