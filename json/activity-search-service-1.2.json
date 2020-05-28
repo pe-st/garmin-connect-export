@@ -1,0 +1,822 @@
+{"results": {
+  "activities": [
+    {
+      "activity": {
+        "activityId": 2541953812,
+        "activityName": "Reckingen Augenstern-Ulrichen Langlauf",
+        "activityDescription": "",
+        "activityVideoUrl": "",
+        "locationName": "",
+        "isTitled": true,
+        "isElevationCorrected": false,
+        "isBarometricCapable": true,
+        "isSwimAlgorithmCapable": true,
+        "isVideoCapable": false,
+        "isActivityEdited": false,
+        "favorite": false,
+        "ispr": false,
+        "isAutoCalcCalories": false,
+        "isParent": false,
+        "parentId": 0,
+        "userId": 2836200,
+        "username": "eschep",
+        "displayname": "eschep",
+        "uploadDate": {
+          "@class": "org.apache.xerces.jaxp.datatype.XMLGregorianCalendarImpl",
+          "display": "Thu, 8 Mar 2018 7:09",
+          "value": "2018-03-08",
+          "withDay": "Thu, 8 Mar 2018",
+          "abbr": "8 Mar 2018",
+          "millis": "1520489394000"
+        },
+        "uploadApplication": {
+          "display": "Unknown",
+          "key": "unknown",
+          "version": "18.4.4.0"
+        },
+        "device": {
+          "display": "fēnix 5",
+          "key": "fenix5",
+          "version": "8.0.0.0"
+        },
+        "deviceId": "3946806421",
+        "deviceImageUrl": "https://static.garmincdn.com/com.garmin.connect/content/images/device-images/fenix-5.png",
+        "isDeviceReleased": true,
+        "externalId": "889442603",
+        "privacy": {
+          "display": "Subscriber",
+          "key": "subscribers",
+          "fieldNameDisplay": "Privacy"
+        },
+        "numTrackpoints": -1,
+        "activityType": {
+          "display": "Cross Country Skiing",
+          "key": "cross_country_skiing",
+          "fieldNameDisplay": "Activity Type",
+          "parent": {
+            "display": "Other",
+            "key": "other",
+            "fieldNameDisplay": "Activity Type"
+          }
+        },
+        "eventType": {
+          "display": "Uncategorized",
+          "key": "uncategorized",
+          "fieldNameDisplay": "Event Type"
+        },
+        "activityTimeZone": {
+          "display": "(GMT+01:00) Central European Time",
+          "key": "Europe/Paris",
+          "fieldNameDisplay": "Time Zone",
+          "abbr": "Central European Time"
+        },
+        "localizedSpeedLabel": "Speed",
+        "localizedPaceLabel": "Pace",
+        "activitySummary": {
+          "SumSampleCountDuration": {
+            "fieldDisplayName": "SumSampleCountDuration",
+            "display": "926",
+            "displayUnit": "Samples",
+            "value": "926.0",
+            "unitAbbr": "Samples",
+            "withUnit": "926 Samples",
+            "withUnitAbbr": "926 Samples",
+            "uom": "sampleCount"
+          },
+          "SumSampleCountElevation": {
+            "fieldDisplayName": "SumSampleCountElevation",
+            "display": "926",
+            "displayUnit": "Samples",
+            "value": "926.0",
+            "unitAbbr": "Samples",
+            "withUnit": "926 Samples",
+            "withUnitAbbr": "926 Samples",
+            "uom": "sampleCount"
+          },
+          "SumSampleCountDistance": {
+            "fieldDisplayName": "SumSampleCountDistance",
+            "display": "926",
+            "displayUnit": "Samples",
+            "value": "926.0",
+            "unitAbbr": "Samples",
+            "withUnit": "926 Samples",
+            "withUnitAbbr": "926 Samples",
+            "uom": "sampleCount"
+          },
+          "GainUncorrectedElevation": {
+            "fieldDisplayName": "GainUncorrectedElevation",
+            "display": "10,600",
+            "displayUnit": "Centimeters",
+            "value": "10600.0",
+            "unitAbbr": "cm",
+            "withUnit": "10,600 Centimeters",
+            "withUnitAbbr": "10,600 cm",
+            "uom": "centimeter"
+          },
+          "GainCorrectedElevation": {
+            "fieldDisplayName": "GainCorrectedElevation",
+            "display": "8,353",
+            "displayUnit": "Centimeters",
+            "value": "8353.0",
+            "unitAbbr": "cm",
+            "withUnit": "8,353 Centimeters",
+            "withUnitAbbr": "8,353 cm",
+            "uom": "centimeter"
+          },
+          "SumSampleCountSpeed": {
+            "fieldDisplayName": "SumSampleCountSpeed",
+            "display": "926",
+            "displayUnit": "Samples",
+            "value": "926.0",
+            "unitAbbr": "Samples",
+            "withUnit": "926 Samples",
+            "withUnitAbbr": "926 Samples",
+            "uom": "sampleCount"
+          },
+          "LossUncorrectedElevation": {
+            "fieldDisplayName": "LossUncorrectedElevation",
+            "display": "7,300",
+            "displayUnit": "Centimeters",
+            "value": "7300.0",
+            "unitAbbr": "cm",
+            "withUnit": "7,300 Centimeters",
+            "withUnitAbbr": "7,300 cm",
+            "uom": "centimeter"
+          },
+          "SumSampleCountHeartRate": {
+            "fieldDisplayName": "SumSampleCountHeartRate",
+            "display": "926",
+            "displayUnit": "Samples",
+            "value": "926.0",
+            "unitAbbr": "Samples",
+            "withUnit": "926 Samples",
+            "withUnitAbbr": "926 Samples",
+            "uom": "sampleCount"
+          },
+          "DirectFunctionalThresholdPower": {
+            "fieldDisplayName": "DirectFunctionalThresholdPower",
+            "display": "244",
+            "displayUnit": "Watts",
+            "value": "244.0",
+            "unitAbbr": "W",
+            "withUnit": "244 Watts",
+            "withUnitAbbr": "244 W",
+            "uom": "watt"
+          },
+          "EndLongitude": {
+            "fieldDisplayName": "EndLongitude",
+            "display": "8.2481",
+            "displayUnit": "Decimal Degrees",
+            "value": "8.248067228123546",
+            "unitAbbr": "dd",
+            "withUnit": "8.2481 Decimal Degrees",
+            "withUnitAbbr": "8.2481 dd",
+            "uom": "dd"
+          },
+          "WeightedMeanMovingSpeed": {
+            "fieldDisplayName": "Avg Moving Speed",
+            "display": "11.3",
+            "displayUnit": "Kilometers per Hour",
+            "value": "11.328197775200842",
+            "unitAbbr": "km/h",
+            "withUnit": "11.3 Kilometers per Hour",
+            "withUnitAbbr": "11.3 km/h",
+            "uom": "kph"
+          },
+          "WeightedMeanMovingPace": {
+            "fieldDisplayName": "Avg Moving Pace",
+            "display": "05:18",
+            "displayUnit": "Minutes per Kilometer",
+            "value": "5.296517697753228",
+            "unitAbbr": "min/km",
+            "withUnit": "05:18 Minutes per Kilometer",
+            "withUnitAbbr": "05:18 min/km",
+            "uom": "minperkm"
+          },
+          "MaxHeartRate": {
+            "fieldDisplayName": "Max HR",
+            "display": "146",
+            "displayUnit": "Beats per Minute",
+            "value": "146.0",
+            "unitAbbr": "bpm",
+            "withUnit": "146 Beats per Minute",
+            "withUnitAbbr": "146 bpm",
+            "uom": "bpm",
+            "percentMax": {
+              "fieldDisplayName": "Max HR",
+              "display": "79",
+              "displayUnit": "Percent of Max",
+              "value": "78.91891891891892",
+              "unitAbbr": "% of Max",
+              "withUnit": "79 Percent of Max",
+              "withUnitAbbr": "79 % of Max",
+              "uom": "bpm"
+            },
+            "zones": {
+              "fieldDisplayName": "Max HR",
+              "display": "3.9",
+              "displayUnit": "Zones",
+              "value": "3.8947368421052633",
+              "unitAbbr": "z",
+              "withUnit": "3.9 Zones",
+              "withUnitAbbr": "3.9 z",
+              "uom": "bpm"
+            }
+          },
+          "WeightedMeanHeartRate": {
+            "fieldDisplayName": "Avg HR",
+            "display": "110",
+            "displayUnit": "Beats per Minute",
+            "value": "110.0",
+            "unitAbbr": "bpm",
+            "withUnit": "110 Beats per Minute",
+            "withUnitAbbr": "110 bpm",
+            "uom": "bpm",
+            "percentMax": {
+              "fieldDisplayName": "Avg HR",
+              "display": "59",
+              "displayUnit": "Percent of Max",
+              "value": "59.45945945945946",
+              "unitAbbr": "% of Max",
+              "withUnit": "59 Percent of Max",
+              "withUnitAbbr": "59 % of Max",
+              "uom": "bpm"
+            },
+            "zones": {
+              "fieldDisplayName": "Avg HR",
+              "display": "1.9",
+              "displayUnit": "Zones",
+              "value": "1.9473684210526314",
+              "unitAbbr": "z",
+              "withUnit": "1.9 Zones",
+              "withUnitAbbr": "1.9 z",
+              "uom": "bpm"
+            }
+          },
+          "MinSpeed": {
+            "fieldDisplayName": "Min Speed",
+            "display": "0.3",
+            "displayUnit": "Kilometers per Hour",
+            "value": "0.30960001051425934",
+            "unitAbbr": "km/h",
+            "withUnit": "0.3 Kilometers per Hour",
+            "withUnitAbbr": "0.3 km/h",
+            "uom": "kph"
+          },
+          "MinPace": {
+            "fieldDisplayName": "MinPace",
+            "display": "--:--",
+            "displayUnit": "Minutes per Kilometer",
+            "value": "-Infinity",
+            "unitAbbr": "min/km",
+            "withUnit": "--:-- Minutes per Kilometer",
+            "withUnitAbbr": "--:-- min/km",
+            "uom": "minperkm"
+          },
+          "MaxSpeed": {
+            "fieldDisplayName": "Max Speed",
+            "display": "37.8",
+            "displayUnit": "Kilometers per Hour",
+            "value": "37.84320030212403",
+            "unitAbbr": "km/h",
+            "withUnit": "37.8 Kilometers per Hour",
+            "withUnitAbbr": "37.8 km/h",
+            "uom": "kph"
+          },
+          "MaxPace": {
+            "fieldDisplayName": "Best Pace",
+            "display": "01:35",
+            "displayUnit": "Minutes per Kilometer",
+            "value": "1.5854895865303542",
+            "unitAbbr": "min/km",
+            "withUnit": "01:35 Minutes per Kilometer",
+            "withUnitAbbr": "01:35 min/km",
+            "uom": "minperkm"
+          },
+          "SumEnergy": {
+            "fieldDisplayName": "Calories",
+            "display": "319",
+            "displayUnit": "Calories",
+            "value": "319.0915556488991",
+            "unitAbbr": "C",
+            "withUnit": "319 Calories",
+            "withUnitAbbr": "319 C",
+            "uom": "kilocalorie"
+          },
+          "SumElapsedDuration": {
+            "fieldDisplayName": "Elapsed Time",
+            "display": "00:43:47",
+            "displayUnit": "Hours:Minutes:Seconds",
+            "value": "2627.38",
+            "unitAbbr": "h:m:s",
+            "withUnit": "00:43:47 Hours:Minutes:Seconds",
+            "withUnitAbbr": "00:43:47 h:m:s",
+            "uom": "second"
+          },
+          "MaxRunCadence": {
+            "fieldDisplayName": "Max Run Cadence",
+            "display": "110",
+            "displayUnit": "Steps per Minute",
+            "value": "110.0",
+            "unitAbbr": "spm",
+            "withUnit": "110 Steps per Minute",
+            "withUnitAbbr": "110 spm",
+            "uom": "stepsPerMinute"
+          },
+          "MaxDoubleCadence": {
+            "fieldDisplayName": "Max Run Cadence",
+            "display": "220",
+            "displayUnit": "Steps per Minute",
+            "value": "220.0",
+            "unitAbbr": "spm",
+            "withUnit": "220 Steps per Minute",
+            "withUnitAbbr": "220 spm",
+            "uom": "stepsPerMinute"
+          },
+          "WeightedMeanRunCadence": {
+            "fieldDisplayName": "Avg Run Cadence",
+            "display": "17",
+            "displayUnit": "Steps per Minute",
+            "value": "17.0",
+            "unitAbbr": "spm",
+            "withUnit": "17 Steps per Minute",
+            "withUnitAbbr": "17 spm",
+            "uom": "stepsPerMinute"
+          },
+          "WeightedMeanDoubleCadence": {
+            "fieldDisplayName": "Avg Run Cadence",
+            "display": "35",
+            "displayUnit": "Steps per Minute",
+            "value": "34.765625",
+            "unitAbbr": "spm",
+            "withUnit": "35 Steps per Minute",
+            "withUnitAbbr": "35 spm",
+            "uom": "stepsPerMinute"
+          },
+          "BeginLatitude": {
+            "fieldDisplayName": "Beginning Latitude",
+            "display": "46.4668",
+            "displayUnit": "Decimal Degrees",
+            "value": "46.46675166673958",
+            "unitAbbr": "dd",
+            "withUnit": "46.4668 Decimal Degrees",
+            "withUnitAbbr": "46.4668 dd",
+            "uom": "dd"
+          },
+          "SumMovingDuration": {
+            "fieldDisplayName": "Moving Time",
+            "display": "00:43:34",
+            "displayUnit": "Hours:Minutes:Seconds",
+            "value": "2614.0",
+            "unitAbbr": "h:m:s",
+            "withUnit": "00:43:34 Hours:Minutes:Seconds",
+            "withUnitAbbr": "00:43:34 h:m:s",
+            "uom": "second"
+          },
+          "WeightedMeanSpeed": {
+            "fieldDisplayName": "Avg Speed",
+            "display": "11.3",
+            "displayUnit": "Kilometers per Hour",
+            "value": "11.271600151062014",
+            "unitAbbr": "km/h",
+            "withUnit": "11.3 Kilometers per Hour",
+            "withUnitAbbr": "11.3 km/h",
+            "uom": "kph"
+          },
+          "WeightedMeanPace": {
+            "fieldDisplayName": "Avg Pace",
+            "display": "05:19",
+            "displayUnit": "Minutes per Kilometer",
+            "value": "5.323112885116562",
+            "unitAbbr": "min/km",
+            "withUnit": "05:19 Minutes per Kilometer",
+            "withUnitAbbr": "05:19 min/km",
+            "uom": "minperkm"
+          },
+          "SumDuration": {
+            "fieldDisplayName": "Time",
+            "display": "00:43:47",
+            "displayUnit": "Hours:Minutes:Seconds",
+            "value": "2627.38",
+            "unitAbbr": "h:m:s",
+            "withUnit": "00:43:47 Hours:Minutes:Seconds",
+            "withUnitAbbr": "00:43:47 h:m:s",
+            "uom": "second"
+          },
+          "SumDistance": {
+            "fieldDisplayName": "Distance",
+            "display": "8.23",
+            "displayUnit": "Kilometers",
+            "value": "8.22553",
+            "unitAbbr": "km",
+            "withUnit": "8.23 Kilometers",
+            "withUnitAbbr": "8.23 km",
+            "uom": "kilometer"
+          },
+          "BeginLongitude": {
+            "fieldDisplayName": "Beginning Longitude",
+            "display": "8.2435",
+            "displayUnit": "Decimal Degrees",
+            "value": "8.243478052318096",
+            "unitAbbr": "dd",
+            "withUnit": "8.2435 Decimal Degrees",
+            "withUnitAbbr": "8.2435 dd",
+            "uom": "dd"
+          },
+          "EndTrainingEffectIndices": {
+            "fieldDisplayName": "EndTrainingEffectIndices",
+            "display": "0.00",
+            "displayUnit": "",
+            "value": "0.0",
+            "unitAbbr": "",
+            "withUnit": "0.00 ",
+            "withUnitAbbr": "0.00 ",
+            "uom": "dimensionless"
+          },
+          "SumSampleCountTimestamp": {
+            "fieldDisplayName": "SumSampleCountTimestamp",
+            "display": "926",
+            "displayUnit": "Samples",
+            "value": "926.0",
+            "unitAbbr": "Samples",
+            "withUnit": "926 Samples",
+            "withUnitAbbr": "926 Samples",
+            "uom": "sampleCount"
+          },
+          "BeginTrainingEffectIndices": {
+            "fieldDisplayName": "BeginTrainingEffectIndices",
+            "display": "0.00",
+            "displayUnit": "",
+            "value": "0.0",
+            "unitAbbr": "",
+            "withUnit": "0.00 ",
+            "withUnitAbbr": "0.00 ",
+            "uom": "dimensionless"
+          },
+          "MaxCorrectedElevation": {
+            "fieldDisplayName": "MaxCorrectedElevation",
+            "display": "135,848",
+            "displayUnit": "Centimeters",
+            "value": "135848.0",
+            "unitAbbr": "cm",
+            "withUnit": "135,848 Centimeters",
+            "withUnitAbbr": "135,848 cm",
+            "uom": "centimeter"
+          },
+          "MinCorrectedElevation": {
+            "fieldDisplayName": "MinCorrectedElevation",
+            "display": "130,817",
+            "displayUnit": "Centimeters",
+            "value": "130817.0",
+            "unitAbbr": "cm",
+            "withUnit": "130,817 Centimeters",
+            "withUnitAbbr": "130,817 cm",
+            "uom": "centimeter"
+          },
+          "MinHeartRate": {
+            "fieldDisplayName": "MinHeartRate",
+            "display": "83",
+            "displayUnit": "Beats per Minute",
+            "value": "83.0",
+            "unitAbbr": "bpm",
+            "withUnit": "83 Beats per Minute",
+            "withUnitAbbr": "83 bpm",
+            "uom": "bpm",
+            "percentMax": {
+              "fieldDisplayName": "MinHeartRate",
+              "display": "45",
+              "displayUnit": "Percent of Max",
+              "value": "44.86486486486487",
+              "unitAbbr": "% of Max",
+              "withUnit": "45 Percent of Max",
+              "withUnitAbbr": "45 % of Max",
+              "uom": "bpm"
+            },
+            "zones": {
+              "fieldDisplayName": "MinHeartRate",
+              "display": "0.9",
+              "displayUnit": "Zones",
+              "value": "0.9021739130434783",
+              "unitAbbr": "z",
+              "withUnit": "0.9 Zones",
+              "withUnitAbbr": "0.9 z",
+              "uom": "bpm"
+            }
+          },
+          "MaxUncorrectedElevation": {
+            "fieldDisplayName": "MaxUncorrectedElevation",
+            "display": "137,480",
+            "displayUnit": "Centimeters",
+            "value": "137480.0",
+            "unitAbbr": "cm",
+            "withUnit": "137,480 Centimeters",
+            "withUnitAbbr": "137,480 cm",
+            "uom": "centimeter"
+          },
+          "MinUncorrectedElevation": {
+            "fieldDisplayName": "MinUncorrectedElevation",
+            "display": "132,600",
+            "displayUnit": "Centimeters",
+            "value": "132600.0",
+            "unitAbbr": "cm",
+            "withUnit": "132,600 Centimeters",
+            "withUnitAbbr": "132,600 cm",
+            "uom": "centimeter"
+          },
+          "LossCorrectedElevation": {
+            "fieldDisplayName": "LossCorrectedElevation",
+            "display": "5,207",
+            "displayUnit": "Centimeters",
+            "value": "5207.0",
+            "unitAbbr": "cm",
+            "withUnit": "5,207 Centimeters",
+            "withUnitAbbr": "5,207 cm",
+            "uom": "centimeter"
+          },
+          "GainElevation": {
+            "fieldDisplayName": "Elevation Gain",
+            "display": "106",
+            "displayUnit": "Meters",
+            "value": "106.0",
+            "unitAbbr": "m",
+            "withUnit": "106 Meters",
+            "withUnitAbbr": "106 m",
+            "uom": "meter"
+          },
+          "SumStep": {
+            "fieldDisplayName": "Steps",
+            "display": "3,522",
+            "displayUnit": "Steps",
+            "value": "3522.0",
+            "unitAbbr": "s",
+            "withUnit": "3,522 Steps",
+            "withUnitAbbr": "3,522 s",
+            "uom": "step"
+          },
+          "SumSampleCountLongitude": {
+            "fieldDisplayName": "SumSampleCountLongitude",
+            "display": "926",
+            "displayUnit": "Samples",
+            "value": "926.0",
+            "unitAbbr": "Samples",
+            "withUnit": "926 Samples",
+            "withUnitAbbr": "926 Samples",
+            "uom": "sampleCount"
+          },
+          "BeginTimestamp": {
+            "fieldDisplayName": "Start",
+            "display": "Thu, 8 Mar 2018 12:23",
+            "displayUnit": "",
+            "value": "2018-03-08T11:23:22.000Z",
+            "unitAbbr": "Central European Time",
+            "withUnit": "Thu, 8 Mar 2018 12:23 ",
+            "withUnitAbbr": "Thu, 8 Mar 2018 12:23 Central European Time",
+            "uom": "Europe/Paris"
+          },
+          "EndTimestamp": {
+            "fieldDisplayName": "EndTimestamp",
+            "display": "Thu, 8 Mar 2018 13:07",
+            "displayUnit": "",
+            "value": "2018-03-08T12:07:09.000Z",
+            "unitAbbr": "Central European Time",
+            "withUnit": "Thu, 8 Mar 2018 13:07 ",
+            "withUnitAbbr": "Thu, 8 Mar 2018 13:07 Central European Time",
+            "uom": "Europe/Paris"
+          },
+          "SumSampleCountLatitude": {
+            "fieldDisplayName": "SumSampleCountLatitude",
+            "display": "926",
+            "displayUnit": "Samples",
+            "value": "926.0",
+            "unitAbbr": "Samples",
+            "withUnit": "926 Samples",
+            "withUnitAbbr": "926 Samples",
+            "uom": "sampleCount"
+          },
+          "LossElevation": {
+            "fieldDisplayName": "Elevation Loss",
+            "display": "73",
+            "displayUnit": "Meters",
+            "value": "73.0",
+            "unitAbbr": "m",
+            "withUnit": "73 Meters",
+            "withUnitAbbr": "73 m",
+            "uom": "meter"
+          },
+          "SumSampleCountAirTemperature": {
+            "fieldDisplayName": "SumSampleCountAirTemperature",
+            "display": "926",
+            "displayUnit": "Samples",
+            "value": "926.0",
+            "unitAbbr": "Samples",
+            "withUnit": "926 Samples",
+            "withUnitAbbr": "926 Samples",
+            "uom": "sampleCount"
+          },
+          "SumAnaerobicTrainingEffect": {
+            "fieldDisplayName": "SumAnaerobicTrainingEffect",
+            "display": "0.10",
+            "displayUnit": "",
+            "value": "0.10000000149011612",
+            "unitAbbr": "",
+            "withUnit": "0.10 ",
+            "withUnitAbbr": "0.10 ",
+            "uom": "dimensionless"
+          },
+          "SumSampleCountMovingDuration": {
+            "fieldDisplayName": "SumSampleCountMovingDuration",
+            "display": "926",
+            "displayUnit": "Samples",
+            "value": "926.0",
+            "unitAbbr": "Samples",
+            "withUnit": "926 Samples",
+            "withUnitAbbr": "926 Samples",
+            "uom": "sampleCount"
+          },
+          "MaxVerticalSpeed": {
+            "fieldDisplayName": "MaxVerticalSpeed",
+            "display": "0.60",
+            "displayUnit": "Meters per Second",
+            "value": "0.5999755859375",
+            "unitAbbr": "mps",
+            "withUnit": "0.60 Meters per Second",
+            "withUnitAbbr": "0.60 mps",
+            "uom": "mps"
+          },
+          "WeightedMeanStrideLength": {
+            "fieldDisplayName": "Avg Stride Length",
+            "display": "6.15",
+            "displayUnit": "Meters",
+            "value": "6.151658983791259",
+            "unitAbbr": "m",
+            "withUnit": "6.15 Meters",
+            "withUnitAbbr": "6.15 m",
+            "uom": "meter"
+          },
+          "SumSampleCountElapsedDuration": {
+            "fieldDisplayName": "SumSampleCountElapsedDuration",
+            "display": "926",
+            "displayUnit": "Samples",
+            "value": "926.0",
+            "unitAbbr": "Samples",
+            "withUnit": "926 Samples",
+            "withUnitAbbr": "926 Samples",
+            "uom": "sampleCount"
+          },
+          "MaxElevation": {
+            "fieldDisplayName": "Max Elevation",
+            "display": "1,375",
+            "displayUnit": "Meters",
+            "value": "1374.8",
+            "unitAbbr": "m",
+            "withUnit": "1,375 Meters",
+            "withUnitAbbr": "1,375 m",
+            "uom": "meter"
+          },
+          "SumSampleCountMovingSpeed": {
+            "fieldDisplayName": "SumSampleCountMovingSpeed",
+            "display": "922",
+            "displayUnit": "Samples",
+            "value": "922.0",
+            "unitAbbr": "Samples",
+            "withUnit": "922 Samples",
+            "withUnitAbbr": "922 Samples",
+            "uom": "sampleCount"
+          },
+          "MinAirTemperature": {
+            "fieldDisplayName": "Min Temperature",
+            "display": "21.0",
+            "displayUnit": "",
+            "value": "21.0",
+            "unitAbbr": "°C",
+            "withUnit": "21.0 ",
+            "withUnitAbbr": "21.0 °C",
+            "uom": "celcius"
+          },
+          "MaxFractionalCadence": {
+            "fieldDisplayName": "Max Run Cadence",
+            "display": "0.00",
+            "displayUnit": "Revolutions per Minute",
+            "value": "0.0",
+            "unitAbbr": "rpm",
+            "withUnit": "0.00 Revolutions per Minute",
+            "withUnitAbbr": "0.00 rpm",
+            "uom": "rpm"
+          },
+          "WeightedMeanFractionalCadence": {
+            "fieldDisplayName": "Avg Run Cadence",
+            "display": "0.38",
+            "displayUnit": "Revolutions per Minute",
+            "value": "0.3828125",
+            "unitAbbr": "rpm",
+            "withUnit": "0.38 Revolutions per Minute",
+            "withUnitAbbr": "0.38 rpm",
+            "uom": "rpm"
+          },
+          "MaxAirTemperature": {
+            "fieldDisplayName": "Max Temperature",
+            "display": "28.0",
+            "displayUnit": "",
+            "value": "28.0",
+            "unitAbbr": "°C",
+            "withUnit": "28.0 ",
+            "withUnitAbbr": "28.0 °C",
+            "uom": "celcius"
+          },
+          "EndLatitude": {
+            "fieldDisplayName": "EndLatitude",
+            "display": "46.4699",
+            "displayUnit": "Decimal Degrees",
+            "value": "46.469942070543766",
+            "unitAbbr": "dd",
+            "withUnit": "46.4699 Decimal Degrees",
+            "withUnitAbbr": "46.4699 dd",
+            "uom": "dd"
+          },
+          "SumTrainingEffect": {
+            "fieldDisplayName": "Training Effect",
+            "display": "1.40",
+            "displayUnit": "",
+            "value": "1.399999976158142",
+            "unitAbbr": "",
+            "withUnit": "1.40 ",
+            "withUnitAbbr": "1.40 ",
+            "uom": "dimensionless"
+          },
+          "WeightedMeanAirTemperature": {
+            "fieldDisplayName": "Avg Temperature",
+            "display": "24.8",
+            "displayUnit": "",
+            "value": "24.846973734297677",
+            "unitAbbr": "°C",
+            "withUnit": "24.8 ",
+            "withUnitAbbr": "24.8 °C",
+            "uom": "celcius"
+          },
+          "SumSampleCountDoubleCadence": {
+            "fieldDisplayName": "SumSampleCountDoubleCadence",
+            "display": "926",
+            "displayUnit": "Samples",
+            "value": "926.0",
+            "unitAbbr": "Samples",
+            "withUnit": "926 Samples",
+            "withUnitAbbr": "926 Samples",
+            "uom": "sampleCount"
+          },
+          "SumSampleCountFractionalCadence": {
+            "fieldDisplayName": "SumSampleCountFractionalCadence",
+            "display": "926",
+            "displayUnit": "Samples",
+            "value": "926.0",
+            "unitAbbr": "Samples",
+            "withUnit": "926 Samples",
+            "withUnitAbbr": "926 Samples",
+            "uom": "sampleCount"
+          },
+          "MinElevation": {
+            "fieldDisplayName": "Min Elevation",
+            "display": "1,326",
+            "displayUnit": "Meters",
+            "value": "1326.0",
+            "unitAbbr": "m",
+            "withUnit": "1,326 Meters",
+            "withUnitAbbr": "1,326 m",
+            "uom": "meter"
+          }
+        },
+        "totalLaps": {},
+        "garminSwimAlgorithm": false,
+        "updatedDate": {
+          "@class": "sql-timestamp",
+          "$": "2018-03-08 11:35:20.0"
+        },
+        "updatedDateFormatted": "2018-03-08 11:35:20.0 GMT",
+        "userRoles": [
+          "ROLE_CONNECTUSER",
+          "ROLE_FITNESS_USER",
+          "ROLE_WELLNESS_USER",
+          "ROLE_OUTDOOR_USER",
+          "ROLE_CONNECT_2_USER"
+        ]
+      }
+    }
+  ],
+  "totalFound": 861,
+  "currentPage": 1,
+  "totalPages": 87,
+  "query": {
+    "filters": {
+      "parent_id": "",
+      "parent_id_oper": "is",
+      "userId": "2836200",
+      "userId_oper": "="
+    },
+    "sortOrder": "DESC",
+    "sortField": "activitySummaryBeginTimestampGmt",
+    "activityStart": "0",
+    "activitiesPerPage": "10",
+    "explore": "false",
+    "ignoreUntitled": "false",
+    "ignoreNonGPS": "false"
+  }
+}}
