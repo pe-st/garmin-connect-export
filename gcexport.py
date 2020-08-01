@@ -159,6 +159,9 @@ URL_GC_TCX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/
 URL_GC_ORIGINAL_ACTIVITY = 'http://connect.garmin.com/proxy/download-service/files/activity/'
 
 
+#USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.10136'
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2816.0 Safari/537.36')
+
 def resolve_path(directory, subdir, time):
     """
     Replace time variables and returns changed path. Supported place holders are {YYYY} and {MM}
@@ -217,10 +220,12 @@ def write_to_file(filename, content, mode, file_time=None):
 # url is a string, post is a dictionary of POST parameters, headers is a dictionary of headers.
 def http_req(url, post=None, headers=None):
     """Helper function that makes the HTTP requests."""
+    response = None
     request = Request(url)
     # Tell Garmin we're some supported browser.
-    request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, \
-        like Gecko) Chrome/54.0.2816.0 Safari/537.36')
+    #request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, \
+    #    like Gecko) Chrome/54.0.2816.0 Safari/537.36')
+    request.add_header('User-Agent', USER_AGENT)    
     if headers:
         if python3:
             for header_key, header_value in headers.items():
@@ -245,6 +250,10 @@ def http_req(url, post=None, headers=None):
             raise
         else:
             raise
+    if not response:
+        print('\nno response, try again later')
+        sys.exit(1)
+    
     logging.debug('Got %s in %s s from %s', response.getcode(), timer() - start_time, url)
 
     # N.B. urllib2 will follow any 302 redirects.
