@@ -9,11 +9,10 @@ Fork author: Michael P (https://github.com/moderation/)
 Date: February 21, 2016
 Fork author: Peter Steiner (https://github.com/pe-st/)
 Date: June 2017
-Porting to Python3 started by Thomas Th. (https://github.com/telemaxx/)
-Date: March 2020
+Date: March 2020 - Python3 support by Thomas Th. (https://github.com/telemaxx/)
 
 Description:    Use this script to export your fitness data from Garmin Connect.
-                See README.md for more information.
+                See README.md for more information, CHANGELOG.md for a history of the changes
 
 Activity & event types:
     https://connect.garmin.com/modern/main/js/properties/event_types/event_types.properties
@@ -27,29 +26,24 @@ import pickle
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
-from os import makedirs, mkdir, rename, remove, stat, utime
-from os.path import dirname, isdir, isfile, join, realpath, sep, splitext
 from platform import python_version
 from subprocess import call
 from timeit import default_timer as timer
 
 import argparse
 import csv
+import io
 import json
 import logging
+import os
+import os.path
 import re
 import string
 import sys
 import unicodedata
 import zipfile
 
-python3 = True
-try: # for python3
-    from urllib.request import urlopen, Request, HTTPError, URLError
-except ImportError: # or python2
-    from urllib2 import urlopen, Request, HTTPError, URLError
-    python3 = False
-
+python3 = sys.version_info.major == 3
 if python3:
     import http.cookiejar
     import urllib.error
@@ -57,16 +51,18 @@ if python3:
     import urllib.request
     import urllib
     from urllib.parse import urlencode
+    from urllib.request import Request, HTTPError, URLError
     COOKIE_JAR = http.cookiejar.CookieJar()
     OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
 else:
     import cookielib
     import urllib2
     from urllib import urlencode
+    from urllib2 import Request, HTTPError, URLError
     COOKIE_JAR = cookielib.CookieJar()
     OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR), urllib2.HTTPSHandler(debuglevel=0))
 
-SCRIPT_VERSION = '2.3.3'
+SCRIPT_VERSION = '3.0.1'
 
 # this is almost the datetime format Garmin used in the activity-search-service
 # JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
@@ -102,7 +98,7 @@ LIMIT_MAXIMUM = 1000
 
 MAX_TRIES = 3
 
-CSV_TEMPLATE = join(dirname(realpath(__file__)), "csv_header_default.properties")
+CSV_TEMPLATE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "csv_header_default.properties")
 
 WEBHOST = "https://connect.garmin.com"
 REDIRECT = "https://connect.garmin.com/modern/"
@@ -165,7 +161,7 @@ def resolve_path(directory, subdir, time):
     :param time: date-time-string
     :return: Updated dictionary string
     """
-    ret = join(directory, subdir)
+    ret = os.path.join(directory, subdir)
     if re.compile(".*{YYYY}.*").match(ret):
         ret = ret.replace("{YYYY}", time[0:4])
     if re.compile(".*{MM}.*").match(ret):
@@ -198,23 +194,40 @@ def sanitize_filename(name, max_length=0):
     return stripped_filename[:max_length] if max_length > 0 else stripped_filename
 
 
-def write_to_file(filename, content, mode, file_time=None):
-    """Helper function that persists content to file."""
-    if python3 and (filename.endswith('.json') or filename.endswith('.gpx') or filename.endswith('.tcx')):
-        write_file = open(filename, mode, encoding="utf-8")
-        if not isinstance(content, str):
-            content=content.decode("utf-8")
+def write_to_file(filename, content, mode='w', file_time=None):
+    """
+    Helper function that persists content to a file.
+
+    :param filename:     name of the file to write
+    :param content:      content to write; with Python 2 always of type 'str',
+                         with Python 3 it can be 'bytes' or 'str'. If it's
+                         'bytes' and the mode 'w', it will be converted/decoded
+    :param mode:         'w' or 'wb'
+    :param file_time:    if given use as timestamp for the file written
+    """
+    if mode == 'w':
+        write_file = io.open(filename, mode, encoding="utf-8")
+        if isinstance(content, bytes):
+            content = content.decode("utf-8")
+    elif mode == 'wb':
+        write_file = io.open(filename, mode)
     else:
-        write_file = open(filename, mode)
+        raise Exception('Unsupported file mode: ', mode)
     write_file.write(content)
     write_file.close()
     if file_time:
-        utime(filename, (file_time, file_time))
+        os.utime(filename, (file_time, file_time))
 
 
-# url is a string, post is a dictionary of POST parameters, headers is a dictionary of headers.
 def http_req(url, post=None, headers=None):
-    """Helper function that makes the HTTP requests."""
+    """
+    Helper function that makes the HTTP requests.
+
+    :param url:          URL for the request
+    :param post:         dictionary of POST parameters
+    :param headers:      dictionary of headers
+    :return: response body (type 'str' with Python 2, type 'bytes' with Python 3
+    """
     request = Request(url)
     # Tell Garmin we're some supported browser.
     request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, \
@@ -275,30 +288,13 @@ def load_properties(multiline, separator='=', comment_char='#', keys=None):
     props = {}
     for line in multiline.splitlines():
         stripped_line = line.strip()
-        if python3:
-            stripped_line = line.strip()
-            if stripped_line:
-                if (isinstance(stripped_line,bytes)):
-                    stripped_line = stripped_line.decode('utf8')
-                if (isinstance(comment_char,bytes)):
-                    comment_char=comment_char.decode('utf8')             
-                if not stripped_line.startswith(comment_char):
-                    #https://python-forum.io/Thread-Diff-between-Py-2-7-and-3--14749
-                    key_value = stripped_line.split(separator)
-                    key = key_value[0].strip()
-                    value = separator.join(key_value[1:]).strip().strip('"')
-                    props[key] = value
-                    if keys != None:
-                        keys.append(key)
-        else:
-            stripped_line = line.strip()
-            if stripped_line and not stripped_line.startswith(comment_char):
-                key_value = stripped_line.split(separator)
-                key = key_value[0].strip()
-                value = separator.join(key_value[1:]).strip().strip('"')
-                props[key] = value
-                if keys != None:
-                    keys.append(key)
+        if stripped_line and not stripped_line.startswith(comment_char):
+            key_value = stripped_line.split(separator)
+            key = key_value[0].strip()
+            value = separator.join(key_value[1:]).strip().strip('"')
+            props[key] = value
+            if keys != None:
+                keys.append(key)
     return props
 
 
@@ -446,7 +442,7 @@ def parse_arguments(argv):
 
     parser.add_argument('--version', action='version', version='%(prog)s ' + SCRIPT_VERSION,
         help='print version and exit')
-    parser.add_argument('-v', '--verbosity', action='count',
+    parser.add_argument('-v', '--verbosity', action='count', default=0,
         help='increase output verbosity')
     parser.add_argument('--username',
         help='your Garmin Connect username or email address (otherwise, you will be prompted)')
@@ -474,7 +470,7 @@ def parse_arguments(argv):
         help='append the activity\'s description to the file name of the download; limit size if number is given')
     parser.add_argument('-t', '--template', default=CSV_TEMPLATE,
         help='template file with desired columns for CSV output')
-    parser.add_argument('-fp', '--fileprefix', action='count',
+    parser.add_argument('-fp', '--fileprefix', action='count', default=0,
         help="set the local time as activity file name prefix")
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
         help="give index for first activity to import, i.e. skipping the newest activites")
@@ -530,7 +526,7 @@ def login_to_garmin_connect(args):
         raise Exception('Couldn\'t find ticket in the login response. Cannot log in. '
                         'Did you enter the correct username and password?')
     login_ticket = match.group(1)
-    print(' Done. Ticket=' + login_ticket)
+    print(' Done. Ticket=', login_ticket, sep='')
 
     print("Authenticating...", end='')
     logging.info('Authentication URL %s', URL_GC_POST_AUTH + 'ticket=' + login_ticket)
@@ -645,6 +641,13 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
 def extract_device(device_dict, details, start_time_seconds, args, http_caller, file_writer):
     """
     Try to get the device details (and cache them, as they're used for multiple activities)
+
+    :param device_dict:  cache (dict) of already known devices
+    :param details:      dict with the details of an activity, should contain a device ID
+    :param args:         command-line arguments (for the file_writer callback)
+    :param http_caller:  callback to perform the HTTP call for downloading the device details
+    :param file_writer:  callback that saves the device details in a file
+    :return: string with the device name
     """
     if not present('metadataDTO', details):
         logging.warning("no metadataDTO")
@@ -663,7 +666,7 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
             device_id = device_meta['deviceId'] if present('deviceId', device_meta) else None
             if 'deviceId' not in device_meta or device_id and device_id != '0':
                 device_json = http_caller(URL_GC_DEVICE + str(device_app_inst_id))
-                file_writer(args.directory + sep + 'device_' + str(device_app_inst_id) + '.json',
+                file_writer(os.path.join(args.directory, 'device_' + str(device_app_inst_id) + '.json'),
                             device_json, 'w',
                             start_time_seconds)
                 if not device_json:
@@ -687,7 +690,7 @@ def load_gear(activity_id, args):
         gear = json.loads(gear_json)
         if gear:
             del args # keep 'args' argument in case you need to uncomment write_to_file
-            # write_to_file(args.directory + sep + 'activity_' + activity_id + '-gear.json',
+            # write_to_file(join(args.directory, 'activity_' + activity_id + '-gear.json'),
             #               gear_json, 'w')
             gear_display_name = gear[0]['displayName'] if present('displayName', gear[0]) else None
             gear_model = gear[0]['customMakeModel'] if present('customMakeModel', gear[0]) else None
@@ -711,43 +714,43 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     else:
         directory = args.directory
 
-    if not isdir(directory):
-        makedirs(directory)
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
 
     # timestamp as prefix for filename
-    if args.fileprefix and args.fileprefix > 0:
+    if args.fileprefix > 0:
         prefix = "{}-".format(start_time_locale.replace("-", "").replace(":", "").replace(" ", "-"))
     else:
         prefix = ""
 
     fit_filename = None
     if args.format == 'gpx':
-        data_filename = directory + sep + prefix + 'activity_' + activity_id + append_desc + '.gpx'
+        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.gpx')
         download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
         file_mode = 'w'
     elif args.format == 'tcx':
-        data_filename = directory + sep + prefix + 'activity_' + activity_id + append_desc + '.tcx'
+        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.tcx')
         download_url = URL_GC_TCX_ACTIVITY + activity_id + '?full=true'
         file_mode = 'w'
     elif args.format == 'original':
-        data_filename = directory + sep + prefix + 'activity_' + activity_id + append_desc + '.zip'
+        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.zip')
         # TODO not all 'original' files are in FIT format, some are GPX or TCX...
-        fit_filename = directory + sep + prefix + 'activity_' + activity_id + append_desc + '.fit'
+        fit_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.fit')
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
     elif args.format == 'json':
-        data_filename = directory + sep + prefix + 'activity_' + activity_id + append_desc + '.json'
+        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.json')
         file_mode = 'w'
     else:
         raise Exception('Unrecognized format.')
 
-    if isfile(data_filename):
+    if os.path.isfile(data_filename):
         logging.debug('Data file for %s already exists', activity_id)
         print('\tData file already exists; skipping...')
         return
 
     # Regardless of unzip setting, don't redownload if the ZIP or FIT file exists.
-    if args.format == 'original' and isfile(fit_filename):
+    if args.format == 'original' and os.path.isfile(fit_filename):
         logging.debug('Original data file for %s already exists', activity_id)
         print('\tFIT data file already exists; skipping...')
         return
@@ -787,23 +790,23 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     if args.format == 'original':
         # Even manual upload of a GPX file is zipped, but we'll validate the extension.
         if args.unzip and data_filename[-3:].lower() == 'zip':
-            logging.debug('Unzipping and removing original file, size is %s', stat(data_filename).st_size)
-            if stat(data_filename).st_size > 0:
+            logging.debug('Unzipping and removing original file, size is %s', os.stat(data_filename).st_size)
+            if os.stat(data_filename).st_size > 0:
                 zip_file = open(data_filename, 'rb')
                 zip_obj = zipfile.ZipFile(zip_file)
                 for name in zip_obj.namelist():
                     unzipped_name = zip_obj.extract(name, directory)
-                    name_unzipped_base, name_unzipped_ext = splitext(name)
-                    fit_filename_name_base, name_ext = splitext(fit_filename)
-                    new_name = fit_filename_name_base + name_unzipped_ext
+                    # prepend 'activity_' and append the description to the base name
+                    name_base, name_ext = os.path.splitext(name)
+                    new_name = os.path.join(directory, prefix + 'activity_' + name_base + append_desc + name_ext)
                     logging.debug('renaming %s to %s', unzipped_name, new_name)
-                    rename(unzipped_name, new_name)
+                    os.rename(unzipped_name, new_name)
                     if file_time:
-                        utime(new_name, (file_time, file_time))
+                        os.utime(new_name, (file_time, file_time))
                 zip_file.close()
             else:
                 print('\tSkipping 0Kb zip file.')
-            remove(data_filename)
+            os.remove(data_filename)
 
 
 def setup_logging():
@@ -828,12 +831,12 @@ def logging_verbosity(verbosity):
     for handler in logger.handlers:
         if isinstance(handler, logging.FileHandler):
             # this is the logfile handler
-            level = logging.DEBUG if verbosity and verbosity > 0 else logging.INFO
+            level = logging.DEBUG if verbosity > 0 else logging.INFO
             handler.setLevel(level)
             logging.info('New logfile level: %s', logging.getLevelName(level))
         elif isinstance(handler, logging.StreamHandler):
             # this is the console handler
-            level = logging.DEBUG if verbosity and verbosity > 1 else (logging.INFO if verbosity and verbosity > 0 else logging.WARN)
+            level = logging.DEBUG if verbosity > 1 else (logging.INFO if verbosity > 0 else logging.WARN)
             handler.setLevel(level)
             logging.debug('New console log level: %s', logging.getLevelName(level))
 
@@ -849,7 +852,7 @@ def write_last_activity_index(settings_dir, activity_index, format):
     settings = read_settings(settings_dir)
     settings['activity_indices'][format] = activity_index
 
-    file_name = join(settings_dir, ".settings")
+    file_name = os.path.join(settings_dir, ".settings")
 
     with open(file_name, "wb") as f:
         pickle.dump(settings, f)
@@ -864,7 +867,7 @@ def read_settings(settings_dir):
     json and original. If settings are not found an initialized dictionary will be returned:
     dict(activity_indices=(tcx=0, gps=0, json=0, original=0))
     """
-    file_name = join(settings_dir, ".settings")
+    file_name = os.path.join(settings_dir, ".settings")
 
     try:
         with open(file_name, "rb") as f:
@@ -882,7 +885,7 @@ def resolve_path(directory, subdir, time):
     :param time: date-time-string
     :return: Updated dictionary string
     """
-    ret = join(directory, subdir)
+    ret = os.path.join(directory, subdir)
     if re.compile(".*{YYYY}.*").match(ret):
         ret = ret.replace("{YYYY}", time[0:4])
     if re.compile(".*{MM}.*").match(ret):
@@ -903,7 +906,7 @@ def main(argv):
     print('Welcome to Garmin Connect Exporter!')
 
     # Create directory for data files.
-    if isdir(args.directory):
+    if os.path.isdir(args.directory):
         logging.warning("Output directory %s already exists. "
                         "Will skip already-downloaded files and append to the CSV file.",
                         args.directory)
@@ -911,11 +914,11 @@ def main(argv):
     login_to_garmin_connect(args)
 
     # We should be logged in now.
-    if not isdir(args.directory):
-        mkdir(args.directory)
+    if not os.path.isdir(args.directory):
+        os.mkdir(args.directory)
 
     csv_filename = args.directory + '/activities.csv'
-    csv_existed = isfile(csv_filename)
+    csv_existed = os.path.isfile(csv_filename)
 
     if python3:
         csv_file = open(csv_filename, mode='a', encoding='utf-8')
@@ -941,7 +944,7 @@ def main(argv):
     if not match:
         raise Exception('Did not find the display name in the profile page.')
     display_name = match.group(1)
-    print(' Done. displayName=' + display_name)
+    print(' Done. displayName=', display_name, sep='')
 
     print('Fetching user stats...', end='')
     logging.info('Userstats page %s', URL_GC_USERSTATS + display_name)
@@ -984,9 +987,9 @@ def main(argv):
 
         search_params = {'start': total_downloaded, 'limit': num_to_download}
         # Query Garmin Connect
-        print('Querying list of activities ' + str(total_downloaded + 1) \
-              + '..' + str(total_downloaded + num_to_download) \
-              + '...', end='')
+        print('Querying list of activities ', total_downloaded + 1,
+              '..', total_downloaded + num_to_download,
+              '...', sep='', end='')
         
         logging.info('Activity list URL %s', URL_GC_LIST + urlencode(search_params))
         result = http_req_as_string(URL_GC_LIST + urlencode(search_params))
@@ -1010,13 +1013,13 @@ def main(argv):
                 pass
                 # Display which entry we're skipping.
                 print('Skipping Garmin Connect activity ', end='')
-                print('(' + str(current_index) + sep + str(total_to_download) + ') ', end='')
-                print('[' + str(actvty['activityId']) + '] \n', end='')
+                print('(', current_index, '/', total_to_download, ') ', sep='', end='')
+                print('[', actvty['activityId'], ']', sep='')
             else:
                 # Display which entry we're working on.
                 print('Garmin Connect activity ', end='')
-                print('(' + str(current_index) + sep + str(total_to_download) + ') ', end='')
-                print('[' + str(actvty['activityId']) + '] ', end='')
+                print('(', current_index, '/', total_to_download, ') ', sep='', end='')
+                print('[', actvty['activityId'], '] ', sep='', end='')
                 print(actvty['activityName'])
 
                 # Retrieve also the detail data from the activity (the one displayed on
@@ -1046,10 +1049,10 @@ def main(argv):
                 extract['elapsed_seconds'] = int(round(extract['elapsed_duration']))
                 extract['end_time_with_offset'] = extract['start_time_with_offset'] + timedelta(seconds=extract['elapsed_seconds'])
 
-                print('\t' + extract['start_time_with_offset'].isoformat() + ', ', end='')
-                print(hhmmss_from_seconds(extract['elapsed_seconds']) + ', ', end='')
+                print('\t', extract['start_time_with_offset'].isoformat(), ', ', sep='', end='')
+                print(hhmmss_from_seconds(extract['elapsed_seconds']), ', ', sep='', end='')
                 if 'distance' in actvty and isinstance(actvty['distance'], (float)):
-                    print("{0:.3f}".format(actvty['distance'] / 1000) + 'km')
+                    print("{0:.3f}".format(actvty['distance'] / 1000), 'km', sep='')
                 else:
                     print('0.000 km')
 

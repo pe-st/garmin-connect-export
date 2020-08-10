@@ -91,17 +91,22 @@ optional arguments:
 ```
 
 Examples:
-`python gcexport.py --count all` will download all of your data to a dated directory.
 
-`python gcexport.py -c all -f gpx -ot --desc 20` will export all of your data in GPX format, set the timestamp of the GPX files to the start time of the activity and append the 20 first characters of the activity's description to the file name.
+- `python3 gcexport.py --count all`  
+  will download all of your data to a dated directory.
 
-`python gcexport.py -c all -e /Applications/LibreOffice.app/Contents/MacOS/soffice -a calc` will download all of your data and then use LibreOffice to open the CSV file with the list of your activities (the path to LibreOffice is platform-specific; the example is for macOS).
+- `python3 gcexport.py -c all -f gpx -ot --desc 20`  
+  will export all of your data in GPX format, set the timestamp of the GPX files to the start time of the activity and append the 20 first characters of the activity's description to the file name.
 
-`python gcexport.py -d ~/MyActivities -c 3 -f original -u --username bobbyjoe --password bestpasswordever1` will download your three most recent activities in the FIT file format (or whatever they were uploaded as) into the `~/MyActivities` directory (unless they already exist). Using the `--password` flags is not recommended because your password will be stored in your command line history. Instead, omit it to be prompted (and note that nothing will be displayed when you type your password). Equally you might not want to have the username stored in your command line history; in this case avoid also to give the `--username` option, and you'll be prompted for it. Note also that depending on the age of your garmin account your username is the email address (I myself still can login both with username and email address, but I've had a report that for some users the email address is mandatory to login).
+- `python3 gcexport.py -c all -e /Applications/LibreOffice.app/Contents/MacOS/soffice -a calc`  
+  will download all of your data and then use LibreOffice to open the CSV file with the list of your activities (the path to LibreOffice is platform-specific; the example is for macOS).
+
+- `python3 gcexport.py -d ~/MyActivities -c 3 -f original -u --username bobbyjoe --password bestpasswordever1`  
+  will download your three most recent activities in the FIT file format (or whatever they were uploaded as) into the `~/MyActivities` directory (unless they already exist). Using the `--password` flags is not recommended because your password will be stored in your command line history. Instead, omit it to be prompted (and note that nothing will be displayed when you type your password). Equally you might not want to have the username stored in your command line history; in this case avoid also to give the `--username` option, and you'll be prompted for it. Note also that depending on the age of your garmin account your username is the email address (I myself still can login both with username and email address, but I've had a report that for some users the email address is mandatory to login).
 
 Alternatively, you may run it with `./gcexport.py` if you set the file as executable (i.e., `chmod u+x gcexport.py`).
 
-Of course, you must have Python installed to run this. Most Mac and Linux users should already have it. Note that if you run into the [TLSV1 ALERT problem](https://github.com/pe-st/garmin-connect-export/issues/16), your Python installation might not be recent enough, e.g. macOS Sierra and High Sierra come with Python 2.7.10 which suffers from this problem (macOS Mojave's Python is recent enough though). In this case you can install a more recent Python on your Mac using [Homebrew](https://docs.brew.sh/Homebrew-and-Python) and MUSTN'T run the script with `./gcexport.py`, but with `python gcexport.py`.
+Of course, you must have Python installed to run this, any recent 2.7.x or 3.x version should work (if you use Python 2.x, replace `python3` in the examples above with `python` or `python2`). Most Mac and Linux users should already have it. Note that if you run into the [TLSV1 ALERT problem](https://github.com/pe-st/garmin-connect-export/issues/16), your Python installation might not be recent enough, e.g. macOS Sierra and High Sierra come with Python 2.7.10 which suffers from this problem (macOS Mojave's Python is recent enough though). In this case you can install a more recent Python on your Mac using [Homebrew](https://docs.brew.sh/Homebrew-and-Python) and MUSTN'T run the script with `./gcexport.py`, but with `python3 gcexport.py`.
 
 Also, as stated above, you should have some basic command line experience.
 
@@ -129,33 +134,7 @@ Garmin Connect API
 ------------------
 This script is for personal use only. It simulates a standard user session (i.e., in the browser), logging in using cookies and an authorization ticket. This makes the script pretty brittle. If you're looking for a more reliable option, particularly if you wish to use this for some production service, Garmin does offer a paid API service.
 
-### REST endpoints
-
-As this script doesn't use the paid API, the endpoints to use are known by reverse engineering browser sessions. And as the Garmin Connect website changes over time, chances are that this script gets broken.
-
-Small history of the endpoints used by `gcexport.py` to get a list of activities:
-
-- [activity-search-service-1.0](https://connect.garmin.com/proxy/activity-search-service-1.0/json/activities): initial endpoint used since 2015, worked at least until January 2018
-- [activity-search-service-1.2](https://connect.garmin.com/proxy/activity-search-service-1.2/json/activities): endpoint introduced in `gcexport.py` in August 2016. In March 2018 this still works, but doesn't allow you to fetch more than 20 activities, even split over multiple calls (when doing three consecutive calls with 1,19,19 as `limit` parameter, the third one fails with HTTP error 500).
-  In August 2018 it stopped working altogether. The JSON returned by this endpoint however was quite rich (see example `activity-search-service-1.2.json` in the `json` folder).
-- [Profile page](https://connect.garmin.com/modern/profile) and
-  [User Stats page](https://connect.garmin.com/modern/proxy/userstats-service/statistics/user_name) were introduced in August 2018 when activity-search-service-1.2 stopped working. Their purpose in this script is solely to get the number of activities which I didn't find elsewhere.
-- [activitylist-service](https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities): endpoint introduced in `gcexport.py` in March 2018. The JSON returned by this endpoint is very different from the activity-search-service-1.2 one (also here see the example in the `json` folder), e.g.
-    - it is concise and offers no redundant information (e.g. only speed, not speed and pace)
-    - the units are not explicitly given and must be deducted (e.g. the speed unit is m/s)
-    - there is less information, e.g. there is only one set of elevation values (not both corrected and uncorrected), and other values like minimum heart rate are missing.
-    - some other information is available only as an ID (e.g. `timeZoneId` or `deviceId`), and more complete information
-      is available by further REST calls (one for each activity and additional ones for device information)
-
-Endpoints to get information about a specific activity:
-
-- [activity-service](https://connect.garmin.com/modern/proxy/activity-service/activity/nnnn): A kind of summary of the activity, most values are present in their canonical format.
-- [activity-service-1.3 details](https://connect.garmin.com/modern/proxy/activity-service-1.3/json/activityDetails/nnnn): A detailed list of measurements, with a list of the metrics available for each measurement.
-
-### Limitations of Data Provided by Current Endpoints and Choices Made
-
-- The timezones provided are just the names (e.g. for Central European Time CET you can get either "Europe/Paris" or "(GMT+01:00) Central European Time"), but not the exact offset. Note that the "GMT+01:00" part of the name is hardcoded, so in summer (daylight savings time) Garmin Connect still uses +01:00 in the name even if the offset then is +02:00. To get the offset you need to calculate the difference between the startTimeLocal and the startTimeGMT.
-
+More information about the API endpoints used in the script is available in [CONTRIBUTING.md](CONTRIBUTING.md)
 
 History
 -------
@@ -164,11 +143,13 @@ The original project was written in PHP (formerly in the `old` directory, now de
 After 2015, when the original repo stopped being maintained, several forks from **kjkjava** started appearing (see
 Forks and Branches section above).
 
+For the history of this branch see the [CHANGELOG](CHANGELOG.md)
+
 Contributions
 -------------
-Contributions are welcome, particularly if this script stops working with Garmin Connect. You may consider opening a GitHub Issue first. New features, however simple, are encouraged.
+Contributions are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md)
 
-Contributors as of 2019-08 (Hope I didn't forget anyone):
+Contributors as of 2020-04 (Hope I didn't forget anyone):
 
 - Kyle Krafka @kjkjava
 - Jochem Wichers Hoeth @jowiho
@@ -186,7 +167,8 @@ Contributors as of 2019-08 (Hope I didn't forget anyone):
 - Christian Moelders @chmoelders
 - Christian Schulzendorff @chs8691
 - Josef K @jkall
-
+- Thomas Th @telemaxx
+- Bart Skowron @bartskowron
 
 License
 -------

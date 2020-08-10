@@ -3,6 +3,21 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 3.0.1 - 2020-05-23
+
+- fixed: `--subdir` was broken in 3.0.0 by the migration to Python 3 (reported by @jamorris, issue #37)
+- changed: moved unit tests for `resolve_path` from **unittest** framework to **pytest**
+
+
+## 3.0.0 - 2020-05-16
+
+- added: support for Python 3, thanks to @telemaxx and @bartskowron
+- added: file `CONTRIBUTING.md` and moved some parts of `README.md` into it
+- changed: with Windows the script now uses backslashes as path separator
+- changed: default Git branch is now `master` (the old `develop` branch is kept for the time being)
+- fixed: `-fp` option for `original` format
+
+
 ## 2.3.3 - 2020-01-30
 
 - fixed: skipping existing `.fit` files didn't work (reported by @fellrnr, issue #25)
