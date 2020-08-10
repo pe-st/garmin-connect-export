@@ -22,6 +22,7 @@ Activity & event types:
 # this avoids different pylint behaviour for python 2 and 3
 from __future__ import print_function
 
+import pickle
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
@@ -448,7 +449,8 @@ def parse_arguments(argv):
     parser.add_argument('--password',
         help='your Garmin Connect password (otherwise, you will be prompted)')
     parser.add_argument('-c', '--count', default='1',
-        help='number of recent activities to download, or \'all\' (default: 1)')
+        help="number of recent activities to download, or \'all\' or \'new\' (default: 1), "
+             "\'new\' or \'number\' downloads the latest activities by activity's date/time")
     parser.add_argument('-e', '--external',
         help='path to external program to pass CSV file too')
     parser.add_argument('-a', '--args',
@@ -839,6 +841,59 @@ def logging_verbosity(verbosity):
             logging.debug('New console log level: %s', logging.getLevelName(level))
 
 
+def write_last_activity_index(settings_dir, activity_index, format):
+    """
+    Persists the index of the last exported activity for the given export format
+    (see also method read_settings())
+    :param settings_dir: Path to the pickle file
+    :param activity_index: Positive integer
+    :param format: Value of args.format
+    """
+    settings = read_settings(settings_dir)
+    settings['activity_indices'][format] = activity_index
+
+    file_name = os.path.join(settings_dir, ".settings")
+
+    with open(file_name, "wb") as f:
+        pickle.dump(settings, f)
+
+
+def read_settings(settings_dir):
+    """
+    Reads the stored settings from the given download dir
+    Expected pickle format is for instance {activity_indices={tcx=10, gpx=42, json=2, original=0}}
+    :param settings_dir: Path to the settings file
+    :return: dictionary with one key 'activity_indices', which is a dictionary of integer values for keys tcx, gpx,
+    json and original. If settings are not found an initialized dictionary will be returned:
+    dict(activity_indices=(tcx=0, gps=0, json=0, original=0))
+    """
+    file_name = os.path.join(settings_dir, ".settings")
+
+    try:
+        with open(file_name, "rb") as f:
+            pick = pickle.load(f)
+            return pick
+    except IOError:
+        return dict(activity_indices=dict(tcx=0, gpx=0, json=0, original=0))
+
+
+def resolve_path(directory, subdir, time):
+    """
+    Replace time variables and returns changed path. Supported place holders are {YYYY} and {MM}
+    :param directory: export root directory
+    :param subdir: subdirectory, can have place holders.
+    :param time: date-time-string
+    :return: Updated dictionary string
+    """
+    ret = os.path.join(directory, subdir)
+    if re.compile(".*{YYYY}.*").match(ret):
+        ret = ret.replace("{YYYY}", time[0:4])
+    if re.compile(".*{MM}.*").match(ret):
+        ret = ret.replace("{MM}", time[5:7])
+
+    return ret
+
+
 def main(argv):
     """
     Main entry point for gcexport.py
@@ -875,34 +930,37 @@ def main(argv):
     if not csv_existed:
         csv_filter.write_header()
 
+    # If the user wants to download all activities, query the userstats
+    # on the profile page to know how many are available
+    print('Getting display name...', end='')
+    logging.info('Profile page %s', URL_GC_PROFILE)
+    profile_page = http_req_as_string(URL_GC_PROFILE)
+    # write_to_file(args.directory + '/profile.html', profile_page, 'a')
+
+    # extract the display name from the profile page, it should be in there as
+    # \"displayName\":\"John.Doe\"
+    pattern = re.compile(r".*\\\"displayName\\\":\\\"([-.\w]+)\\\".*", re.MULTILINE | re.DOTALL)
+    match = pattern.match(profile_page)
+    if not match:
+        raise Exception('Did not find the display name in the profile page.')
+    display_name = match.group(1)
+    print(' Done. displayName=', display_name, sep='')
+
+    print('Fetching user stats...', end='')
+    logging.info('Userstats page %s', URL_GC_USERSTATS + display_name)
+    result = http_req_as_string(URL_GC_USERSTATS + display_name)
+    print(' Done.')
+
+    # Persist JSON
+    write_to_file(args.directory + '/userstats.json', result, 'w')
+
+    # Modify total_to_download based on how many activities the server reports.
+    json_results = json.loads(result)
     if args.count == 'all':
-        # If the user wants to download all activities, query the userstats
-        # on the profile page to know how many are available
-        print('Getting display name...', end='')
-        logging.info('Profile page %s', URL_GC_PROFILE)
-        profile_page = http_req_as_string(URL_GC_PROFILE)
-        # write_to_file(args.directory + '/profile.html', profile_page, 'a')
-
-        # extract the display name from the profile page, it should be in there as
-        # \"displayName\":\"John.Doe\"
-        pattern = re.compile(r".*\\\"displayName\\\":\\\"([-.\w]+)\\\".*", re.MULTILINE | re.DOTALL)
-        match = pattern.match(profile_page)
-        if not match:
-            raise Exception('Did not find the display name in the profile page.')
-        display_name = match.group(1)
-        print(' Done. displayName=', display_name, sep='')
-
-        print('Fetching user stats...', end='')
-        logging.info('Userstats page %s', URL_GC_USERSTATS + display_name)
-        result = http_req_as_string(URL_GC_USERSTATS + display_name)
-        print(' Done.')
-
-        # Persist JSON
-        write_to_file(args.directory + '/userstats.json', result, 'w')
-
-        # Modify total_to_download based on how many activities the server reports.
-        json_results = json.loads(result)
         total_to_download = int(json_results['userMetrics'][0]['totalActivities'])
+    elif args.count == 'new':
+        total_to_download = int(json_results['userMetrics'][0]['totalActivities']) -\
+                            read_settings(args.directory)['activity_indices'][args.format]
     else:
         total_to_download = int(args.count)
     total_downloaded = 0
@@ -1036,6 +1094,12 @@ def main(argv):
 
                 export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc,
                                  actvty['startTimeLocal'])
+
+            # Regardless if file was written or already exists
+            write_last_activity_index(args.directory,
+                                      int(json_results['userMetrics'][0]['totalActivities']) -
+                                      total_to_download + current_index,
+                                      args.format)
 
             current_index += 1
         # End for loop for activities of chunk
