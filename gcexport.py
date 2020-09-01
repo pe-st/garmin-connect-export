@@ -961,7 +961,7 @@ def main(argv):
             logging.warning('Expected %s activities, got %s.', num_to_download, len(activities))
 
         # Processing each activity; starting with the oldest one. Running from oldest to newest is necessary to save the
-        # oldest successful downloaded activity. Doing it so, 'count new' has a starting point to fetch the latest ones
+        # newest successful downloaded activity. Doing it so, 'count new' has a starting point to fetch the latest ones
         # at the next time.
         for actvty in activities[::-1]:
 
