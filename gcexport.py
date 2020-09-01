@@ -22,6 +22,7 @@ Activity & event types:
 # this avoids different pylint behaviour for python 2 and 3
 from __future__ import print_function
 
+import pickle
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
@@ -231,6 +232,7 @@ def http_req(url, post=None, headers=None):
     # Tell Garmin we're some supported browser.
     request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, \
         like Gecko) Chrome/54.0.2816.0 Safari/537.36')
+
     if headers:
         if python3:
             for header_key, header_value in headers.items():
@@ -448,7 +450,8 @@ def parse_arguments(argv):
     parser.add_argument('--password',
         help='your Garmin Connect password (otherwise, you will be prompted)')
     parser.add_argument('-c', '--count', default='1',
-        help='number of recent activities to download, or \'all\' (default: 1)')
+        help='number of recent activities to download, or \'all\' or \'new\' (default: 1)'
+                        "'new' or 'number' downloads the latest activities by activity's date/time")
     parser.add_argument('-e', '--external',
         help='path to external program to pass CSV file too')
     parser.add_argument('-a', '--args',
@@ -471,7 +474,7 @@ def parse_arguments(argv):
     parser.add_argument('-fp', '--fileprefix', action='count', default=0,
         help="set the local time as activity file name prefix")
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
-        help="give index for first activity to import, i.e. skipping the newest activites")
+        help="set index to skip the newest activities. E.g. 3 will not download the last 2 ones")
 
     return parser.parse_args(argv[1:])
 
@@ -875,36 +878,44 @@ def main(argv):
     if not csv_existed:
         csv_filter.write_header()
 
+    # query the userstats, we need the activity index for storing in .settings file
+    # on the profile page to know how many are available
+    print('Getting display name...', end='')
+    logging.info('Profile page %s', URL_GC_PROFILE)
+    profile_page = http_req_as_string(URL_GC_PROFILE)
+    # write_to_file(args.directory + '/profile.html', profile_page, 'a')
+
+    # extract the display name from the profile page, it should be in there as
+    # \"displayName\":\"John.Doe\"
+    pattern = re.compile(r".*\\\"displayName\\\":\\\"([-.\w]+)\\\".*", re.MULTILINE | re.DOTALL)
+    match = pattern.match(profile_page)
+    if not match:
+        raise Exception('Did not find the display name in the profile page.')
+    display_name = match.group(1)
+    print(' Done. displayName=', display_name, sep='')
+
+    print('Fetching user stats...', end='')
+    logging.info('Userstats page %s', URL_GC_USERSTATS + display_name)
+    result = http_req_as_string(URL_GC_USERSTATS + display_name)
+    print(' Done.')
+
+    # Persist JSON
+    write_to_file(args.directory + '/userstats.json', result, 'w')
+
+    # Modify total_to_download based on how many activities the server reports.
+    # index holds the actual activity index number
+    json_results = json.loads(result)
+
     if args.count == 'all':
-        # If the user wants to download all activities, query the userstats
-        # on the profile page to know how many are available
-        print('Getting display name...', end='')
-        logging.info('Profile page %s', URL_GC_PROFILE)
-        profile_page = http_req_as_string(URL_GC_PROFILE)
-        # write_to_file(args.directory + '/profile.html', profile_page, 'a')
-
-        # extract the display name from the profile page, it should be in there as
-        # \"displayName\":\"John.Doe\"
-        pattern = re.compile(r".*\\\"displayName\\\":\\\"([-.\w]+)\\\".*", re.MULTILINE | re.DOTALL)
-        match = pattern.match(profile_page)
-        if not match:
-            raise Exception('Did not find the display name in the profile page.')
-        display_name = match.group(1)
-        print(' Done. displayName=', display_name, sep='')
-
-        print('Fetching user stats...', end='')
-        logging.info('Userstats page %s', URL_GC_USERSTATS + display_name)
-        result = http_req_as_string(URL_GC_USERSTATS + display_name)
-        print(' Done.')
-
-        # Persist JSON
-        write_to_file(args.directory + '/userstats.json', result, 'w')
-
-        # Modify total_to_download based on how many activities the server reports.
-        json_results = json.loads(result)
         total_to_download = int(json_results['userMetrics'][0]['totalActivities'])
+
+    elif args.count == 'new':
+        total_to_download = int(json_results['userMetrics'][0]['totalActivities']) - \
+                            read_settings(args.directory)['activity_indices'][args.format]
+
     else:
         total_to_download = int(args.count)
+
     total_downloaded = 0
 
     device_dict = dict()
@@ -949,14 +960,19 @@ def main(argv):
         if len(activities) != num_to_download:
             logging.warning('Expected %s activities, got %s.', num_to_download, len(activities))
 
-        # Process each activity.
-        for actvty in activities:
-            if args.start_activity_no and current_index < args.start_activity_no:
+        # Process each activity; start with the oldest one. Running from oldest to newest is necessary to save the
+        # oldest successful downloaded activity. Doing it so, 'count new' has a starting point to fetch the latest ones
+        # at the next time.
+        for actvty in activities[::-1]:
+
+            # Skip the newest ones, if wanted
+            if args.start_activity_no > 1 and current_index > total_to_download - args.start_activity_no:
                 pass
                 # Display which entry we're skipping.
                 print('Skipping Garmin Connect activity ', end='')
                 print('(', current_index, '/', total_to_download, ') ', sep='', end='')
                 print('[', actvty['activityId'], ']', sep='')
+
             else:
                 # Display which entry we're working on.
                 print('Garmin Connect activity ', end='')
@@ -1037,6 +1053,11 @@ def main(argv):
                 export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc,
                                  actvty['startTimeLocal'])
 
+                # Regardless if file was written or already exists
+                write_last_activity_index(args.directory,
+                                          int(json_results['userMetrics'][0]['totalActivities']) -
+                                          total_to_download + current_index,
+                                          args.format)
             current_index += 1
         # End for loop for activities of chunk
         total_downloaded += num_to_download
@@ -1050,6 +1071,42 @@ def main(argv):
         call([args.external, "--" + args.args, csv_filename])
 
     print('Done!')
+
+
+def write_last_activity_index(settings_dir, activity_index, format):
+    """
+    Persists the index of the last exported activity for the given export format
+    (see also method read_settings())
+    :param settings_dir: Path to the pickle file
+    :param activity_index: Positive integer
+    :param format: Value of args.format
+    """
+    settings = read_settings(settings_dir)
+    settings['activity_indices'][format] = activity_index
+
+    file_name = os.path.join(settings_dir, ".settings")
+
+    with open(file_name, "wb") as f:
+        pickle.dump(settings, f)
+
+
+def read_settings(settings_dir):
+    """
+    Reads the stored settings from the given download dir
+    Expected pickle format is for instance {activity_indices={tcx=10, gpx=42, json=2, original=0}}
+    :param settings_dir: Path to the settings file
+    :return: dictionary with one key 'activity_indices', which is a dictionary of integer values for keys tcx, gpx,
+    json and original. If settings are not found an initialized dictionary will be returned:
+    dict(activity_indices=(tcx=0, gps=0, json=0, original=0))
+    """
+    file_name = os.path.join(settings_dir, ".settings")
+
+    try:
+        with open(file_name, "rb") as f:
+            pick = pickle.load(f)
+            return pick
+    except IOError:
+        return dict(activity_indices=dict(tcx=0, gpx=0, json=0, original=0))
 
 
 if __name__ == "__main__":
