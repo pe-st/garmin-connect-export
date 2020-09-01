@@ -450,7 +450,7 @@ def parse_arguments(argv):
     parser.add_argument('--password',
         help='your Garmin Connect password (otherwise, you will be prompted)')
     parser.add_argument('-c', '--count', default='1',
-        help='number of recent activities to download, or \'all\' or \'new\' (default: 1)'
+        help="number of recent activities to download, or 'all' or 'new' (default: 1). "
                         "'new' or 'number' downloads the latest activities by activity's date/time")
     parser.add_argument('-e', '--external',
         help='path to external program to pass CSV file too')
@@ -474,7 +474,7 @@ def parse_arguments(argv):
     parser.add_argument('-fp', '--fileprefix', action='count', default=0,
         help="set the local time as activity file name prefix")
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
-        help="set index to skip the newest activities. E.g. 3 will not download the last 2 ones")
+        help="set index for the newest activity to download, starting with '1'. E.g. 3 will not download the last 2 ones")
 
     return parser.parse_args(argv[1:])
 
@@ -960,7 +960,7 @@ def main(argv):
         if len(activities) != num_to_download:
             logging.warning('Expected %s activities, got %s.', num_to_download, len(activities))
 
-        # Process each activity; start with the oldest one. Running from oldest to newest is necessary to save the
+        # Processing each activity; starting with the oldest one. Running from oldest to newest is necessary to save the
         # oldest successful downloaded activity. Doing it so, 'count new' has a starting point to fetch the latest ones
         # at the next time.
         for actvty in activities[::-1]:
