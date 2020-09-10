@@ -4,6 +4,7 @@ Tests for gcexport.py; Call them with this command line:
 
 py.test gcexport_test.py
 """
+import shutil
 
 from gcexport import *
 try:
@@ -126,3 +127,37 @@ def test_resolve_path():
     assert resolve_path('root', 'sub/{yyyy}', '2018-03-08 12:23:22') == 'root/sub/{yyyy}'
     assert resolve_path('root', 'sub/{YYYYMM}', '2018-03-08 12:23:22') == 'root/sub/{YYYYMM}'
     assert resolve_path('root', 'sub/all', '2018-03-08 12:23:22') == 'root/sub/all'
+
+
+def test_read_settings():
+    test_dir = ".unittestdir"
+
+    # Setup
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+
+    os.mkdir(test_dir)
+
+    #  Test initial state
+    act_pickle = read_settings(test_dir)
+    exp_pickle = dict(activity_indices=dict(gpx=0, json=0, original=0,tcx=0))
+
+    assert act_pickle == exp_pickle
+
+    # Test updates
+    write_last_activity_index(test_dir, 1, 'gpx')
+    write_last_activity_index(test_dir, 22, 'json')
+    write_last_activity_index(test_dir, 333, 'original')
+    write_last_activity_index(test_dir, 4444, 'tcx')
+
+    act_pickle = read_settings(test_dir)
+
+    exp_pickle['activity_indices']['gpx'] = 1
+    exp_pickle['activity_indices']['json'] = 22
+    exp_pickle['activity_indices']['original'] = 333
+    exp_pickle['activity_indices']['tcx'] = 4444
+
+    assert act_pickle == exp_pickle
+
+    # Tear down
+    shutil.rmtree(test_dir)
