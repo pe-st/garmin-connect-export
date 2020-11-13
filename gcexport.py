@@ -160,8 +160,7 @@ URL_GC_ORIGINAL_ACTIVITY = 'http://connect.garmin.com/proxy/download-service/fil
 
 
 #USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.10136'
-USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2816.0 Safari/537.36')
-
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2816.0 Safari/537.36'
 def resolve_path(directory, subdir, time):
     """
     Replace time variables and returns changed path. Supported place holders are {YYYY} and {MM}
@@ -760,7 +759,8 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     elif args.format == 'original':
         data_filename = directory + sep + prefix + 'activity_' + activity_id + append_desc + '.zip'
         # TODO not all 'original' files are in FIT format, some are GPX or TCX...
-        fit_filename = directory + sep + prefix + 'activity_' + activity_id + append_desc + '.fit'
+        fit_filename = directory + sep + prefix + 'activity_' + activity_id + '_ACTIVITY' + append_desc + '.fit'
+        logging.debug('fitfilename: %s', fit_filename)
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
     elif args.format == 'json':
