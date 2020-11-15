@@ -3,6 +3,11 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 3.0.2 - 2020-11-15
+
+- fixed: unzipped filename was changed by Garmin, breaking redownload check (issue #48)
+
+
 ## 3.0.1 - 2020-05-23
 
 - fixed: `--subdir` was broken in 3.0.0 by the migration to Python 3 (reported by @jamorris, issue #37)
