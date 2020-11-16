@@ -41,6 +41,7 @@ import string
 import sys
 import unicodedata
 import zipfile
+import shutil
 
 python3 = sys.version_info.major == 3
 if python3:
@@ -245,12 +246,20 @@ def http_req(url, post=None, headers=None):
     start_time = timer()
     try:
         response = OPENER.open(request, data=post)
+    except HTTPError as ex:
+        if ex.code == 429:
+            print('\ntoo many requests, try again later')
+            sys.exit(1)
     except URLError as ex:
         if hasattr(ex, 'reason'):
             logging.error('Failed to reach url %s, error: %s', url, ex)
             raise
         else:
             raise
+    if not response:
+        print('\nno response, try again later')
+        sys.exit(1)
+    
     logging.debug('Got %s in %s s from %s', response.getcode(), timer() - start_time, url)
 
     # N.B. urllib2 will follow any 302 redirects.
@@ -472,7 +481,12 @@ def parse_arguments(argv):
         help="set the local time as activity file name prefix")
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
         help="give index for first activity to import, i.e. skipping the newest activites")
-
+    parser.add_argument('-w', '--workflowdirectory', nargs='?', default="",
+        help="if downloading activity(format: 'original' and --unzip): copy the file, given a friendly filename, to this directory (default: not copying)")
+    parser.add_argument('--wdesc', type=int, nargs='?', const=20, default=20,
+        help='append the activity\'s description to the file name of the workflow file; limit size if number is given, default 20') 
+    parser.add_argument('--wdevice', type=int, nargs='?', const=10, default=10,
+        help='append the activity\'s device-name to the file name of the workflow file; limit size if number is given, default 10')     
     return parser.parse_args(argv[1:])
 
 
@@ -701,10 +715,12 @@ def load_gear(activity_id, args):
         # logging.exception(e)
 
 
-def export_data_file(activity_id, activity_details, args, file_time, append_desc, start_time_locale):
+def export_data_file(activity_id, activity_details, args, file_time, append_desc, start_time_locale, friendly_filename):
     """
     Write the data of the activity to a file, depending on the chosen data format
     """
+    copied_files = 0
+    skipped_files = 0
     # Time dependent subdirectory for activity files, e.g. '{YYYY}
     if not args.subdir is None:
         directory = resolve_path(args.directory, args.subdir, start_time_locale)
@@ -745,13 +761,16 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     if os.path.isfile(data_filename):
         logging.debug('Data file for %s already exists', activity_id)
         print('\tData file already exists; skipping...')
-        return
+        skipped_files = 1
+        return copied_files, skipped_files
 
     # Regardless of unzip setting, don't redownload if the ZIP or FIT file exists.
     if args.format == 'original' and os.path.isfile(fit_filename):
         logging.debug('Original data file for %s already exists', activity_id)
         print('\tFIT data file already exists; skipping...')
-        return
+        skipped_files = 1
+        return copied_files, skipped_files
+
 
     if args.format != 'json':
         # Download the data file from Garmin Connect. If the download fails (e.g., due to timeout),
@@ -802,14 +821,20 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                     name_base = name_base.replace('_ACTIVITY', '')
                     new_name = os.path.join(directory, prefix + 'activity_' + name_base + append_desc + name_ext)
                     logging.debug('renaming %s to %s', unzipped_name, new_name)
-                    os.rename(unzipped_name, new_name)
+                    if len(args.workflowdirectory) and os.path.join(args.directory, name) != os.path.join(args.workflowdirectory, name):
+                        shutil.copyfile(os.path.join(args.directory, name), os.path.join(args.workflowdirectory, friendly_filename + name_ext))
+                        logging.info('copy file to: ' + args.workflowdirectory + '/' + friendly_filename)
+                        copied_files = 1
+                    shutil.move (unzipped_name, new_name)
+                    logging.info('renaming %s to %s', unzipped_name, new_name)
+                    # os.rename(unzipped_name, new_name)
                     if file_time:
                         os.utime(new_name, (file_time, file_time))
                 zip_file.close()
             else:
                 print('\tSkipping 0Kb zip file.')
             os.remove(data_filename)
-
+    return copied_files, skipped_files
 
 def setup_logging():
     """Setup logging"""
@@ -910,6 +935,9 @@ def main(argv):
     else:
         total_to_download = int(args.count)
     total_downloaded = 0
+    total_successfully_downloaded = 0
+    total_copied = 0
+    total_skipped = 0
 
     device_dict = dict()
 
@@ -1014,6 +1042,12 @@ def main(argv):
 
                 extract['device'] = extract_device(device_dict, details, start_time_seconds, args, http_req_as_string, write_to_file)
 
+                workflow_prefix = "{}-".format(actvty['startTimeLocal'])
+                if (isinstance(workflow_prefix,bytes)):
+                    workflow_prefix = workflow_prefix.decode('utf8')
+                workflow_prefix = "{}-".format(actvty['startTimeLocal'].replace("-", "").replace(":", "").replace(" ", "-"))
+                friendly_filename = workflow_prefix + sanitize_filename(actvty['activityName'] , args.wdesc) + '_' + sanitize_filename(extract['device'] , args.wdevice)
+
                 # try to get the JSON with all the samples (not all activities have it...),
                 # but only if it's really needed for the CSV output
                 extract['samples'] = None
@@ -1038,15 +1072,21 @@ def main(argv):
                 # Write stats to CSV.
                 csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name)
 
-                export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc,
-                                 actvty['startTimeLocal'])
-
+                copied_files, skipped_files = export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc,
+                                 actvty['startTimeLocal'], friendly_filename)
+                if skipped_files == 0: total_successfully_downloaded += 1
+                total_copied += copied_files
+                total_skipped += skipped_files
             current_index += 1
         # End for loop for activities of chunk
         total_downloaded += num_to_download
     # End while loop for multiple chunks.
 
     csv_file.close()
+    print("Total Requested.........." + str(total_to_download))
+    print("Total Downloaded........." + str(total_successfully_downloaded))
+    print("Total Copied(workflow)..." + str(total_copied))
+    print("Total Skipped............" + str(total_skipped))
 
     if args.external:
         print('Open CSV output.')
