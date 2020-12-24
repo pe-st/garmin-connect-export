@@ -88,6 +88,9 @@ optional arguments:
   -sa START_ACTIVITY_NO, --start_activity_no START_ACTIVITY_NO
                         give index for first activity to import, i.e. skipping
                         the newest activites
+  -af, --archive DIRECTORY/Filename.zip
+                        Append newly downloaded activity files to the archive
+                        .zip file.                       
 ```
 
 Examples:

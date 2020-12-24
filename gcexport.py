@@ -39,7 +39,9 @@ import os.path
 import re
 import string
 import sys
+import time
 import unicodedata
+import warnings
 import zipfile
 
 python3 = sys.version_info.major == 3
@@ -472,6 +474,8 @@ def parse_arguments(argv):
         help="set the local time as activity file name prefix")
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
         help="give index for first activity to import, i.e. skipping the newest activites")
+    parser.add_argument('-af', '--archive', nargs="?", default=activities_directory,
+        help="the fully qualified zip archive location")
 
     return parser.parse_args(argv[1:])
 
@@ -843,6 +847,32 @@ def logging_verbosity(verbosity):
             logging.debug('New console log level: %s', logging.getLevelName(level))
 
 
+def zipfilesindir(dst, src):
+    """
+    :param dst: full path with filename where the archive will be created
+    :param src: ARGS.directory - we will zip whatever is left in the directory
+    :return:
+    """
+    logging.debug("In zipfilesindir, preparing to archive all file in " + src)
+    # sleep to allow system to finish processing file. We don't want an inuse or not found error
+    time.sleep(3)
+    dirpart = os.path.dirname(dst)
+    if not os.path.isdir(dirpart):
+        os.mkdir(dirpart)
+        logging.debug("Archive directory " + dirpart + "created")
+    # fname = os.path.basename(dst)
+    zf = zipfile.ZipFile(dst, "a")
+    abs_src = os.path.abspath(src)
+    for dirname, subdirs, files in os.walk(src):
+        for filename in files:
+            absname = os.path.abspath(os.path.join(dirname, filename))
+            arcname = absname[len(abs_src) + 1:]
+            logging.debug("zipping " + os.path.join(dirname, filename) + " as " + arcname)
+            zf.write(absname, arcname)
+    zf.close()
+    logging.info("Archive created: " + dst)
+
+
 def main(argv):
     """
     Main entry point for gcexport.py
@@ -1002,7 +1032,7 @@ def main(argv):
                 else:
                     print('0.000 km')
 
-                if args.desc != None:
+                if args.desc is not None:
                     append_desc = '_' + sanitize_filename(actvty['activityName'], args.desc)
                 else:
                     append_desc = ''
@@ -1052,6 +1082,16 @@ def main(argv):
         print('Open CSV output.')
         print(csv_filename)
         call([args.external, "--" + args.args, csv_filename])
+
+    # archive the downloaded files
+    if args.archive:
+        warnings.filterwarnings("ignore")
+        print("archiving the downloaded files to: " + args.archive)
+        if args.subdir:
+            zipfilesindir(args.archive, args.subdir)
+        else:
+            zipfilesindir(args.archive, args.directory)
+        warnings.filterwarnings("default")
 
     print('Done!')
 
