@@ -39,6 +39,7 @@ import os.path
 import re
 import string
 import sys
+import shutil
 import time
 import unicodedata
 import warnings
@@ -480,7 +481,7 @@ def parse_arguments(argv):
         help="set the local time as activity file name prefix")
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
         help="give index for first activity to import, i.e. skipping the newest activites")
-    parser.add_argument('-af', '--archive', nargs="?", default=activities_directory,
+    parser.add_argument('-af', '--archive', nargs="?", default=None,
         help="the fully qualified zip archive location")
 
     return parser.parse_args(argv[1:])
@@ -859,28 +860,50 @@ def zipfilesindir(dst, src):
     :param src: ARGS.directory - we will zip whatever is left in the directory
     :return:
 
-    Let's unzip the archive file first, if it exists,  into a temp temp area. This
-    is done to prevent duplicate file when re re-zip.
+    Let's unzip the archive file first, if it exists,  into a temp area. Now copy
+    the downloaded files into the temp area. This will allow for changed activities to
+    replace the older copy. Then we rebuild the archive. This is done to prevent duplicate
+    file when we re-zip.
 
     """
+    # data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.zip')
     logging.debug("In zipfilesindir, preparing to archive all file in " + src)
     # sleep to allow system to finish processing file. We don't want an inuse or not found error
     time.sleep(3)
     dirpart = os.path.dirname(dst)
+    temparch = dirpart + "/temparch"
+    if os.path.isdir(temparch):
+        shutil.rmtree(temparch)
+        logging.debug("Deleting a left over Temporary Archive directory " + temparch)
+    if os.path.exists(dst):
+        with zipfile.ZipFile(dst, 'r') as zipObj:
+            # Extract all the contents of zip file into temparch
+            zipObj.extractall(path=temparch)
+    copytree(src, temparch)
     if not os.path.isdir(dirpart):
         os.mkdir(dirpart)
         logging.debug("Archive directory " + dirpart + "created")
-    # fname = os.path.basename(dst)
-    zf = zipfile.ZipFile(dst, "a")
-    abs_src = os.path.abspath(src)
-    for dirname, subdirs, files in os.walk(src):
+    zf = zipfile.ZipFile(dst, "w")
+    abs_src = os.path.abspath(temparch)
+    for dirname, subdirs, files in os.walk(temparch):
         for filename in files:
             absname = os.path.abspath(os.path.join(dirname, filename))
             arcname = absname[len(abs_src) + 1:]
             logging.debug("zipping " + os.path.join(dirname, filename) + " as " + arcname)
             zf.write(absname, arcname)
     zf.close()
+    shutil.rmtree(temparch)
     logging.info("Archive created: " + dst)
+
+
+def copytree(src, dst, symlinks=False, ignore=None):
+    for item in os.listdir(src):
+        s = os.path.join(src, item)
+        d = os.path.join(dst, item)
+        if os.path.isdir(s):
+            shutil.copytree(s, d, symlinks, ignore)
+        else:
+            shutil.copy2(s, d)
 
 
 def main(argv):
@@ -1100,13 +1123,13 @@ def main(argv):
 
     # archive the downloaded files
     if args.archive:
-        warnings.filterwarnings("ignore")
+        # warnings.filterwarnings("ignore")
         print("archiving the downloaded files to: " + args.archive)
         if args.subdir:
             zipfilesindir(args.archive, args.subdir)
         else:
             zipfilesindir(args.archive, args.directory)
-        warnings.filterwarnings("default")
+        # warnings.filterwarnings("default")
 
     print('Done!')
 
