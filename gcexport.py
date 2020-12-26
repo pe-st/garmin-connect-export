@@ -153,6 +153,7 @@ URL_GC_GPX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/
 URL_GC_TCX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
 URL_GC_ORIGINAL_ACTIVITY = 'http://connect.garmin.com/proxy/download-service/files/activity/'
 
+NOTEXIST = 0
 
 def resolve_path(directory, subdir, time):
     """
@@ -248,6 +249,11 @@ def http_req(url, post=None, headers=None):
     try:
         response = OPENER.open(request, data=post)
     except URLError as ex:
+        if ex.code == 404:
+            logging.error('Activity does not exist %s, error: %s', url, ex)
+            global NOTEXIST;
+            NOTEXIST = 1
+            return b''
         if hasattr(ex, 'reason'):
             logging.error('Failed to reach url %s, error: %s', url, ex)
             raise
@@ -852,6 +858,10 @@ def zipfilesindir(dst, src):
     :param dst: full path with filename where the archive will be created
     :param src: ARGS.directory - we will zip whatever is left in the directory
     :return:
+
+    Let's unzip the archive file first, if it exists,  into a temp temp area. This
+    is done to prevent duplicate file when re re-zip.
+
     """
     logging.debug("In zipfilesindir, preparing to archive all file in " + src)
     # sleep to allow system to finish processing file. We don't want an inuse or not found error
@@ -1007,6 +1017,10 @@ def main(argv):
                 tries = MAX_TRIES
                 while tries > 0:
                     activity_details = http_req_as_string(URL_GC_ACTIVITY + str(actvty['activityId']))
+                    global NOTEXIST;
+                    if NOTEXIST == 1:
+                        tries = 0
+                        continue
                     details = json.loads(activity_details)
                     # I observed a failure to get a complete JSON detail in about 5-10 calls out of 1000
                     # retrying then statistically gets a better JSON ;-)
@@ -1017,7 +1031,8 @@ def main(argv):
                         tries -= 1
                         if tries == 0:
                             raise Exception('Didn\'t get "summaryDTO" after ' + str(MAX_TRIES) + ' tries for ' + str(actvty['activityId']))
-
+                if NOTEXIST == 1:
+                    continue
                 extract = {}
                 extract['start_time_with_offset'] = offset_date_time(actvty['startTimeLocal'], actvty['startTimeGMT'])
                 elapsed_duration = details['summaryDTO']['elapsedDuration'] if 'summaryDTO' in details and 'elapsedDuration' in details['summaryDTO'] else None
