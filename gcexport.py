@@ -100,6 +100,8 @@ LIMIT_MAXIMUM = 1000
 
 MAX_TRIES = 3
 
+NOTEXIST = 0
+
 CSV_TEMPLATE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "csv_header_default.properties")
 
 WEBHOST = "https://connect.garmin.com"
@@ -154,7 +156,6 @@ URL_GC_GPX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/
 URL_GC_TCX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
 URL_GC_ORIGINAL_ACTIVITY = 'http://connect.garmin.com/proxy/download-service/files/activity/'
 
-NOTEXIST = 0
 
 def resolve_path(directory, subdir, time):
     """
@@ -871,18 +872,27 @@ def zipfilesindir(dst, src):
     # sleep to allow system to finish processing file. We don't want an inuse or not found error
     time.sleep(3)
     dirpart = os.path.dirname(dst)
-    temparch = dirpart + "/temparch"
+    temparch = dirpart + "\\temparch"
+    # if we find an orphaned temparch delete it
     if os.path.isdir(temparch):
         shutil.rmtree(temparch)
         logging.debug("Deleting a left over Temporary Archive directory " + temparch)
+    # If the archive file already exists extract everything into temparch
     if os.path.exists(dst):
         with zipfile.ZipFile(dst, 'r') as zipObj:
             # Extract all the contents of zip file into temparch
             zipObj.extractall(path=temparch)
+    # if the archive did not exist temparch was not created, create it now because copytree needs an existing directory
+    if not os.path.isdir(temparch):
+        os.mkdir(temparch)
+        logging.debug("Directory " + dirpart + " created")
+    # copy newly downloaded activities over the archive extracted files to replace any changed activities
     copytree(src, temparch)
+    # If the archive directory does not exist create it
     if not os.path.isdir(dirpart):
         os.mkdir(dirpart)
         logging.debug("Archive directory " + dirpart + "created")
+    # now archive all the files and create a new archive will old and new activities
     zf = zipfile.ZipFile(dst, "w")
     abs_src = os.path.abspath(temparch)
     for dirname, subdirs, files in os.walk(temparch):
@@ -897,6 +907,9 @@ def zipfilesindir(dst, src):
 
 
 def copytree(src, dst, symlinks=False, ignore=None):
+    """
+    Copy all files in the source directory into an existing directory
+    """
     for item in os.listdir(src):
         s = os.path.join(src, item)
         d = os.path.join(dst, item)
@@ -910,6 +923,7 @@ def main(argv):
     """
     Main entry point for gcexport.py
     """
+    global NOTEXIST;
     setup_logging()
     logging.info("Starting %s version %s, using Python version %s", argv[0], SCRIPT_VERSION, python_version())
     args = parse_arguments(argv)
@@ -1018,6 +1032,7 @@ def main(argv):
 
         # Process each activity.
         for actvty in activities:
+            NOTEXIST = 0
             if args.start_activity_no and current_index < args.start_activity_no:
                 pass
                 # Display which entry we're skipping.
@@ -1040,9 +1055,10 @@ def main(argv):
                 tries = MAX_TRIES
                 while tries > 0:
                     activity_details = http_req_as_string(URL_GC_ACTIVITY + str(actvty['activityId']))
-                    global NOTEXIST;
+
                     if NOTEXIST == 1:
                         tries = 0
+                        current_index += 1
                         continue
                     details = json.loads(activity_details)
                     # I observed a failure to get a complete JSON detail in about 5-10 calls out of 1000
