@@ -171,6 +171,7 @@ Contributors as of 2021-02 (Hope I didn't forget anyone):
 - Josef K @jkall
 - Thomas Th @telemaxx
 - Bart Skowron @bxsx
+- @reto
 
 License
 -------
