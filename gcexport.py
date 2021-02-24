@@ -231,6 +231,7 @@ def http_req(url, post=None, headers=None):
     # Tell Garmin we're some supported browser.
     request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, \
         like Gecko) Chrome/54.0.2816.0 Safari/537.36')
+    request.add_header('nk', 'NT')  # necessary since 2021-02-23 to avoid http error code 402
     if headers:
         if python3:
             for header_key, header_value in headers.items():
