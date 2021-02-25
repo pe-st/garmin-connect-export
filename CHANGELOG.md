@@ -3,6 +3,13 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 3.0.3 - 2021-02-24
+
+- fixed: `HTTP Error 402: Payment Required` (started appearing 2021-02-23)
+  ([Pull Request](https://github.com/pe-st/garmin-connect-export/pull/55) by @reto)
+- changed: [detached from kjkjava's repo](https://github.com/pe-st/garmin-connect-export/issues/53)
+
+  
 ## 3.0.2 - 2020-11-15
 
 - fixed: unzipped filename was changed by Garmin, breaking redownload check (issue #48)
