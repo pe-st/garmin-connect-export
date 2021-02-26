@@ -41,6 +41,7 @@ import string
 import sys
 import unicodedata
 import zipfile
+import configparser
 
 python3 = sys.version_info.major == 3
 if python3:
@@ -98,6 +99,8 @@ LIMIT_MAXIMUM = 1000
 MAX_TRIES = 3
 
 CSV_TEMPLATE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "csv_header_default.properties")
+LAST_INSTANCE_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "last_activity.ini")
+
 
 WEBHOST = "https://connect.garmin.com"
 REDIRECT = "https://connect.garmin.com/modern/"
@@ -473,6 +476,8 @@ def parse_arguments(argv):
         help="set the local time as activity file name prefix")
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
         help="give index for first activity to import, i.e. skipping the newest activites")
+    parser.add_argument('-n', '--new', action='store_true',
+        help="This argument overrules the count parameter it will use the last_activity.ini to determine how many activities to download.")
 
     return parser.parse_args(argv[1:])
 
@@ -844,6 +849,34 @@ def logging_verbosity(verbosity):
             logging.debug('New console log level: %s', logging.getLevelName(level))
 
 
+def read_last_downloaded_activity_index(file):
+    ret_value = 0
+    if os.path.exists(file):
+        config = configparser.ConfigParser()
+        config.read(file)
+        if 'LAST_INDEX' in config.sections():
+            if 'last-downloaded-activity-index' in config['LAST_INDEX']:
+                ret_value = int(config['LAST_INDEX']['last-downloaded-activity-index'])
+            else:
+                logging.error('last-downloaded-activity-index property not found in file: %s', str(file))
+        else:
+            logging.error('Incorrect section in last instance ini file:%s', str(file))
+    else:
+        logging.info("Last activity ini file not found " + str(file))
+
+    if ret_value == 0:
+        print("Continue to download all activities and creating ini file for next run...")
+    return ret_value
+
+
+def write_last_downloaded_activity_index(file, last_index):
+    config = configparser.ConfigParser()
+    config['LAST_INDEX'] = {'last-downloaded-activity-index': str(last_index)}
+    with open(file, 'w') as configfile:
+        config.write(configfile)
+        print("Write last downloaded activity index (" + str(last_index) + ") in: " + str(file))
+
+
 def main(argv):
     """
     Main entry point for gcexport.py
@@ -880,7 +913,7 @@ def main(argv):
     if not csv_existed:
         csv_filter.write_header()
 
-    if args.count == 'all':
+    if args.count == 'all' or args.new:
         # If the user wants to download all activities, query the userstats
         # on the profile page to know how many are available
         print('Getting display name...', end='')
@@ -907,7 +940,9 @@ def main(argv):
 
         # Modify total_to_download based on how many activities the server reports.
         json_results = json.loads(result)
-        total_to_download = int(json_results['userMetrics'][0]['totalActivities'])
+        total_to_download = last_activity_index = int(json_results['userMetrics'][0]['totalActivities'])
+        if args.new:
+            total_to_download = last_activity_index - read_last_downloaded_activity_index(LAST_INSTANCE_FILE)
     else:
         total_to_download = int(args.count)
     total_downloaded = 0
@@ -1046,6 +1081,9 @@ def main(argv):
         # End for loop for activities of chunk
         total_downloaded += num_to_download
     # End while loop for multiple chunks.
+
+    if args.new:
+        write_last_downloaded_activity_index(LAST_INSTANCE_FILE, last_activity_index)
 
     csv_file.close()
 

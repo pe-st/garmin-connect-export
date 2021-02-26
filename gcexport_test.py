@@ -4,6 +4,7 @@ Tests for gcexport.py; Call them with this command line:
 
 py.test gcexport_test.py
 """
+from unittest import TestCase
 
 from gcexport import *
 try:
@@ -51,7 +52,7 @@ def test_sanitize_filename():
     assert '' == sanitize_filename(u'')
     assert '' == sanitize_filename(None)
 
-    with open('json/activity_emoji.json') as json_data:
+    with open('test_files/json/activity_emoji.json') as json_data:
         details = json.load(json_data)
     assert 'Biel__Pavillon' == sanitize_filename(details['activityName'])
 
@@ -67,14 +68,14 @@ def test_load_properties_keys():
 
 
 def test_csv_write_record():
-    with open('json/activitylist-service.json') as json_data_1:
+    with open('test_files/json/activitylist-service.json') as json_data_1:
         activities = json.load(json_data_1)
-    with open('json/activity_emoji.json') as json_data_2:
+    with open('test_files/json/activity_emoji.json') as json_data_2:
         details = json.load(json_data_2)
-    with open('json/activity_types.properties', 'r') as prop_1:
+    with open('test_files/json/activity_types.properties', 'r') as prop_1:
         activity_type_props = prop_1.read()
     activity_type_name = load_properties(activity_type_props)
-    with open('json/event_types.properties', 'r') as prop_2:
+    with open('test_files/json/event_types.properties', 'r') as prop_2:
         event_type_props = prop_2.read()
     event_type_name = load_properties(event_type_props)
 
@@ -99,22 +100,22 @@ def write_to_file_mock(filename, content, mode, file_time=None):
 
 
 def http_req_mock(url, post=None, headers=None):
-    with open('json/device_856399.json') as json_device:
+    with open('test_files/json/device_856399.json') as json_device:
         return json_device.read()
 
 
 def test_extract_device():
     args = parse_arguments([])
 
-    with open('json/activity_2541953812.json') as json_detail:
+    with open('test_files/json/activity_2541953812.json') as json_detail:
         details = json.load(json_detail)
     assert u'fēnix 5 10.0.0.0' == extract_device({}, details, None, args, http_req_mock, write_to_file_mock)
 
-    with open('json/activity_154105348_gpx_device_null.json') as json_detail:
+    with open('test_files/json/activity_154105348_gpx_device_null.json') as json_detail:
         details = json.load(json_detail)
     assert None == extract_device({}, details, None, args, http_req_mock, write_to_file_mock)
 
-    with open('json/activity_995784118_gpx_device_0.json') as json_detail:
+    with open('test_files/json/activity_995784118_gpx_device_0.json') as json_detail:
         details = json.load(json_detail)
     assert None == extract_device({}, details, None, args, http_req_mock, write_to_file_mock)
 
@@ -126,3 +127,25 @@ def test_resolve_path():
     assert resolve_path('root', 'sub/{yyyy}', '2018-03-08 12:23:22') == 'root/sub/{yyyy}'
     assert resolve_path('root', 'sub/{YYYYMM}', '2018-03-08 12:23:22') == 'root/sub/{YYYYMM}'
     assert resolve_path('root', 'sub/all', '2018-03-08 12:23:22') == 'root/sub/all'
+
+
+class Test(TestCase):
+    def test_read_write_last_downloaded_activity_index(self):
+        input_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_files", "ini", "last_activity.ini")
+        output_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_files", "ini", "last_activity_out.ini")
+        assert read_last_downloaded_activity_index(input_file) == 400
+
+        write_last_downloaded_activity_index(output_file, 3)
+        assert read_last_downloaded_activity_index(output_file) == 3
+
+    def test_read_ini_file_not_found(self):
+        input_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_files", "ini", "file_not_found.ini")
+        assert read_last_downloaded_activity_index(input_file) == 0
+
+    def test_read_ini_wrong_section(self):
+        input_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_files", "ini", "last_activity_wrong_section.ini")
+        assert read_last_downloaded_activity_index(input_file) == 0
+
+    def test_read_ini_wrong_property(self):
+        input_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_files", "ini", "last_activity_wrong_property.ini")
+        assert read_last_downloaded_activity_index(input_file) == 0
