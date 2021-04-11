@@ -11,8 +11,10 @@ Before going into the details of this script itself, some meta information.
 
 There exist many [forks](https://help.github.com/articles/fork-a-repo/) of this script repository:
 
-- [pe-st]()
-  This is my (**pe-st**) repository, the one you're looking at (or the source of the copy you're looking at)
+- [pe-st](https://github.com/pe-st/garmin-connect-export)
+  This is my (**pe-st**) repository, the one you're looking at (or the source of the copy you're looking at).
+  It was [detached from **kjkjava**'s repo](https://github.com/pe-st/garmin-connect-export/issues/53)
+  (see below) in February 2021, after more than 5 years of inactivity of the upstream repo.
 - [kjkjava](https://github.com/kjkjava/garmin-connect-export)
   The original repo (mother repo) of my (**pe-st**) repo. It seems not maintained anymore (last commit in 2015, see also: [pr#42](https://github.com/kjkjava/garmin-connect-export/pull/42) and [issues#46](https://github.com/kjkjava/garmin-connect-export/issues/46))
 - [moderation](https://github.com/moderation/garmin-connect-export)
@@ -149,7 +151,7 @@ Contributions
 -------------
 Contributions are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md)
 
-Contributors as of 2020-04 (Hope I didn't forget anyone):
+Contributors as of 2021-02 (Hope I didn't forget anyone):
 
 - Kyle Krafka @kjkjava
 - Jochem Wichers Hoeth @jowiho
@@ -168,7 +170,8 @@ Contributors as of 2020-04 (Hope I didn't forget anyone):
 - Christian Schulzendorff @chs8691
 - Josef K @jkall
 - Thomas Th @telemaxx
-- Bart Skowron @bartskowron
+- Bart Skowron @bxsx
+- @reto
 
 License
 -------

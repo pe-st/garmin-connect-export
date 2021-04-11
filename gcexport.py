@@ -61,7 +61,7 @@ else:
     COOKIE_JAR = cookielib.CookieJar()
     OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR), urllib2.HTTPSHandler(debuglevel=0))
 
-SCRIPT_VERSION = '3.0.1'
+SCRIPT_VERSION = '3.0.3'
 
 # this is almost the datetime format Garmin used in the activity-search-service
 # JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
@@ -231,6 +231,7 @@ def http_req(url, post=None, headers=None):
     # Tell Garmin we're some supported browser.
     request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, \
         like Gecko) Chrome/54.0.2816.0 Safari/537.36')
+    request.add_header('nk', 'NT')  # necessary since 2021-02-23 to avoid http error code 402
     if headers:
         if python3:
             for header_key, header_value in headers.items():
@@ -796,6 +797,10 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                     unzipped_name = zip_obj.extract(name, directory)
                     # prepend 'activity_' and append the description to the base name
                     name_base, name_ext = os.path.splitext(name)
+                    # sometimes in 2020 Garmin added '_ACTIVITY' to the name in the ZIP. Remove it...
+                    # note that 'new_name' should match 'fit_filename' elsewhere in this script to
+                    # avoid downloading the same files again
+                    name_base = name_base.replace('_ACTIVITY', '')
                     new_name = os.path.join(directory, prefix + 'activity_' + name_base + append_desc + name_ext)
                     logging.debug('renaming %s to %s', unzipped_name, new_name)
                     os.rename(unzipped_name, new_name)
@@ -881,7 +886,7 @@ def main(argv):
         print('Getting display name...', end='')
         logging.info('Profile page %s', URL_GC_PROFILE)
         profile_page = http_req_as_string(URL_GC_PROFILE)
-        # write_to_file(args.directory + '/profile.html', profile_page, 'a')
+        # write_to_file(args.directory + '/profile.html', profile_page, 'w')
 
         # extract the display name from the profile page, it should be in there as
         # \"displayName\":\"John.Doe\"
@@ -911,10 +916,10 @@ def main(argv):
 
     # load some dictionaries with lookup data from REST services
     activity_type_props = http_req_as_string(URL_GC_ACT_PROPS)
-    # write_to_file(args.directory + '/activity_types.properties', activity_type_props, 'a')
+    # write_to_file(args.directory + '/activity_types.properties', activity_type_props, 'w')
     activity_type_name = load_properties(activity_type_props)
     event_type_props = http_req_as_string(URL_GC_EVT_PROPS)
-    # write_to_file(args.directory + '/event_types.properties', event_type_props, 'a')
+    # write_to_file(args.directory + '/event_types.properties', event_type_props, 'w')
     event_type_name = load_properties(event_type_props)
 
     # This while loop will download data from the server in multiple chunks, if necessary.
