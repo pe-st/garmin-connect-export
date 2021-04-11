@@ -41,7 +41,6 @@ import string
 import sys
 import unicodedata
 import zipfile
-
 from filtering import update_download_stats, read_exclude
 
 python3 = sys.version_info.major == 3
@@ -55,7 +54,8 @@ if python3:
     from urllib.request import Request, HTTPError, URLError
 
     COOKIE_JAR = http.cookiejar.CookieJar()
-    OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
+    OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR),
+                                         urllib.request.HTTPSHandler(debuglevel=0))
 else:
     import cookielib
     import urllib2
@@ -447,54 +447,37 @@ def parse_arguments(argv):
 
     parser.add_argument('--version', action='version', version='%(prog)s ' + SCRIPT_VERSION,
                         help='print version and exit')
-
     parser.add_argument('-v', '--verbosity', action='count', default=0,
                         help='increase output verbosity')
-
     parser.add_argument('--username',
                         help='your Garmin Connect username or email address (otherwise, you will be prompted)')
-
     parser.add_argument('--password',
                         help='your Garmin Connect password (otherwise, you will be prompted)')
-
     parser.add_argument('-c', '--count', default='1',
                         help='number of recent activities to download, or \'all\' (default: 1)')
-
     parser.add_argument('-e', '--external',
                         help='path to external program to pass CSV file too')
-
     parser.add_argument('-a', '--args',
                         help='additional arguments to pass to external program')
-
     parser.add_argument('-f', '--format', choices=['gpx', 'tcx', 'original', 'json'], default='gpx',
                         help="export format; can be 'gpx', 'tcx', 'original' or 'json' (default: 'gpx')")
-
     parser.add_argument('-d', '--directory', default=activities_directory,
                         help='the directory to export to (default: \'./YYYY-MM-DD_garmin_connect_export\')')
-
     parser.add_argument('-s', "--subdir",
-                        help="the subdirectory for activity files (tcx, gpx etc.), supported placeholders are {YYYY} "
-                             "and {MM} (default: export directory)")
-
+                        help="the subdirectory for activity files (tcx, gpx etc.), supported placeholders are {YYYY} and {MM}"
+                             " (default: export directory)")
     parser.add_argument('-u', '--unzip', action='store_true',
                         help='if downloading ZIP files (format: \'original\'), unzip the file and remove the ZIP file')
-
     parser.add_argument('-ot', '--originaltime', action='store_true',
                         help='will set downloaded (and possibly unzipped) file time to the activity start time')
-
     parser.add_argument('--desc', type=int, nargs='?', const=0, default=None,
-                        help='append the activity\'s description to the file name of the download; limit size if '
-                             'number is given')
-
+                        help='append the activity\'s description to the file name of the download; limit size if number is given')
     parser.add_argument('-t', '--template', default=CSV_TEMPLATE,
                         help='template file with desired columns for CSV output')
-
     parser.add_argument('-fp', '--fileprefix', action='count', default=0,
                         help="set the local time as activity file name prefix")
-
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
-                        help="give index for first activity to import, i.e. skipping the newest activities. "
-                             "Default is '1'.")
+                        help="give index for first activity to import, i.e. skipping the newest activites. Default is '1'.")
 
     parser.add_argument('-ex', '--exclude', metavar="FILE",
                         help="Json file with Array of activity IDs to exclude from download. "
