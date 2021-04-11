@@ -41,7 +41,6 @@ import string
 import sys
 import unicodedata
 import zipfile
-
 from filtering import update_download_stats, read_exclude
 
 python3 = sys.version_info.major == 3
@@ -55,8 +54,7 @@ if python3:
     from urllib.request import Request, HTTPError, URLError
 
     COOKIE_JAR = http.cookiejar.CookieJar()
-    OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR),
-                                         urllib.request.HTTPSHandler(debuglevel=0))
+    OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
 else:
     import cookielib
     import urllib2
@@ -478,7 +476,7 @@ def parse_arguments(argv):
     parser.add_argument('-fp', '--fileprefix', action='count', default=0,
                         help="set the local time as activity file name prefix")
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
-                        help="give index for first activity to import, i.e. skipping the newest activites. Default is '1'.")
+                        help="give index for first activity to import, i.e. skipping the newest activities. Default is '1'.")
 
     parser.add_argument('-ex', '--exclude', metavar="FILE",
                         help="Json file with Array of activity IDs to exclude from download. "
@@ -568,160 +566,71 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('description', actvty['description'] if present('description', actvty) else None)
     csv_filter.set_column('startTimeIso', extract['start_time_with_offset'].isoformat())
     csv_filter.set_column('startTime1123', extract['start_time_with_offset'].strftime(ALMOST_RFC_1123))
-    csv_filter.set_column('startTimeMillis',
-                          str(actvty['beginTimestamp']) if present('beginTimestamp', actvty) else None)
-    csv_filter.set_column('startTimeRaw', details['summaryDTO']['startTimeLocal'] if present('startTimeLocal', details[
-        'summaryDTO']) else None)
-    csv_filter.set_column('endTimeIso',
-                          extract['end_time_with_offset'].isoformat() if extract['end_time_with_offset'] else None)
-    csv_filter.set_column('endTime1123', extract['end_time_with_offset'].strftime(ALMOST_RFC_1123) if extract[
-        'end_time_with_offset'] else None)
-    csv_filter.set_column('endTimeMillis',
-                          str(actvty['beginTimestamp'] + extract['elapsed_seconds'] * 1000) if present('beginTimestamp',
-                                                                                                       actvty) else None)
+    csv_filter.set_column('startTimeMillis', str(actvty['beginTimestamp']) if present('beginTimestamp', actvty) else None)
+    csv_filter.set_column('startTimeRaw', details['summaryDTO']['startTimeLocal'] if present('startTimeLocal', details['summaryDTO']) else None)
+    csv_filter.set_column('endTimeIso', extract['end_time_with_offset'].isoformat() if extract['end_time_with_offset'] else None)
+    csv_filter.set_column('endTime1123', extract['end_time_with_offset'].strftime(ALMOST_RFC_1123) if extract['end_time_with_offset'] else None)
+    csv_filter.set_column('endTimeMillis', str(actvty['beginTimestamp'] + extract['elapsed_seconds'] * 1000) if present('beginTimestamp', actvty) else None)
     csv_filter.set_column('durationRaw', str(round(actvty['duration'], 3)) if present('duration', actvty) else None)
-    csv_filter.set_column('duration',
-                          hhmmss_from_seconds(round(actvty['duration'])) if present('duration', actvty) else None)
-    csv_filter.set_column('elapsedDurationRaw',
-                          str(round(extract['elapsed_duration'], 3)) if extract['elapsed_duration'] else None)
-    csv_filter.set_column('elapsedDuration', hhmmss_from_seconds(round(extract['elapsed_duration'])) if extract[
-        'elapsed_duration'] else None)
-    csv_filter.set_column('movingDurationRaw',
-                          str(round(details['summaryDTO']['movingDuration'], 3)) if present('movingDuration', details[
-                              'summaryDTO']) else None)
-    csv_filter.set_column('movingDuration',
-                          hhmmss_from_seconds(round(details['summaryDTO']['movingDuration'])) if present(
-                              'movingDuration', details['summaryDTO']) else None)
-    csv_filter.set_column('distanceRaw',
-                          "{0:.5f}".format(actvty['distance'] / 1000) if present('distance', actvty) else None)
-    csv_filter.set_column('averageSpeedRaw',
-                          kmh_from_mps(details['summaryDTO']['averageSpeed']) if present('averageSpeed', details[
-                              'summaryDTO']) else None)
-    csv_filter.set_column('averageSpeedPaceRaw',
-                          trunc6(pace_or_speed_raw(type_id, parent_type_id, actvty['averageSpeed'])) if present(
-                              'averageSpeed', actvty) else None)
-    csv_filter.set_column('averageSpeedPace',
-                          pace_or_speed_formatted(type_id, parent_type_id, actvty['averageSpeed']) if present(
-                              'averageSpeed', actvty) else None)
-    csv_filter.set_column('averageMovingSpeedRaw',
-                          kmh_from_mps(details['summaryDTO']['averageMovingSpeed']) if present('averageMovingSpeed',
-                                                                                               details[
-                                                                                                   'summaryDTO']) else None)
-    csv_filter.set_column('averageMovingSpeedPaceRaw', trunc6(
-        pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['averageMovingSpeed'])) if present(
-        'averageMovingSpeed', details['summaryDTO']) else None)
-    csv_filter.set_column('averageMovingSpeedPace', pace_or_speed_formatted(type_id, parent_type_id,
-                                                                            details['summaryDTO'][
-                                                                                'averageMovingSpeed']) if present(
-        'averageMovingSpeed', details['summaryDTO']) else None)
-    csv_filter.set_column('maxSpeedRaw', kmh_from_mps(details['summaryDTO']['maxSpeed']) if present('maxSpeed', details[
-        'summaryDTO']) else None)
-    csv_filter.set_column('maxSpeedPaceRaw', trunc6(
-        pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['maxSpeed'])) if present('maxSpeed', details[
-        'summaryDTO']) else None)
-    csv_filter.set_column('maxSpeedPace', pace_or_speed_formatted(type_id, parent_type_id,
-                                                                  details['summaryDTO']['maxSpeed']) if present(
-        'maxSpeed', details['summaryDTO']) else None)
-    csv_filter.set_column('elevationLoss',
-                          str(round(details['summaryDTO']['elevationLoss'], 2)) if present('elevationLoss', details[
-                              'summaryDTO']) else None)
-    csv_filter.set_column('elevationLossUncorr', str(round(details['summaryDTO']['elevationLoss'], 2)) if not actvty[
-        'elevationCorrected'] and present('elevationLoss', details['summaryDTO']) else None)
-    csv_filter.set_column('elevationLossCorr', str(round(details['summaryDTO']['elevationLoss'], 2)) if actvty[
-                                                                                                            'elevationCorrected'] and present(
-        'elevationLoss', details['summaryDTO']) else None)
-    csv_filter.set_column('elevationGain',
-                          str(round(details['summaryDTO']['elevationGain'], 2)) if present('elevationGain', details[
-                              'summaryDTO']) else None)
-    csv_filter.set_column('elevationGainUncorr', str(round(details['summaryDTO']['elevationGain'], 2)) if not actvty[
-        'elevationCorrected'] and present('elevationGain', details['summaryDTO']) else None)
-    csv_filter.set_column('elevationGainCorr', str(round(details['summaryDTO']['elevationGain'], 2)) if actvty[
-                                                                                                            'elevationCorrected'] and present(
-        'elevationGain', details['summaryDTO']) else None)
-    csv_filter.set_column('minElevation',
-                          str(round(details['summaryDTO']['minElevation'], 2)) if present('minElevation', details[
-                              'summaryDTO']) else None)
-    csv_filter.set_column('minElevationUncorr', str(round(details['summaryDTO']['minElevation'], 2)) if not actvty[
-        'elevationCorrected'] and present('minElevation', details['summaryDTO']) else None)
-    csv_filter.set_column('minElevationCorr', str(round(details['summaryDTO']['minElevation'], 2)) if actvty[
-                                                                                                          'elevationCorrected'] and present(
-        'minElevation', details['summaryDTO']) else None)
-    csv_filter.set_column('maxElevation',
-                          str(round(details['summaryDTO']['maxElevation'], 2)) if present('maxElevation', details[
-                              'summaryDTO']) else None)
-    csv_filter.set_column('maxElevationUncorr', str(round(details['summaryDTO']['maxElevation'], 2)) if not actvty[
-        'elevationCorrected'] and present('maxElevation', details['summaryDTO']) else None)
-    csv_filter.set_column('maxElevationCorr', str(round(details['summaryDTO']['maxElevation'], 2)) if actvty[
-                                                                                                          'elevationCorrected'] and present(
-        'maxElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('duration', hhmmss_from_seconds(round(actvty['duration'])) if present('duration', actvty) else None)
+    csv_filter.set_column('elapsedDurationRaw', str(round(extract['elapsed_duration'], 3)) if extract['elapsed_duration'] else None)
+    csv_filter.set_column('elapsedDuration', hhmmss_from_seconds(round(extract['elapsed_duration'])) if extract['elapsed_duration'] else None)
+    csv_filter.set_column('movingDurationRaw', str(round(details['summaryDTO']['movingDuration'], 3)) if present('movingDuration', details['summaryDTO']) else None)
+    csv_filter.set_column('movingDuration', hhmmss_from_seconds(round(details['summaryDTO']['movingDuration'])) if present('movingDuration', details['summaryDTO']) else None)
+    csv_filter.set_column('distanceRaw', "{0:.5f}".format(actvty['distance'] / 1000) if present('distance', actvty) else None)
+    csv_filter.set_column('averageSpeedRaw', kmh_from_mps(details['summaryDTO']['averageSpeed']) if present('averageSpeed', details['summaryDTO']) else None)
+    csv_filter.set_column('averageSpeedPaceRaw', trunc6(pace_or_speed_raw(type_id, parent_type_id, actvty['averageSpeed'])) if present('averageSpeed', actvty) else None)
+    csv_filter.set_column('averageSpeedPace', pace_or_speed_formatted(type_id, parent_type_id, actvty['averageSpeed']) if present('averageSpeed', actvty) else None)
+    csv_filter.set_column('averageMovingSpeedRaw', kmh_from_mps(details['summaryDTO']['averageMovingSpeed']) if present('averageMovingSpeed', details['summaryDTO']) else None)
+    csv_filter.set_column('averageMovingSpeedPaceRaw', trunc6(pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['averageMovingSpeed'])) if present('averageMovingSpeed', details['summaryDTO']) else None)
+    csv_filter.set_column('averageMovingSpeedPace', pace_or_speed_formatted(type_id, parent_type_id, details['summaryDTO']['averageMovingSpeed']) if present('averageMovingSpeed', details['summaryDTO']) else None)
+    csv_filter.set_column('maxSpeedRaw', kmh_from_mps(details['summaryDTO']['maxSpeed']) if present('maxSpeed', details['summaryDTO']) else None)
+    csv_filter.set_column('maxSpeedPaceRaw', trunc6(pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['maxSpeed'])) if present('maxSpeed', details['summaryDTO']) else None)
+    csv_filter.set_column('maxSpeedPace', pace_or_speed_formatted(type_id, parent_type_id, details['summaryDTO']['maxSpeed']) if present('maxSpeed', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationLoss', str(round(details['summaryDTO']['elevationLoss'], 2)) if present('elevationLoss', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationLossUncorr', str(round(details['summaryDTO']['elevationLoss'], 2)) if not actvty['elevationCorrected'] and present('elevationLoss', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationLossCorr', str(round(details['summaryDTO']['elevationLoss'], 2)) if actvty['elevationCorrected'] and present('elevationLoss', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationGain', str(round(details['summaryDTO']['elevationGain'], 2)) if present('elevationGain', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationGainUncorr', str(round(details['summaryDTO']['elevationGain'], 2)) if not actvty['elevationCorrected'] and present('elevationGain', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationGainCorr', str(round(details['summaryDTO']['elevationGain'], 2)) if actvty['elevationCorrected'] and present('elevationGain', details['summaryDTO']) else None)
+    csv_filter.set_column('minElevation', str(round(details['summaryDTO']['minElevation'], 2)) if present('minElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('minElevationUncorr', str(round(details['summaryDTO']['minElevation'], 2)) if not actvty['elevationCorrected'] and present('minElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('minElevationCorr', str(round(details['summaryDTO']['minElevation'], 2)) if actvty['elevationCorrected'] and present('minElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('maxElevation', str(round(details['summaryDTO']['maxElevation'], 2)) if present('maxElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('maxElevationUncorr', str(round(details['summaryDTO']['maxElevation'], 2)) if not actvty['elevationCorrected'] and present('maxElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('maxElevationCorr', str(round(details['summaryDTO']['maxElevation'], 2)) if actvty['elevationCorrected'] and present('maxElevation', details['summaryDTO']) else None)
     csv_filter.set_column('elevationCorrected', 'true' if actvty['elevationCorrected'] else 'false')
     # csv_record += empty_record  # no minimum heart rate in JSON
-    csv_filter.set_column('maxHRRaw',
-                          str(details['summaryDTO']['maxHR']) if present('maxHR', details['summaryDTO']) else None)
+    csv_filter.set_column('maxHRRaw', str(details['summaryDTO']['maxHR']) if present('maxHR', details['summaryDTO']) else None)
     csv_filter.set_column('maxHR', "{0:.0f}".format(actvty['maxHR']) if present('maxHR', actvty) else None)
-    csv_filter.set_column('averageHRRaw', str(details['summaryDTO']['averageHR']) if present('averageHR', details[
-        'summaryDTO']) else None)
+    csv_filter.set_column('averageHRRaw', str(details['summaryDTO']['averageHR']) if present('averageHR', details['summaryDTO']) else None)
     csv_filter.set_column('averageHR', "{0:.0f}".format(actvty['averageHR']) if present('averageHR', actvty) else None)
-    csv_filter.set_column('caloriesRaw', str(details['summaryDTO']['calories']) if present('calories', details[
-        'summaryDTO']) else None)
-    csv_filter.set_column('calories', "{0:.0f}".format(details['summaryDTO']['calories']) if present('calories',
-                                                                                                     details[
-                                                                                                         'summaryDTO']) else None)
+    csv_filter.set_column('caloriesRaw', str(details['summaryDTO']['calories']) if present('calories', details['summaryDTO']) else None)
+    csv_filter.set_column('calories', "{0:.0f}".format(details['summaryDTO']['calories']) if present('calories', details['summaryDTO']) else None)
     csv_filter.set_column('vo2max', str(actvty['vO2MaxValue']) if present('vO2MaxValue', actvty) else None)
-    csv_filter.set_column('aerobicEffect',
-                          str(round(details['summaryDTO']['trainingEffect'], 2)) if present('trainingEffect', details[
-                              'summaryDTO']) else None)
-    csv_filter.set_column('anaerobicEffect', str(round(details['summaryDTO']['anaerobicTrainingEffect'], 2)) if present(
-        'anaerobicTrainingEffect', details['summaryDTO']) else None)
-    csv_filter.set_column('averageRunCadence',
-                          str(round(details['summaryDTO']['averageRunCadence'], 2)) if present('averageRunCadence',
-                                                                                               details[
-                                                                                                   'summaryDTO']) else None)
-    csv_filter.set_column('maxRunCadence', str(details['summaryDTO']['maxRunCadence']) if present('maxRunCadence',
-                                                                                                  details[
-                                                                                                      'summaryDTO']) else None)
-    csv_filter.set_column('strideLength',
-                          str(round(details['summaryDTO']['strideLength'], 2)) if present('strideLength', details[
-                              'summaryDTO']) else None)
+    csv_filter.set_column('aerobicEffect', str(round(details['summaryDTO']['trainingEffect'], 2)) if present('trainingEffect', details['summaryDTO']) else None)
+    csv_filter.set_column('anaerobicEffect', str(round(details['summaryDTO']['anaerobicTrainingEffect'], 2)) if present('anaerobicTrainingEffect', details['summaryDTO']) else None)
+    csv_filter.set_column('averageRunCadence', str(round(details['summaryDTO']['averageRunCadence'], 2)) if present('averageRunCadence', details['summaryDTO']) else None)
+    csv_filter.set_column('maxRunCadence', str(details['summaryDTO']['maxRunCadence']) if present('maxRunCadence', details['summaryDTO']) else None)
+    csv_filter.set_column('strideLength', str(round(details['summaryDTO']['strideLength'], 2)) if present('strideLength', details['summaryDTO']) else None)
     csv_filter.set_column('steps', str(actvty['steps']) if present('steps', actvty) else None)
-    csv_filter.set_column('averageCadence', str(actvty['averageBikingCadenceInRevPerMinute']) if present(
-        'averageBikingCadenceInRevPerMinute', actvty) else None)
-    csv_filter.set_column('maxCadence',
-                          str(actvty['maxBikingCadenceInRevPerMinute']) if present('maxBikingCadenceInRevPerMinute',
-                                                                                   actvty) else None)
+    csv_filter.set_column('averageCadence', str(actvty['averageBikingCadenceInRevPerMinute']) if present('averageBikingCadenceInRevPerMinute', actvty) else None)
+    csv_filter.set_column('maxCadence', str(actvty['maxBikingCadenceInRevPerMinute']) if present('maxBikingCadenceInRevPerMinute', actvty) else None)
     csv_filter.set_column('strokes', str(actvty['strokes']) if present('strokes', actvty) else None)
-    csv_filter.set_column('averageTemperature',
-                          str(details['summaryDTO']['averageTemperature']) if present('averageTemperature',
-                                                                                      details['summaryDTO']) else None)
-    csv_filter.set_column('minTemperature', str(details['summaryDTO']['minTemperature']) if present('minTemperature',
-                                                                                                    details[
-                                                                                                        'summaryDTO']) else None)
-    csv_filter.set_column('maxTemperature', str(details['summaryDTO']['maxTemperature']) if present('maxTemperature',
-                                                                                                    details[
-                                                                                                        'summaryDTO']) else None)
+    csv_filter.set_column('averageTemperature', str(details['summaryDTO']['averageTemperature']) if present('averageTemperature', details['summaryDTO']) else None)
+    csv_filter.set_column('minTemperature', str(details['summaryDTO']['minTemperature']) if present('minTemperature', details['summaryDTO']) else None)
+    csv_filter.set_column('maxTemperature', str(details['summaryDTO']['maxTemperature']) if present('maxTemperature', details['summaryDTO']) else None)
     csv_filter.set_column('device', extract['device'] if extract['device'] else None)
     csv_filter.set_column('gear', extract['gear'] if extract['gear'] else None)
-    csv_filter.set_column('activityTypeKey', actvty['activityType']['typeKey'].title() if present('typeKey', actvty[
-        'activityType']) else None)
-    csv_filter.set_column('activityType', value_if_found_else_key(activity_type_name,
-                                                                  'activity_type_' + actvty['activityType'][
-                                                                      'typeKey']) if present('activityType',
-                                                                                             actvty) else None)
-    csv_filter.set_column('activityParent', value_if_found_else_key(activity_type_name,
-                                                                    'activity_type_' + parent_type_key) if parent_type_key else None)
-    csv_filter.set_column('eventTypeKey',
-                          actvty['eventType']['typeKey'].title() if present('typeKey', actvty['eventType']) else None)
-    csv_filter.set_column('eventType',
-                          value_if_found_else_key(event_type_name, actvty['eventType']['typeKey']) if present(
-                              'eventType', actvty) else None)
-    csv_filter.set_column('privacy', details['accessControlRuleDTO']['typeKey'] if present('typeKey', details[
-        'accessControlRuleDTO']) else None)
-    csv_filter.set_column('fileFormat', details['metadataDTO']['fileFormat']['formatKey'] if present('fileFormat',
-                                                                                                     details[
-                                                                                                         'metadataDTO']) and present(
-        'formatKey', details['metadataDTO']['fileFormat']) else None)
-    csv_filter.set_column('tz', details['timeZoneUnitDTO']['timeZone'] if present('timeZone',
-                                                                                  details['timeZoneUnitDTO']) else None)
+    csv_filter.set_column('activityTypeKey', actvty['activityType']['typeKey'].title() if present('typeKey', actvty['activityType']) else None)
+    csv_filter.set_column('activityType', value_if_found_else_key(activity_type_name, 'activity_type_' + actvty['activityType']['typeKey']) if present('activityType', actvty) else None)
+    csv_filter.set_column('activityParent', value_if_found_else_key(activity_type_name, 'activity_type_' + parent_type_key) if parent_type_key else None)
+    csv_filter.set_column('eventTypeKey', actvty['eventType']['typeKey'].title() if present('typeKey', actvty['eventType']) else None)
+    csv_filter.set_column('eventType', value_if_found_else_key(event_type_name, actvty['eventType']['typeKey']) if present('eventType', actvty) else None)
+    csv_filter.set_column('privacy', details['accessControlRuleDTO']['typeKey'] if present('typeKey', details['accessControlRuleDTO']) else None)
+    csv_filter.set_column('privacy', details['accessControlRuleDTO']['typeKey'] if present('typeKey', details['accessControlRuleDTO']) else None)
+    csv_filter.set_column('fileFormat', details['metadataDTO']['fileFormat']['formatKey'] if present('fileFormat', details['metadataDTO']) and present('formatKey', details['metadataDTO']['fileFormat']) else None)
+    csv_filter.set_column('tz', details['timeZoneUnitDTO']['timeZone'] if present('timeZone', details['timeZoneUnitDTO']) else None)
     csv_filter.set_column('tzOffset', extract['start_time_with_offset'].isoformat()[-6:])
     csv_filter.set_column('locationName', details['locationName'] if present('locationName', details) else None)
     csv_filter.set_column('startLatitudeRaw', str(start_latitude) if start_latitude else None)
@@ -732,8 +641,7 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('endLatitude', trunc6(end_latitude) if end_latitude else None)
     csv_filter.set_column('endLongitudeRaw', str(end_longitude) if end_longitude else None)
     csv_filter.set_column('endLongitude', trunc6(end_longitude) if end_longitude else None)
-    csv_filter.set_column('sampleCount', str(extract['samples']['metricsCount']) if present('metricsCount', extract[
-        'samples']) else None)
+    csv_filter.set_column('sampleCount', str(extract['samples']['metricsCount']) if present('metricsCount', extract['samples']) else None)
 
     csv_filter.write_row()
 
@@ -754,8 +662,7 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
         return None
 
     metadata = details['metadataDTO']
-    device_app_inst_id = metadata['deviceApplicationInstallationId'] if present('deviceApplicationInstallationId',
-                                                                                metadata) else None
+    device_app_inst_id = metadata['deviceApplicationInstallationId'] if present('deviceApplicationInstallationId', metadata) else None
     if device_app_inst_id:
         if device_app_inst_id not in device_dict:
             # observed from my stock of activities:
