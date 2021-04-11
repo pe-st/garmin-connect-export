@@ -41,6 +41,7 @@ import string
 import sys
 import unicodedata
 import zipfile
+
 from filtering import update_download_stats, read_exclude
 
 python3 = sys.version_info.major == 3
