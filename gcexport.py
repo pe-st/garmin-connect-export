@@ -472,7 +472,7 @@ def parse_arguments(argv):
     parser.add_argument('-fp', '--fileprefix', action='count', default=0,
         help="set the local time as activity file name prefix")
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
-        help="give index for first activity to import, i.e. skipping the newest activites")
+        help="give index for first activity to import, i.e. skipping the newest activities")
 
     return parser.parse_args(argv[1:])
 
@@ -844,6 +844,68 @@ def logging_verbosity(verbosity):
             logging.debug('New console log level: %s', logging.getLevelName(level))
 
 
+def fetch_userstats(destination_dir):
+    """
+    Http request for getting user statistic like total number of activities. The json will be saved as file
+    'userstats.json'
+    :param destination_dir: Directory to save the json file
+    :return: json with user statistics
+    """
+    print('Getting display name...', end='')
+    logging.info('Profile page %s', URL_GC_PROFILE)
+    profile_page = http_req_as_string(URL_GC_PROFILE)
+    # write_to_file(args.directory + '/profile.html', profile_page, 'w')
+
+    # extract the display name from the profile page, it should be in there as
+    # \"displayName\":\"John.Doe\"
+    pattern = re.compile(r".*\\\"displayName\\\":\\\"([-.\w]+)\\\".*", re.MULTILINE | re.DOTALL)
+    match = pattern.match(profile_page)
+    if not match:
+        raise Exception('Did not find the display name in the profile page.')
+    display_name = match.group(1)
+    print(' Done. displayName=', display_name, sep='')
+
+    print('Fetching user stats...', end='')
+    logging.info('Userstats page %s', URL_GC_USERSTATS + display_name)
+    result = http_req_as_string(URL_GC_USERSTATS + display_name)
+    print(' Done.')
+
+    # Persist JSON
+    write_to_file(os.path.join(destination_dir, 'userstats.json'), result, 'w')
+
+    return json.loads(result)
+
+
+def fetch_activity_chunk(destination_dir, num_to_download, total_downloaded):
+    """
+    Fetch a chunk of activity summaries; as a side effect save them in json format.
+    :param destination_dir:   directory where the json files will be stored
+    :param num_to_download:   number of summaries to download in this chunk
+    :param total_downloaded:  number of already downloaded summaries in previous chunks
+    :return:                  List of activity summaries
+    """
+
+    search_params = {'start': total_downloaded, 'limit': num_to_download}
+    # Query Garmin Connect
+    print('Querying list of activities ', total_downloaded + 1,
+          '..', total_downloaded + num_to_download,
+          '...', sep='', end='')
+    logging.info('Activity list URL %s', URL_GC_LIST + urlencode(search_params))
+    result = http_req_as_string(URL_GC_LIST + urlencode(search_params))
+    print(' Done.')
+
+    # Persist JSON activities list
+    current_index = total_downloaded + 1
+    activities_list_filename = 'activities-' \
+                               + str(current_index) + '-' \
+                               + str(total_downloaded + num_to_download) + '.json'
+    write_to_file(os.path.join(destination_dir, activities_list_filename), result, 'w')
+    activities = json.loads(result)
+    if len(activities) != num_to_download:
+        logging.warning('Expected %s activities, got %s.', num_to_download, len(activities))
+    return activities
+
+
 def main(argv):
     """
     Main entry point for gcexport.py
@@ -883,30 +945,9 @@ def main(argv):
     if args.count == 'all':
         # If the user wants to download all activities, query the userstats
         # on the profile page to know how many are available
-        print('Getting display name...', end='')
-        logging.info('Profile page %s', URL_GC_PROFILE)
-        profile_page = http_req_as_string(URL_GC_PROFILE)
-        # write_to_file(args.directory + '/profile.html', profile_page, 'w')
-
-        # extract the display name from the profile page, it should be in there as
-        # \"displayName\":\"John.Doe\"
-        pattern = re.compile(r".*\\\"displayName\\\":\\\"([-.\w]+)\\\".*", re.MULTILINE | re.DOTALL)
-        match = pattern.match(profile_page)
-        if not match:
-            raise Exception('Did not find the display name in the profile page.')
-        display_name = match.group(1)
-        print(' Done. displayName=', display_name, sep='')
-
-        print('Fetching user stats...', end='')
-        logging.info('Userstats page %s', URL_GC_USERSTATS + display_name)
-        result = http_req_as_string(URL_GC_USERSTATS + display_name)
-        print(' Done.')
-
-        # Persist JSON
-        write_to_file(args.directory + '/userstats.json', result, 'w')
+        json_results = fetch_userstats(args.directory)
 
         # Modify total_to_download based on how many activities the server reports.
-        json_results = json.loads(result)
         total_to_download = int(json_results['userMetrics'][0]['totalActivities'])
     else:
         total_to_download = int(args.count)
@@ -932,29 +973,10 @@ def main(argv):
         else:
             num_to_download = total_to_download - total_downloaded
 
-        search_params = {'start': total_downloaded, 'limit': num_to_download}
-        # Query Garmin Connect
-        print('Querying list of activities ', total_downloaded + 1,
-              '..', total_downloaded + num_to_download,
-              '...', sep='', end='')
-        
-        logging.info('Activity list URL %s', URL_GC_LIST + urlencode(search_params))
-        result = http_req_as_string(URL_GC_LIST + urlencode(search_params))
-
-        print(' Done.')
-
-        # Persist JSON activities list
-        current_index = total_downloaded + 1
-        activities_list_filename = '/activities-' \
-            + str(current_index) + '-' \
-            + str(total_downloaded + num_to_download) + '.json'
-        write_to_file(args.directory + activities_list_filename, result, 'w')
-
-        activities = json.loads(result)
-        if len(activities) != num_to_download:
-            logging.warning('Expected %s activities, got %s.', num_to_download, len(activities))
+        activities = fetch_activity_chunk(args.directory, num_to_download, total_downloaded)
 
         # Process each activity.
+        current_index = total_downloaded + 1
         for actvty in activities:
             if args.start_activity_no and current_index < args.start_activity_no:
                 pass
