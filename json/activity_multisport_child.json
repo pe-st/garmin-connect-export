@@ -1,0 +1,118 @@
+{
+  "activityId": 6588349076,
+  "activityUUID": {
+    "uuid": "925e94a1-1044-463d-98ec-5dfc631b34ee"
+  },
+  "activityName": "Bike-Walk-Bike - Gehen",
+  "userProfileId": 2836200,
+  "parentId": 6588349056,
+  "isMultiSportParent": false,
+  "activityTypeDTO": {
+    "typeId": 9,
+    "typeKey": "walking",
+    "parentTypeId": 17,
+    "sortOrder": 27,
+    "isHidden": false,
+    "restricted": false
+  },
+  "eventTypeDTO": {
+    "typeId": 9,
+    "typeKey": "uncategorized",
+    "sortOrder": 10
+  },
+  "accessControlRuleDTO": {
+    "typeId": 3,
+    "typeKey": "subscribers"
+  },
+  "timeZoneUnitDTO": {
+    "unitId": 124,
+    "unitKey": "Europe/Paris",
+    "factor": 0.0,
+    "timeZone": "Europe/Paris"
+  },
+  "metadataDTO": {
+    "isOriginal": true,
+    "deviceApplicationInstallationId": 880836,
+    "agentApplicationInstallationId": null,
+    "agentString": null,
+    "fileFormat": {
+      "formatId": 7,
+      "formatKey": "fit"
+    },
+    "associatedCourseId": null,
+    "lastUpdateDate": "2021-04-11T13:48:04.0",
+    "uploadedDate": "2021-04-11T12:59:56.0",
+    "videoUrl": null,
+    "hasPolyline": true,
+    "hasChartData": true,
+    "hasHrTimeInZones": true,
+    "hasPowerTimeInZones": false,
+    "userInfoDto": {
+      "userProfilePk": 2836200,
+      "displayname": "eschep",
+      "fullname": "Peter Steiner",
+      "profileImageUrlLarge": null,
+      "profileImageUrlMedium": "https://s3.amazonaws.com/garmin-connect-prod/profile_images/1a8b37ca-2cd1-47bf-a191-9326dd26949f-2836200.png",
+      "profileImageUrlSmall": "https://s3.amazonaws.com/garmin-connect-prod/profile_images/c957e6a9-adb2-4cdb-8105-bf0739323504-2836200.png",
+      "userPro": false
+    },
+    "chartAvailability": {},
+    "childIds": [],
+    "childActivityTypes": [],
+    "sensors": [],
+    "activityImages": [],
+    "manufacturer": "GARMIN",
+    "diveNumber": null,
+    "lapCount": 3,
+    "associatedWorkoutId": null,
+    "isAtpActivity": null,
+    "deviceMetaDataDTO": {
+      "deviceId": "3946806421",
+      "deviceTypePk": 34236,
+      "deviceVersionPk": 880836
+    },
+    "hasIntensityIntervals": false,
+    "hasSplits": false,
+    "manualActivity": false,
+    "autoCalcCalories": false,
+    "favorite": false,
+    "trimmed": false,
+    "personalRecord": false,
+    "gcj02": false,
+    "elevationCorrected": false
+  },
+  "summaryDTO": {
+    "startTimeLocal": "2021-04-11T12:36:16.0",
+    "startTimeGMT": "2021-04-11T10:36:16.0",
+    "startLatitude": 46.70255539007485,
+    "startLongitude": 7.202448779717088,
+    "distance": 4036.26,
+    "duration": 4375.461,
+    "movingDuration": 4020.0,
+    "elapsedDuration": 5332.783,
+    "elevationGain": 162.0,
+    "elevationLoss": 160.0,
+    "maxElevation": 1457.8,
+    "minElevation": 1362.2,
+    "averageSpeed": 0.921999990940094,
+    "averageMovingSpeed": 1.004044778548663,
+    "maxSpeed": 1.5399999618530273,
+    "calories": 385.0,
+    "averageHR": 125.0,
+    "maxHR": 152.0,
+    "averageRunCadence": 67.65625,
+    "maxRunCadence": 176.0,
+    "averageTemperature": 21.299496217983616,
+    "maxTemperature": 24.0,
+    "minTemperature": 17.0,
+    "trainingEffect": 3.4000000953674316,
+    "anaerobicTrainingEffect": 1.600000023841858,
+    "aerobicTrainingEffectMessage": "IMPROVING_LACTATE_THRESHOLD_12",
+    "anaerobicTrainingEffectMessage": "MINOR_ANAEROBIC_BENEFIT_15",
+    "endLatitude": 46.69704956933856,
+    "endLongitude": 7.196000078693032,
+    "maxVerticalSpeed": 0.5999755859375,
+    "minActivityLapDuration": 663.623
+  },
+  "locationName": "Plasselb"
+}

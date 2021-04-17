@@ -901,8 +901,9 @@ def fetch_activity_list(destination_dir, total_to_download):
         activities.extend(chunk)
         total_downloaded += num_to_download
 
+    # it seems that parent multisport activities are not counted in userstats
     if len(activities) != total_to_download:
-        logging.warning('Expected %s activities, got %s.', total_to_download, len(activities))
+        logging.info('Expected %s activities, got %s.', total_to_download, len(activities))
     return activities
 
 
@@ -930,7 +931,33 @@ def fetch_activity_chunk(destination_dir, num_to_download, total_downloaded):
                                + str(current_index) + '-' \
                                + str(total_downloaded + num_to_download) + '.json'
     write_to_file(os.path.join(destination_dir, activities_list_filename), result, 'w')
-    return json.loads(result)
+    activity_summaries = json.loads(result)
+    fetch_multisports(activity_summaries, http_req_as_string)
+    return activity_summaries
+
+
+def fetch_multisports(activity_summaries, http_caller):
+    """
+    Search 'activity_summaries' for multisport activities and then
+    fetch the information for the activity parts (child activities)
+    and insert them into the 'activity_summaries' just after the multisport
+    activity
+    :param activity_summaries: list of activity summaries, will be modified in-place
+    :param http_caller:  callback to perform the HTTP call for downloading the activity details
+    """
+    for idx, child_summary in enumerate(activity_summaries):
+        type_key = None if absent_or_null('activityType', child_summary) else child_summary['activityType']['typeKey']
+        if type_key == 'multi_sport':
+            details_string, details = fetch_details(child_summary['activityId'], http_caller)
+
+            child_ids = details['metadataDTO']['childIds'] if 'metadataDTO' in details and 'childIds' in details['metadataDTO'] else None
+            # insert the childs in reversed order always at the same index to get
+            # the correct order in activity_summaries
+            for child_id in reversed(child_ids):
+                child_string, child_details = fetch_details(child_id, http_caller)
+                child_summary = dict()
+                copy_details_to_summary(child_summary, child_details)
+                activity_summaries.insert(idx + 1, child_summary)
 
 
 def fetch_details(activity_id, http_caller):
@@ -958,6 +985,37 @@ def fetch_details(activity_id, http_caller):
                 raise Exception(
                     'Didn\'t get "summaryDTO" after ' + str(MAX_TRIES) + ' tries for ' + str(activity_id))
     return activity_details, details
+
+
+def copy_details_to_summary(summary, details):
+    """
+    Add some activity properties from the 'details' dict to the 'summary' dict
+
+    The choice of which properties are copied is determined by the properties
+    used by the 'csv_write_record' method.
+
+    This particularly useful for childs of multisport activities, as I don't
+    know how to get these activity summaries otherwise
+    :param summary: summary dict, will be modified in-place
+    :param details: details dict
+    """
+    summary['activityId'] = details['activityId']
+    summary['activityName'] = details['activityName']
+    summary['description'] = details['description'] if present('description', details) else None
+    summary['activityType'] = {}
+    summary['activityType']['typeId'] = details['activityTypeDTO']['typeId'] if 'activityTypeDTO' in details and present('typeId', details['activityTypeDTO']) else None
+    summary['activityType']['typeKey'] = details['activityTypeDTO']['typeKey'] if 'activityTypeDTO' in details and present('typeKey', details['activityTypeDTO']) else None
+    summary['activityType']['parentTypeId'] = details['activityTypeDTO']['parentTypeId'] if 'activityTypeDTO' in details and present('parentTypeId', details['activityTypeDTO']) else None
+    summary['eventType'] = {}
+    summary['eventType']['typeKey'] = details['eventType']['typeKey'] if 'eventType' in details and present('typeKey', details['eventType']) else None
+    summary['startTimeLocal'] = details['summaryDTO']['startTimeLocal'] if 'summaryDTO' in details and 'startTimeLocal' in details['summaryDTO'] else None
+    summary['startTimeGMT'] = details['summaryDTO']['startTimeGMT'] if 'summaryDTO' in details and 'startTimeGMT' in details['summaryDTO'] else None
+    summary['duration'] = details['summaryDTO']['duration'] if 'summaryDTO' in details and 'duration' in details['summaryDTO'] else None
+    summary['distance'] = details['summaryDTO']['distance'] if 'summaryDTO' in details and 'distance' in details['summaryDTO'] else None
+    summary['averageSpeed'] = details['summaryDTO']['averageSpeed'] if 'summaryDTO' in details and 'averageSpeed' in details['summaryDTO'] else None
+    summary['maxHR'] = details['summaryDTO']['maxHR'] if 'summaryDTO' in details and 'maxHR' in details['summaryDTO'] else None
+    summary['averageHR'] = details['summaryDTO']['averageHR'] if 'summaryDTO' in details and 'averageHR' in details['summaryDTO'] else None
+    summary['elevationCorrected'] = details['metadataDTO']['elevationCorrected'] if 'metadataDTO' in details and 'elevationCorrected' in details['metadataDTO'] else None
 
 
 def main(argv):
@@ -1025,12 +1083,12 @@ def main(argv):
             pass
             # Display which entry we're skipping.
             print('Skipping Garmin Connect activity ', end='')
-            print('(', current_index, '/', total_to_download, ') ', sep='', end='')
+            print('(', current_index, '/', len(activities), ') ', sep='', end='')
             print('[', actvty['activityId'], ']', sep='')
         else:
             # Display which entry we're working on.
             print('Garmin Connect activity ', end='')
-            print('(', current_index, '/', total_to_download, ') ', sep='', end='')
+            print('(', current_index, '/', len(activities), ') ', sep='', end='')
             print('[', actvty['activityId'], '] ', sep='', end='')
             print(actvty['activityName'])
 
