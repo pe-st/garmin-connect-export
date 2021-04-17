@@ -933,6 +933,33 @@ def fetch_activity_chunk(destination_dir, num_to_download, total_downloaded):
     return json.loads(result)
 
 
+def fetch_details(activity_id, http_caller):
+    """
+    Try to get the activity details for an activity
+
+    :param activity_id:  id of the activity to fetch
+    :param http_caller:  callback to perform the HTTP call for downloading the activity details
+    :return details_as_string, details_as_json_dict:
+    """
+    activity_details = None
+    details = None
+    tries = MAX_TRIES
+    while tries > 0:
+        activity_details = http_caller(URL_GC_ACTIVITY + str(activity_id))
+        details = json.loads(activity_details)
+        # I observed a failure to get a complete JSON detail in about 5-10 calls out of 1000
+        # retrying then statistically gets a better JSON ;-)
+        if details['summaryDTO']:
+            tries = 0
+        else:
+            logging.info("Retrying activity details download %s", URL_GC_ACTIVITY + str(activity_id))
+            tries -= 1
+            if tries == 0:
+                raise Exception(
+                    'Didn\'t get "summaryDTO" after ' + str(MAX_TRIES) + ' tries for ' + str(activity_id))
+    return activity_details, details
+
+
 def main(argv):
     """
     Main entry point for gcexport.py
@@ -1011,21 +1038,7 @@ def main(argv):
             # the https://connect.garmin.com/modern/activity/xxx page), because some
             # data are missing from 'a' (or are even different, e.g. for my activities
             # 86497297 or 86516281)
-            activity_details = None
-            details = None
-            tries = MAX_TRIES
-            while tries > 0:
-                activity_details = http_req_as_string(URL_GC_ACTIVITY + str(actvty['activityId']))
-                details = json.loads(activity_details)
-                # I observed a failure to get a complete JSON detail in about 5-10 calls out of 1000
-                # retrying then statistically gets a better JSON ;-)
-                if details['summaryDTO']:
-                    tries = 0
-                else:
-                    logging.info("Retrying activity details download %s", URL_GC_ACTIVITY + str(actvty['activityId']))
-                    tries -= 1
-                    if tries == 0:
-                        raise Exception('Didn\'t get "summaryDTO" after ' + str(MAX_TRIES) + ' tries for ' + str(actvty['activityId']))
+            activity_details, details = fetch_details(actvty['activityId'], http_req_as_string)
 
             extract = {}
             extract['start_time_with_offset'] = offset_date_time(actvty['startTimeLocal'], actvty['startTimeGMT'])
