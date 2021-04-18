@@ -51,6 +51,7 @@ if python3:
     import urllib
     from urllib.parse import urlencode
     from urllib.request import Request, HTTPError, URLError
+
     COOKIE_JAR = http.cookiejar.CookieJar()
     OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
 else:
@@ -58,6 +59,7 @@ else:
     import urllib2
     from urllib import urlencode
     from urllib2 import Request, HTTPError, URLError
+
     COOKIE_JAR = cookielib.CookieJar()
     OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR), urllib2.HTTPSHandler(debuglevel=0))
 
@@ -266,6 +268,7 @@ def http_req(url, post=None, headers=None):
 
     return response.read()
 
+
 def http_req_as_string(url, post=None, headers=None):
     """Helper function that makes the HTTP requests, returning a string instead of bytes."""
     if python3:
@@ -363,11 +366,28 @@ def offset_date_time(time_local, time_gmt):
     Build an 'aware' datetime from two 'naive' datetime objects (that is timestamps
     as present in the activitylist-service.json), using the time difference as offset.
     """
-    local_dt = datetime.strptime(time_local, "%Y-%m-%d %H:%M:%S")
-    gmt_dt = datetime.strptime(time_gmt, "%Y-%m-%d %H:%M:%S")
+    local_dt = datetime_from_iso(time_local)
+    gmt_dt = datetime_from_iso(time_gmt)
     offset = local_dt - gmt_dt
     offset_tz = FixedOffset(offset.seconds // 60, "LCL")
     return local_dt.replace(tzinfo=offset_tz)
+
+
+def datetime_from_iso(iso_date_time):
+    """
+    Call 'datetime.strptime' supporting different ISO time formats
+    (with or without 'T' between date and time, with or without microseconds,
+    but without offset)
+    :param iso_date_time: timestamp string in ISO format
+    :return:
+    """
+    pattern = re.compile(r"(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})(\.\d+)?")
+    match = pattern.match(iso_date_time)
+    if not match:
+        raise Exception('Invalid ISO timestamp ' + iso_date_time + '.')
+    micros = match.group(3) if match.group(3) else ".0"
+    iso_with_micros = match.group(1) + ' ' + match.group(2) + micros
+    return datetime.strptime(iso_with_micros, "%Y-%m-%d %H:%M:%S.%f")
 
 
 def pace_or_speed_raw(type_id, parent_type_id, mps):
@@ -513,7 +533,7 @@ def login_to_garmin_connect(args):
 
     print('Requesting Login ticket...', end='')
     login_response = http_req_as_string(URL_GC_LOGIN + '#', post_data, headers)
-    
+
     for cookie in COOKIE_JAR:
         logging.debug("Cookie %s : %s", cookie.name, cookie.value)
     # write_to_file('login-response.html', login_response, 'w')
@@ -955,6 +975,7 @@ def fetch_multisports(activity_summaries, http_caller):
             # the correct order in activity_summaries
             for child_id in reversed(child_ids):
                 child_string, child_details = fetch_details(child_id, http_caller)
+                # write_to_file('child_' + str(child_id) + '.json', child_string, 'w')
                 child_summary = dict()
                 copy_details_to_summary(child_summary, child_details)
                 activity_summaries.insert(idx + 1, child_summary)
@@ -1112,7 +1133,7 @@ def main(argv):
             else:
                 print('0.000 km')
 
-            if args.desc != None:
+            if args.desc is not None:
                 append_desc = '_' + sanitize_filename(actvty['activityName'], args.desc)
             else:
                 append_desc = ''
