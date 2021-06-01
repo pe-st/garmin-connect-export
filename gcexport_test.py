@@ -44,6 +44,25 @@ def test_datetime_from_iso():
     assert datetime_from_iso("2018-03-08T12:23:22.0") == datetime(2018, 3, 8, 12, 23, 22, 0)
 
 
+def test_epoch_seconds_from_summary():
+    # activity with a beginTimestamp
+    with open('json/activity_2541953812_overview.json') as json_timestamp:
+        summary = json.load(json_timestamp)
+    assert summary['beginTimestamp'] == 1520508202000
+    assert epoch_seconds_from_summary(summary) == 1520508202
+
+    # activity with a startTimeLocal without fractions
+    with open('json/activity_multisport_overview.json') as json_timestamp:
+        summary = json.load(json_timestamp)
+    assert summary['beginTimestamp'] == None
+    assert summary['startTimeLocal'] == '2021-04-11 11:50:49'
+    assert epoch_seconds_from_summary(summary) == 1618134649
+
+    # activity with a startTimeLocal with fractions
+    summary['startTimeLocal'] = '2021-04-11 11:50:50.3'
+    assert epoch_seconds_from_summary(summary) == 1618134650
+
+
 def test_hhmmss_from_seconds():
     # check/document that no rounding happens in hhmmss_from_seconds and the caller must round itself:
     # 2969.6 s are 49 minutes and 29.6 seconds
@@ -168,7 +187,7 @@ def test_fetch_multisports():
     mock_details_multi_counter = 0
     fetch_multisports(activity_summaries, http_req_mock_details_multi)
 
-    # the entries 0/1/2 frombefore are now 0/1/7
+    # the entries 0/1/2 from before are now 0/1/7
     assert activity_summaries[0]['activityId'] == 6609987243
     assert activity_summaries[1]['activityId'] == 6588349056
     assert activity_summaries[7]['activityId'] == 6585943400

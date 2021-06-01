@@ -204,7 +204,7 @@ def write_to_file(filename, content, mode='w', file_time=None):
                          with Python 3 it can be 'bytes' or 'str'. If it's
                          'bytes' and the mode 'w', it will be converted/decoded
     :param mode:         'w' or 'wb'
-    :param file_time:    if given use as timestamp for the file written
+    :param file_time:    if given use as timestamp for the file written (in seconds since 1970-01-01)
     """
     if mode == 'w':
         write_file = io.open(filename, mode, encoding="utf-8")
@@ -379,7 +379,7 @@ def datetime_from_iso(iso_date_time):
     (with or without 'T' between date and time, with or without microseconds,
     but without offset)
     :param iso_date_time: timestamp string in ISO format
-    :return:
+    :return: a 'naive` datetime
     """
     pattern = re.compile(r"(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})(\.\d+)?")
     match = pattern.match(iso_date_time)
@@ -388,6 +388,26 @@ def datetime_from_iso(iso_date_time):
     micros = match.group(3) if match.group(3) else ".0"
     iso_with_micros = match.group(1) + ' ' + match.group(2) + micros
     return datetime.strptime(iso_with_micros, "%Y-%m-%d %H:%M:%S.%f")
+
+
+def epoch_seconds_from_summary(summary):
+    """
+    Determine the start time in epoch seconds (seconds since 1970-01-01)
+
+    :param summary: summary dict
+    :return: epoch seconds as integer
+    """
+    if present('beginTimestamp', summary):
+        return summary['beginTimestamp'] // 1000
+    elif present('startTimeLocal', summary) and present('startTimeGMT', summary):
+        dt = offset_date_time(summary['startTimeLocal'], summary['startTimeGMT'])
+        # with Python 3 this can be simplified to datetime.timestamp()
+        utc = FixedOffset(0, "UTC")
+        seconds = (dt - datetime(1970, 1, 1, tzinfo = utc)).total_seconds()
+        return int(seconds)
+    else:
+        logging.info('No timestamp found in activity %s', summary['activityId'])
+        return None
 
 
 def pace_or_speed_raw(type_id, parent_type_id, mps):
@@ -1139,7 +1159,7 @@ def main(argv):
                 append_desc = ''
 
             if args.originaltime:
-                start_time_seconds = actvty['beginTimestamp'] // 1000 if present('beginTimestamp', actvty) else None
+                start_time_seconds = epoch_seconds_from_summary(actvty)
             else:
                 start_time_seconds = None
 
