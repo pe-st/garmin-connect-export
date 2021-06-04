@@ -778,8 +778,8 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
         file_mode = 'w'
     elif args.format == 'original':
         data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.zip')
-        # not all 'original' files are in FIT format, some are GPX or TCX...
-        fit_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc)
+        # TODO not all 'original' files are in FIT format, some are GPX or TCX...
+        fit_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.fit')
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
     elif args.format == 'json':
@@ -795,7 +795,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
         return False
 
     # Regardless of unzip setting, don't redownload if the ZIP or FIT file exists.
-    if args.format == 'original' and (os.path.isfile(fit_filename + '.fit') or os.path.isfile(fit_filename + '.gpx') or os.path.isfile(fit_filename + '.tcx')):
+    if args.format == 'original' and os.path.isfile(fit_filename):
         logging.debug('Original data file for %s already exists', activity_id)
         print('\tFIT data file already exists; skipping...')
         # Inform the main program that the file already exists
