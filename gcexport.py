@@ -1232,13 +1232,11 @@ def main(argv):
         if csv_filter.is_column_active('gear'):
             extract['gear'] = load_gear(str(actvty['activityId']), args)
 
-
         # Write stats to CSV.
         csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name)
 
         export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc,
                          actvty['startTimeLocal'])
-
 
     # End for loop for activities / action items
 
