@@ -37,6 +37,32 @@ def test_offset_date_time():
     assert offset_date_time("2018-03-08 12:23:22", "2018-03-08 12:23:22") == datetime(2018, 3, 8, 12, 23, 22, 0, FixedOffset(0, "LCL"))
 
 
+def test_datetime_from_iso():
+    assert datetime_from_iso("2018-03-08 12:23:22") == datetime(2018, 3, 8, 12, 23, 22, 0)
+    assert datetime_from_iso("2018-03-08 12:23:22.0") == datetime(2018, 3, 8, 12, 23, 22, 0)
+    assert datetime_from_iso("2018-03-08T12:23:22") == datetime(2018, 3, 8, 12, 23, 22, 0)
+    assert datetime_from_iso("2018-03-08T12:23:22.0") == datetime(2018, 3, 8, 12, 23, 22, 0)
+
+
+def test_epoch_seconds_from_summary():
+    # activity with a beginTimestamp
+    with open('json/activity_2541953812_overview.json') as json_timestamp:
+        summary = json.load(json_timestamp)
+    assert summary['beginTimestamp'] == 1520508202000
+    assert epoch_seconds_from_summary(summary) == 1520508202
+
+    # activity with a startTimeLocal without fractions
+    with open('json/activity_multisport_overview.json') as json_timestamp:
+        summary = json.load(json_timestamp)
+    assert summary['beginTimestamp'] == None
+    assert summary['startTimeLocal'] == '2021-04-11 11:50:49'
+    assert epoch_seconds_from_summary(summary) == 1618134649
+
+    # activity with a startTimeLocal with fractions
+    summary['startTimeLocal'] = '2021-04-11 11:50:50.3'
+    assert epoch_seconds_from_summary(summary) == 1618134650
+
+
 def test_hhmmss_from_seconds():
     # check/document that no rounding happens in hhmmss_from_seconds and the caller must round itself:
     # 2969.6 s are 49 minutes and 29.6 seconds
@@ -126,3 +152,49 @@ def test_resolve_path():
     assert resolve_path('root', 'sub/{yyyy}', '2018-03-08 12:23:22') == 'root/sub/{yyyy}'
     assert resolve_path('root', 'sub/{YYYYMM}', '2018-03-08 12:23:22') == 'root/sub/{YYYYMM}'
     assert resolve_path('root', 'sub/all', '2018-03-08 12:23:22') == 'root/sub/all'
+
+
+mock_details_multi_counter = 0
+
+def http_req_mock_details_multi(url, post=None, headers=None):
+
+    global mock_details_multi_counter
+    mock_details_multi_counter += 1
+
+    if mock_details_multi_counter == 1:
+        with open('json/activity_multisport_detail.json') as json_stream:
+            return json_stream.read()
+    elif mock_details_multi_counter >= 2 & mock_details_multi_counter <= 6:
+        with open('json/activity_multisport_child.json') as json_stream:
+            json_string = json_stream.read()
+            activity_id = url.split('/')[-1]
+            return json_string.replace('6588349076', activity_id)
+    else:
+        raise Exception('mock_details_multi_counter has invalid value ' + str(mock_details_multi_counter))
+
+
+def test_fetch_multisports():
+
+    with open('json/activities-list.json') as json_detail:
+        activity_summaries = json.load(json_detail)
+
+    # assert state before fetch_multisports
+    assert activity_summaries[0]['activityId'] == 6609987243
+    assert activity_summaries[1]['activityId'] == 6588349056
+    assert activity_summaries[2]['activityId'] == 6585943400
+
+    global mock_details_multi_counter
+    mock_details_multi_counter = 0
+    fetch_multisports(activity_summaries, http_req_mock_details_multi)
+
+    # the entries 0/1/2 from before are now 0/1/7
+    assert activity_summaries[0]['activityId'] == 6609987243
+    assert activity_summaries[1]['activityId'] == 6588349056
+    assert activity_summaries[7]['activityId'] == 6585943400
+
+    # at indexes 2..6 are now the five child activities
+    assert activity_summaries[2]['activityId'] == 6588349067
+    assert activity_summaries[3]['activityId'] == 6588349072
+    assert activity_summaries[4]['activityId'] == 6588349076
+    assert activity_summaries[5]['activityId'] == 6588349079
+    assert activity_summaries[6]['activityId'] == 6588349081

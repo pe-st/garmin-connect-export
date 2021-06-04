@@ -3,6 +3,13 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 3.1.0 - 2021-06-03
+
+- added: export of the parts of multi-sport activities
+- added: `--exclude` option to exclude activities from the download
+  ([Pull Request #58](https://github.com/pe-st/garmin-connect-export/pull/58) by @chs8691)
+
+
 ## 3.0.3 - 2021-02-24
 
 - fixed: `HTTP Error 402: Payment Required` (started appearing 2021-02-23)
