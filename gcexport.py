@@ -250,6 +250,13 @@ def http_req(url, post=None, headers=None):
     start_time = timer()
     try:
         response = OPENER.open(request, data=post)
+    except HTTPError as ex:
+        if hasattr(ex, 'code'):
+            logging.error('Server couldn\'t fulfill the request, code %s, error: %s', ex.code, ex)
+            logging.info('Headers returned:\n%s', ex.info())
+            raise
+        else:
+            raise
     except URLError as ex:
         if hasattr(ex, 'reason'):
             logging.error('Failed to reach url %s, error: %s', url, ex)
@@ -257,6 +264,7 @@ def http_req(url, post=None, headers=None):
         else:
             raise
     logging.debug('Got %s in %s s from %s', response.getcode(), timer() - start_time, url)
+    logging.debug('Headers returned:\n%s', response.info())
 
     # N.B. urllib2 will follow any 302 redirects.
     # print(response.getcode())
@@ -557,6 +565,7 @@ def login_to_garmin_connect(args):
     }
 
     print('Requesting Login ticket...', end='')
+    logging.info('Requesting Login ticket')
     login_response = http_req_as_string(URL_GC_LOGIN + '#', post_data, headers)
 
     for cookie in COOKIE_JAR:
