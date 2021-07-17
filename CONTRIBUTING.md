@@ -10,13 +10,13 @@ A hearty welcome and thank you! There are many ways you can contribute:
 
 ## Python 2 vs 3
 
-At the time of this writing (2020-04) Python 2 has passed its [sunset](https://python3statement.org/).
-But as the target audience of this script are not necessarily Python aficionados, it should be as easy
-to use as possible: clone the repo or download/extract the zip and then start using it.
+At the time of this writing (2021-07) Python 2 has long passed its [sunset](https://python3statement.org/).
+And the effort to still support Python 2 has become to big (see https://github.com/pe-st/garmin-connect-export/issues/64),
+so to protect users from getting HTTP errors/exceptions with Python 2, the script
+purposely denies running with Python 2.
 
-This implies that the script should work also with Python 2.7 for some time to come,
-e.g. the current macOS Catalina ships with Python 2.7.16 and the current Raspberry Pi OS (Raspian Buster)
-comes with Python 2.7.16 as well.
+The code that would support Python 2 will still be around for some time before
+I will clean up the code.
 
 ## Getting started
 

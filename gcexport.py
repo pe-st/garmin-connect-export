@@ -65,7 +65,7 @@ else:
     COOKIE_JAR = cookielib.CookieJar()
     OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR), urllib2.HTTPSHandler(debuglevel=0))
 
-SCRIPT_VERSION = '3.1.0'
+SCRIPT_VERSION = '3.2.0'
 
 # this is almost the datetime format Garmin used in the activity-search-service
 # JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
@@ -493,7 +493,7 @@ def parse_arguments(argv):
     parser.add_argument('--version', action='version', version='%(prog)s ' + SCRIPT_VERSION,
         help='print version and exit')
     parser.add_argument('-v', '--verbosity', action='count', default=0,
-        help='increase output verbosity')
+        help='increase output and log verbosity, save more intermediate files')
     parser.add_argument('--username',
         help='your Garmin Connect username or email address (otherwise, you will be prompted)')
     parser.add_argument('--password',
@@ -546,7 +546,8 @@ def login_to_garmin_connect(args):
     print('Connecting to Garmin Connect...', end='')
     logging.info('Connecting to %s', URL_GC_LOGIN)
     connect_response = http_req_as_string(URL_GC_LOGIN)
-    # write_to_file('connect_response.html', connect_response, 'w')
+    if args.verbosity > 0:
+        write_to_file(os.path.join(args.directory, 'connect_response.html'), connect_response, 'w')
     for cookie in COOKIE_JAR:
         logging.debug("Cookie %s : %s", cookie.name, cookie.value)
     print(' Done.')
@@ -570,7 +571,8 @@ def login_to_garmin_connect(args):
 
     for cookie in COOKIE_JAR:
         logging.debug("Cookie %s : %s", cookie.name, cookie.value)
-    # write_to_file('login-response.html', login_response, 'w')
+    if args.verbosity > 0:
+        write_to_file(os.path.join(args.directory, 'login_response.html'), login_response, 'w')
 
     # extract the ticket from the login response
     pattern = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE | re.DOTALL)
@@ -902,17 +904,18 @@ def logging_verbosity(verbosity):
             logging.debug('New console log level: %s', logging.getLevelName(level))
 
 
-def fetch_userstats(destination_dir):
+def fetch_userstats(args):
     """
     Http request for getting user statistic like total number of activities. The json will be saved as file
     'userstats.json'
-    :param destination_dir: Directory to save the json file
-    :return: json with user statistics
+    :param args:    command-line arguments (for args.directory etc)
+    :return:        json with user statistics
     """
     print('Getting display name...', end='')
     logging.info('Profile page %s', URL_GC_PROFILE)
     profile_page = http_req_as_string(URL_GC_PROFILE)
-    # write_to_file(args.directory + '/profile.html', profile_page, 'w')
+    if args.verbosity > 0:
+        write_to_file(os.path.join(args.directory, 'profile.html'), profile_page, 'w')
 
     # extract the display name from the profile page, it should be in there as
     # \"displayName\":\"John.Doe\"
@@ -929,15 +932,15 @@ def fetch_userstats(destination_dir):
     print(' Done.')
 
     # Persist JSON
-    write_to_file(os.path.join(destination_dir, 'userstats.json'), result, 'w')
+    write_to_file(os.path.join(args.directory, 'userstats.json'), result, 'w')
 
     return json.loads(result)
 
 
-def fetch_activity_list(destination_dir, total_to_download):
+def fetch_activity_list(args, total_to_download):
     """
     Fetch the first 'total_to_download' activity summaries; as a side effect save them in json format.
-    :param destination_dir:   directory where the json files will be stored
+    :param args:              command-line arguments (for args.directory etc)
     :param total_to_download: number of activities to download
     :return:                  List of activity summaries
     """
@@ -955,7 +958,7 @@ def fetch_activity_list(destination_dir, total_to_download):
         else:
             num_to_download = total_to_download - total_downloaded
 
-        chunk = fetch_activity_chunk(destination_dir, num_to_download, total_downloaded)
+        chunk = fetch_activity_chunk(args, num_to_download, total_downloaded)
         activities.extend(chunk)
         total_downloaded += num_to_download
 
@@ -980,10 +983,10 @@ def annotate_activity_list(activities, start, exclude_list):
     return action_list
 
 
-def fetch_activity_chunk(destination_dir, num_to_download, total_downloaded):
+def fetch_activity_chunk(args, num_to_download, total_downloaded):
     """
     Fetch a chunk of activity summaries; as a side effect save them in json format.
-    :param destination_dir:   directory where the json files will be stored
+    :param args:              command-line arguments (for args.directory etc)
     :param num_to_download:   number of summaries to download in this chunk
     :param total_downloaded:  number of already downloaded summaries in previous chunks
     :return:                  List of activity summaries
@@ -1003,20 +1006,21 @@ def fetch_activity_chunk(destination_dir, num_to_download, total_downloaded):
     activities_list_filename = 'activities-' \
                                + str(current_index) + '-' \
                                + str(total_downloaded + num_to_download) + '.json'
-    write_to_file(os.path.join(destination_dir, activities_list_filename), result, 'w')
+    write_to_file(os.path.join(args.directory, activities_list_filename), result, 'w')
     activity_summaries = json.loads(result)
-    fetch_multisports(activity_summaries, http_req_as_string)
+    fetch_multisports(activity_summaries, http_req_as_string, args)
     return activity_summaries
 
 
-def fetch_multisports(activity_summaries, http_caller):
+def fetch_multisports(activity_summaries, http_caller, args):
     """
     Search 'activity_summaries' for multisport activities and then
     fetch the information for the activity parts (child activities)
     and insert them into the 'activity_summaries' just after the multisport
     activity
     :param activity_summaries: list of activity summaries, will be modified in-place
-    :param http_caller:  callback to perform the HTTP call for downloading the activity details
+    :param http_caller:        callback to perform the HTTP call for downloading the activity details
+    :param args:               command-line arguments (for args.directory etc)
     """
     for idx, child_summary in enumerate(activity_summaries):
         type_key = None if absent_or_null('activityType', child_summary) else child_summary['activityType']['typeKey']
@@ -1028,7 +1032,8 @@ def fetch_multisports(activity_summaries, http_caller):
             # the correct order in activity_summaries
             for child_id in reversed(child_ids):
                 child_string, child_details = fetch_details(child_id, http_caller)
-                # write_to_file('child_' + str(child_id) + '.json', child_string, 'w')
+                if args.verbosity > 0:
+                    write_to_file(os.path.join(args.directory, 'child_' + str(child_id) + '.json'), child_string, 'w')
                 child_summary = dict()
                 copy_details_to_summary(child_summary, child_details)
                 activity_summaries.insert(idx + 1, child_summary)
@@ -1103,11 +1108,15 @@ def main(argv):
 
     print('Welcome to Garmin Connect Exporter!')
 
+    if not python3:
+        print('Please upgrade to Python 3.x, version', python_version(), 'isn\'t supported anymore, see https://github.com/pe-st/garmin-connect-export/issues/64')
+        sys.exit(1)
+
     # Get filter list with IDs to exclude
     if args.exclude is not None:
         exclude_list = read_exclude(args.exclude)
         if exclude_list is None:
-            exit(1)
+            sys.exit(1)
     else:
         exclude_list = []
 
@@ -1116,12 +1125,10 @@ def main(argv):
         logging.warning("Output directory %s already exists. "
                         "Will skip already-downloaded files and append to the CSV file.",
                         args.directory)
+    else:
+        os.mkdir(args.directory)
 
     login_to_garmin_connect(args)
-
-    # We should be logged in now.
-    if not os.path.isdir(args.directory):
-        os.mkdir(args.directory)
 
     csv_filename = args.directory + '/activities.csv'
     csv_existed = os.path.isfile(csv_filename)
@@ -1138,7 +1145,7 @@ def main(argv):
 
     # Query the userstats (activities totals on the profile page). Needed for
     # filtering and for downloading 'all' to know how many activities are available
-    userstats_json = fetch_userstats(args.directory)
+    userstats_json = fetch_userstats(args)
 
     if args.count == 'all':
         total_to_download = int(userstats_json['userMetrics'][0]['totalActivities'])
@@ -1149,13 +1156,15 @@ def main(argv):
 
     # load some dictionaries with lookup data from REST services
     activity_type_props = http_req_as_string(URL_GC_ACT_PROPS)
-    # write_to_file(args.directory + '/activity_types.properties', activity_type_props, 'w')
+    if args.verbosity > 0:
+        write_to_file(os.path.join(args.directory, 'activity_types.properties'), activity_type_props, 'w')
     activity_type_name = load_properties(activity_type_props)
     event_type_props = http_req_as_string(URL_GC_EVT_PROPS)
-    # write_to_file(args.directory + '/event_types.properties', event_type_props, 'w')
+    if args.verbosity > 0:
+        write_to_file(os.path.join(args.directory, 'event_types.properties'), activity_type_props, 'w')
     event_type_name = load_properties(event_type_props)
 
-    activities = fetch_activity_list(args.directory, total_to_download)
+    activities = fetch_activity_list(args, total_to_download)
     action_list = annotate_activity_list(activities, args.start_activity_no, exclude_list)
 
     # Process each activity.
@@ -1227,7 +1236,7 @@ def main(argv):
             try:
                 # TODO implement retries here, I have observed temporary failures
                 activity_measurements = http_req_as_string(URL_GC_ACTIVITY + str(actvty['activityId']) + "/details")
-                write_to_file(args.directory + '/activity_' + str(actvty['activityId']) + '_samples.json',
+                write_to_file(os.path.join(args.directory, 'activity_' + str(actvty['activityId']) + '_samples.json'),
                               activity_measurements, 'w',
                               start_time_seconds)
                 samples = json.loads(activity_measurements)

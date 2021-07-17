@@ -3,6 +3,13 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 3.2.0 - 2021-07-17
+
+- changed: [Python 2.x is not supported anymore](https://github.com/pe-st/garmin-connect-export/issues/64)
+- changed: the `--verbose` option now also saves some intermediate responses from Garmin
+- changed: Improve logging for HTTP connection requests
+
+
 ## 3.1.0 - 2021-06-03
 
 - added: export of the parts of multi-sport activities

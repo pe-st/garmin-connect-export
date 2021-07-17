@@ -1,5 +1,8 @@
 # garmin-connect-export script
 
+:exclamation: | This script [now requires Python 3.x](https://github.com/pe-st/garmin-connect-export/issues/64)
+---|---
+
 :exclamation: | There is a [report of a deactivated user account that might by caused by using this script](https://github.com/pe-st/garmin-connect-export/issues/60). The exact reasons are not known, and my account has never been deactivated. But be aware that I can give no guarantee that Garmin tolerates requests made from this script. I believe though that this script is fair use (it doesn't do anything other than automating stuff that you do in the browser). But be careful if you plan to run the script as periodical task (with `cron` etc)
 ---|---
 
@@ -58,7 +61,7 @@ Garmin Connect Exporter
 optional arguments:
   -h, --help            show this help message and exit
   --version             print version and exit
-  -v, --verbosity       increase output verbosity
+  -v, --verbosity       increase output and log verbosity, save more intermediate files
   --username USERNAME   your Garmin Connect username or email address (otherwise, you will be prompted)
   --password PASSWORD   your Garmin Connect password (otherwise, you will be prompted)
   -c COUNT, --count COUNT
@@ -71,8 +74,8 @@ optional arguments:
   -d DIRECTORY, --directory DIRECTORY
                         the directory to export to (default: './YYYY-MM-DD_garmin_connect_export')
   -s SUBDIR, --subdir SUBDIR
-                        the subdirectory for activity files (tcx, gpx etc.), supported placeholders are {YYYY} and {MM} (default:
-                        export directory)
+                        the subdirectory for activity files (tcx, gpx etc.), supported placeholders are {YYYY} and {MM}
+                        (default: export directory)
   -u, --unzip           if downloading ZIP files (format: 'original'), unzip the file and remove the ZIP file
   -ot, --originaltime   will set downloaded (and possibly unzipped) file time to the activity start time
   --desc [DESC]         append the activity's description to the file name of the download; limit size if number is given
@@ -82,7 +85,8 @@ optional arguments:
   -sa START_ACTIVITY_NO, --start_activity_no START_ACTIVITY_NO
                         give index for first activity to import, i.e. skipping the newest activities
   -ex FILE, --exclude FILE
-                        Json file with Array of activity IDs to exclude from download. Format example: {"ids": ["6176888711"]}
+                        Json file with Array of activity IDs to exclude from download.
+                        Format example: {"ids": ["6176888711"]}
 ```
 
 ### Examples
@@ -110,12 +114,11 @@ Alternatively, you may run it with `./gcexport.py` if you set the file as execut
 
 ### Python
 
-Of course, you must have Python installed to run this, any recent 2.7.x or 3.x version should work (if you use Python 2.x,
-you might need to replace `python` in the examples above with `python2`). Most Mac and Linux users should already have Python.
+Of course, you must have Python installed to run this, any recent 3.x version should work.
+Most Mac and Linux users should already have Python.
 Note that if you run into the [TLSV1 ALERT problem](https://github.com/pe-st/garmin-connect-export/issues/16)
 or the [HTTP 403 Authentication Error](https://github.com/pe-st/garmin-connect-export/issues/59),
-your Python installation might not be recent enough, e.g. macOS Sierra and High Sierra come with Python 2.7.10
-which suffers from this problem (macOS Mojave's Python is recent enough though).
+your Python installation might not be recent enough).
 In this case you can install a more recent Python on your Mac using [Homebrew](https://docs.brew.sh/Homebrew-and-Python)
 and/or [pyenv](https://github.com/pyenv/pyenv).
 
