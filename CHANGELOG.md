@@ -3,11 +3,16 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
-## 3.2.0 - 2021-07-17
+## 3.2.0 - 2021-07-18
 
 - changed: [Python 2.x is not supported anymore](https://github.com/pe-st/garmin-connect-export/issues/64)
 - changed: the `--verbose` option now also saves some intermediate responses from Garmin
 - changed: Improve logging for HTTP connection requests
+- fixed: handle the case where an original file has a different extension than `.fit`
+  ([Pull Request #61](https://github.com/pe-st/garmin-connect-export/pull/61) by @cristian5th)
+- fixed: don't write a record to the CSV file for already downloaded activities
+  ([Issue #34](https://github.com/pe-st/garmin-connect-export/issues/34),
+  [Pull Request #62](https://github.com/pe-st/garmin-connect-export/pull/62) by @cristian5th)
 
 
 ## 3.1.0 - 2021-06-03
@@ -20,7 +25,7 @@ This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1
 ## 3.0.3 - 2021-02-24
 
 - fixed: `HTTP Error 402: Payment Required` (started appearing 2021-02-23)
-  ([Pull Request](https://github.com/pe-st/garmin-connect-export/pull/55) by @reto)
+  ([Pull Request #55](https://github.com/pe-st/garmin-connect-export/pull/55) by @reto)
 - changed: [detached from kjkjava's repo](https://github.com/pe-st/garmin-connect-export/issues/53)
 
   

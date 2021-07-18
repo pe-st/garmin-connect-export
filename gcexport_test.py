@@ -174,6 +174,7 @@ def http_req_mock_details_multi(url, post=None, headers=None):
 
 
 def test_fetch_multisports():
+    args = parse_arguments([])
 
     with open('json/activities-list.json') as json_detail:
         activity_summaries = json.load(json_detail)
@@ -185,7 +186,7 @@ def test_fetch_multisports():
 
     global mock_details_multi_counter
     mock_details_multi_counter = 0
-    fetch_multisports(activity_summaries, http_req_mock_details_multi)
+    fetch_multisports(activity_summaries, http_req_mock_details_multi, args)
 
     # the entries 0/1/2 from before are now 0/1/7
     assert activity_summaries[0]['activityId'] == 6609987243

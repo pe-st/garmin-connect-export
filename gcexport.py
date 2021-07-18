@@ -758,13 +758,25 @@ def load_gear(activity_id, args):
         # logging.exception(e)
 
 
-def export_data_file(activity_id, activity_details, args, file_time, append_desc, start_time_locale):
+def export_data_file(activity_id, activity_details, args, file_time, append_desc, date_time):
     """
     Write the data of the activity to a file, depending on the chosen data format
+
+    The default filename is 'activity_' + activity_id, but this can be modified
+    by the '--fileprefix' option and the 'append_desc' parameter; the directory
+    to write the file into can be modified by the '--subdir' option.
+
+    :param activity_id:      ID of the activity (as string)
+    :param activity_details: details of the activity (for format 'json')
+    :param args:             command-line arguments
+    :param file_time:        if given the desired time stamp for the activity file (in seconds since 1970-01-01)
+    :param append_desc:      suffix to the default filename
+    :param date_time:        datetime in ISO format used for '--fileprefix' and '--subdir' options
+    :return:                 True if the file was written, False if the file existed already
     """
-    # Time dependent subdirectory for activity files, e.g. '{YYYY}
+    # Time dependent subdirectory for activity files, e.g. '{YYYY}'
     if not args.subdir is None:
-        directory = resolve_path(args.directory, args.subdir, start_time_locale)
+        directory = resolve_path(args.directory, args.subdir, date_time)
     # export activities to root directory
     else:
         directory = args.directory
@@ -774,11 +786,11 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
 
     # timestamp as prefix for filename
     if args.fileprefix > 0:
-        prefix = "{}-".format(start_time_locale.replace("-", "").replace(":", "").replace(" ", "-"))
+        prefix = "{}-".format(date_time.replace("-", "").replace(":", "").replace(" ", "-"))
     else:
         prefix = ""
 
-    fit_filename = None
+    original_basename = None
     if args.format == 'gpx':
         data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.gpx')
         download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
@@ -790,7 +802,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     elif args.format == 'original':
         data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.zip')
         # not all 'original' files are in FIT format, some are GPX or TCX...
-        fit_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc)
+        original_basename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc)
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
     elif args.format == 'json':
@@ -805,10 +817,10 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
         # Inform the main program that the file already exists
         return False
 
-    # Regardless of unzip setting, don't redownload if the ZIP or FIT file exists.
-    if args.format == 'original' and (os.path.isfile(fit_filename + '.fit') or os.path.isfile(fit_filename + '.gpx') or os.path.isfile(fit_filename + '.tcx')):
+    # Regardless of unzip setting, don't redownload if the ZIP or FIT/GPX/TCX original file exists.
+    if args.format == 'original' and (os.path.isfile(original_basename + '.fit') or os.path.isfile(original_basename + '.gpx') or os.path.isfile(original_basename + '.tcx')):
         logging.debug('Original data file for %s already exists', activity_id)
-        print('\tFIT data file already exists; skipping...')
+        print('\tOriginal data file already exists; skipping...')
         # Inform the main program that the file already exists
         return False
 
@@ -860,7 +872,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                     # prepend 'activity_' and append the description to the base name
                     name_base, name_ext = os.path.splitext(name)
                     # sometimes in 2020 Garmin added '_ACTIVITY' to the name in the ZIP. Remove it...
-                    # note that 'new_name' should match 'fit_filename' elsewhere in this script to
+                    # note that 'new_name' should match 'original_basename' elsewhere in this script to
                     # avoid downloading the same files again
                     name_base = name_base.replace('_ACTIVITY', '')
                     new_name = os.path.join(directory, prefix + 'activity_' + name_base + append_desc + name_ext)
