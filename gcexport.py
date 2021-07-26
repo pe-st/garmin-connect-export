@@ -929,10 +929,10 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     # Inform the main program that the file is new
     return True
 
-def setup_logging():
+def setup_logging(args):
     """Setup logging"""
     logging.basicConfig(
-        filename='gcexport.log',
+        filename = os.path.join(args.directory, 'gcexport.log'),
         level=logging.DEBUG,
         format='%(asctime)s [%(levelname)-7.7s] %(message)s'
     )
@@ -1168,9 +1168,9 @@ def main(argv):
     """
     Main entry point for gcexport.py
     """
-    setup_logging()
-    logging.info("Starting %s version %s, using Python version %s", argv[0], SCRIPT_VERSION, python_version())
     args = parse_arguments(argv)
+    setup_logging(args)
+    logging.info("Starting %s version %s, using Python version %s", argv[0], SCRIPT_VERSION, python_version())
     logging_verbosity(args.verbosity)
 
     print('Welcome to Garmin Connect Exporter!')
