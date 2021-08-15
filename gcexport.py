@@ -65,7 +65,7 @@ else:
     COOKIE_JAR = cookielib.CookieJar()
     OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR), urllib2.HTTPSHandler(debuglevel=0))
 
-SCRIPT_VERSION = '3.2.0'
+SCRIPT_VERSION = '3.2.1'
 
 # this is almost the datetime format Garmin used in the activity-search-service
 # JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
@@ -933,13 +933,7 @@ def fetch_userstats(args):
     if args.verbosity > 0:
         write_to_file(os.path.join(args.directory, 'profile.html'), profile_page, 'w')
 
-    # extract the display name from the profile page, it should be in there as
-    # \"displayName\":\"John.Doe\"
-    pattern = re.compile(r".*\\\"displayName\\\":\\\"([-.\w]+)\\\".*", re.MULTILINE | re.DOTALL)
-    match = pattern.match(profile_page)
-    if not match:
-        raise Exception('Did not find the display name in the profile page.')
-    display_name = match.group(1)
+    display_name = extract_display_name(profile_page)
     print(' Done. displayName=', display_name, sep='')
 
     print('Fetching user stats...', end='')
@@ -951,6 +945,22 @@ def fetch_userstats(args):
     write_to_file(os.path.join(args.directory, 'userstats.json'), result, 'w')
 
     return json.loads(result)
+
+
+def extract_display_name(profile_page):
+    """
+    Extract the display name from the profile page HTML document
+    :param profile_page: HTML document
+    :return:             the display name
+    """
+    # the display name should be in the HTML document as
+    # \"displayName\":\"John.Doe\"
+    pattern = re.compile(r".*\\\"displayName\\\":\\\"(.+?)\\\".*", re.MULTILINE | re.DOTALL)
+    match = pattern.match(profile_page)
+    if not match:
+        raise Exception('Did not find the display name in the profile page.')
+    display_name = match.group(1)
+    return display_name
 
 
 def fetch_activity_list(args, total_to_download):

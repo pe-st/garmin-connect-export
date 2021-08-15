@@ -3,6 +3,12 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 3.2.1 - 2021-08-15
+
+- fixed: make the display name parsing work also for email addresses
+  ([Issue #65](https://github.com/pe-st/garmin-connect-export/issues/65)
+
+
 ## 3.2.0 - 2021-07-18
 
 - changed: [Python 2.x is not supported anymore](https://github.com/pe-st/garmin-connect-export/issues/64)

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+
+<html class="signed-in" lang="de">
+
+
+
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Garmin Connect</title>
+
+
+
+
+
+
+    <link rel="shortcut icon" href="/modern/images/favicon.ico" />
+
+    <!-- Connect Styles -->
+
+        <link rel="stylesheet" type="text/css" href="/modern/css/dropzone.min.css?bust=4.44.3.0" />
+        <link rel="stylesheet" type="text/css" href="/web-react/styles/global.css?bust=4.44.3.0" />
+
+
+
+    <!-- to be modify the google fonts in cdn here -->
+    <!--garmin.cn-->
+
+
+
+        <!-- FONTS -->
+        <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700&amp;subset=latin,cyrillic-ext,greek-ext,vietnamese" />
+
+
+
+
+    <title>Connect</title>
+</head>
+
+
+<body>
+<a href="connectagent://launch" id="notify-agent" style="display: none" tabindex="-1"><!-- dummy comment --></a>
+
+
+
+<div class="connect-container">
+
+    <nav class="main-nav hide"><!-- main navigation --></nav>
+
+    <div class="react-global-modal"><!-- react-global-modal --></div>
+
+    <div class="main-body">
+        <!-- Header -->
+
+
+    <header class="header hide">
+        <!-- placeholder -->
+    </header>
+
+    <section class="beta-testers-survey-banner takeover-container">
+        <!-- placeholder -->
+    </section>
+
+
+<div class="main-header"></div>
+
+
+        <!-- Content Container -->
+
+<div class="content clearfix">
+
+    <script>
+
+
+
+
+        window.VIEWER_USERPREFERENCES = JSON.parse("{\"displayName\":\"john.doe@email.org\",\"preferredLocale\":\"de\",\"measurementSystem\":\"metric\",\"firstDayOfWeek\":{\"dayId\":3,\"dayName\":\"monday\",\"sortOrder\":3,\"isPossibleFirstDay\":true},\"numberFormat\":\"decimal_period\",\"timeFormat\":{\"formatId\":33,\"formatKey\":\"time_twenty_four_hr\",\"minFraction\":0,\"maxFraction\":0,\"groupingUsed\":false,\"displayFormat\":\"H:mm\"},\"dateFormat\":{\"formatId\":24,\"formatKey\":\"ddmmyyyy\",\"minFraction\":0,\"maxFraction\":0,\"groupingUsed\":false,\"displayFormat\":\"EEE, d MMM yyyy\"},\"powerFormat\":{\"formatId\":30,\"formatKey\":\"watt\",\"minFraction\":0,\"maxFraction\":0,\"groupingUsed\":true,\"displayFormat\":null},\"heartRateFormat\":{\"formatId\":21,\"formatKey\":\"bpm\",\"minFraction\":0,\"maxFraction\":0,\"groupingUsed\":false,\"displayFormat\":null},\"timeZone\":\"Europe/Paris\",\"hydrationMeasurementUnit\":\"milliliter\",\"hydrationContainers\":[],\"golfDistanceUnit\":\"statute_us\",\"golfElevationUnit\":null,\"golfSpeedUnit\":null}");
+
+
+
+
+
+
+
+        window.VIEWER_SOCIAL_PROFILE = JSON.parse("{\"id\":2999999,\"profileId\":2888888,\"garminGUID\":\"00000000-5555-4444-8888-333333333333\",\"displayName\":\"john.doe@email.org\",\"fullName\":\"John Doe\",\"userName\":\"johndoe\",\"profileImageUrlLarge\":\"https://s3.amazonaws.com/garmin-connect-prod/profile_images/55555555-2222-4444-8888-888888888888-2888888.png\",\"profileImageUrlMedium\":\"https://s3.amazonaws.com/garmin-connect-prod/profile_images/11111111-2222-4444-aaaa-999999999999-2888888.png\",\"profileImageUrlSmall\":\"https://s3.amazonaws.com/garmin-connect-prod/profile_images/cccccccc-aaaa-4444-8888-bbbbbbbbbbbb-2888888.png\",\"location\":\"\",\"facebookUrl\":null,\"twitterUrl\":null,\"personalWebsite\":null,\"motivation\":null,\"bio\":null,\"primaryActivity\":null,\"favoriteActivityTypes\":[],\"runningTrainingSpeed\":0.0,\"cyclingTrainingSpeed\":0.0,\"favoriteCyclingActivityTypes\":[],\"cyclingClassification\":null,\"cyclingMaxAvgPower\":0.0,\"swimmingTrainingSpeed\":0.0,\"profileVisibility\":\"following\",\"activityStartVisibility\":\"private\",\"activityMapVisibility\":\"public\",\"courseVisibility\":\"public\",\"activityHeartRateVisibility\":\"public\",\"activityPowerVisibility\":\"public\",\"badgeVisibility\":\"following\",\"showAge\":false,\"showWeight\":false,\"showHeight\":false,\"showWeightClass\":false,\"showAgeRange\":false,\"showGender\":false,\"showActivityClass\":false,\"showVO2Max\":false,\"showPersonalRecords\":false,\"showLast12Months\":false,\"showLifetimeTotals\":true,\"showUpcomingEvents\":false,\"showRecentFavorites\":false,\"showRecentDevice\":false,\"showRecentGear\":false,\"showBadges\":true,\"otherActivity\":null,\"otherPrimaryActivity\":null,\"otherMotivation\":null,\"userRoles\":[\"ROLE_OUTDOOR_USER\",\"ROLE_CONNECTUSER\",\"ROLE_FITNESS_USER\",\"ROLE_WELLNESS_USER\",\"ROLE_CONNECT_2_USER\"],\"nameApproved\":true,\"userProfileFullName\":\"John Doe\",\"makeGolfScorecardsPrivate\":false,\"allowGolfLiveScoring\":false,\"allowGolfScoringByConnections\":true,\"userLevel\":3,\"userPoint\":111,\"levelUpdateDate\":\"2001-01-01T18:20:08.0\",\"levelIsViewed\":false,\"levelPointThreshold\":0,\"userPointOffset\":1,\"userPro\":false}");
+
+
+
+
+
+
+
+        window.VIEWER_DASHBOARDS = JSON.parse("[{\"dashboardId\":61111,\"ownerId\":2888888,\"dashboardTitle\":\"\",\"dashboardTitleKey\":\"fitness_dashboard\",\"dashboardOrder\":0},{\"dashboardId\":19999999,\"ownerId\":2888888,\"dashboardTitle\":\"\",\"dashboardTitleKey\":\"wellness_dashboard\",\"dashboardOrder\":1}]");
+
+
+
+
+
+
+
+        window.queueNotificationTimeout = 600000;
+
+
+
+
+
+
+
+        window.queuePollRate = 600000;
+
+
+
+
+
+
+
+
+
+        window.ERROR_VIEW = null;
+
+
+
+
+
+
+
+
+        window.USER_PROFILE = null;
+
+
+
+        window.viewerIsAuthenticated = true;
+
+        window.SYSTEM_TIME_GMT = 1626533312885;
+        window.SESSION_LENGTH = 2700 * 1000;
+        window.GAUTH_HOST = 'https://sso.garmin.com/sso';
+        window.GARMIN_APP_URL = 'https://apps.garmin.com/connect?locale={locale}';
+        window.WEB_TOKEN = null !== null ? "null" : "";
+        window.URL_BUST_VALUE = '4.44.3.0';
+
+        window.JS_ERROR = true;
+    </script>
+
+    <script src="/web-react/static/js/vendor.js?bust=4.44.3.0"></script>
+    <script src="/web-react/static/js/backbone-lib.js?bust=4.44.3.0"></script>
+    <script src="/web-react/static/js/bundle.js?bust=4.44.3.0"></script>
+</div>
+
+        <!-- END .content -->
+
+        <!-- Footer -->
+        <div class="main-footer"></div>
+        <!-- END .footer -->
+        <p style="display: none;" id="garmin-connect-version">4.44.3.0</p>
+    </div>
+
+    <!-- END .container -->
+</div>
+
+<style>
+    .privacy-overlay {
+        position: fixed; /* Sit on top of the page content */
+        width: 100%; /* Full width (cover the whole page) */
+        height: 100%; /* Full height (cover the whole page) */
+        top: 0;
+        left: 0;
+        background-color: #fff;
+        z-index: 9999; /* Specify a stack order in case you're using a different order for other elements */
+    }
+</style>
+
+<div id="overlay" class="privacy-overlay">
+</div>
+
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"rayId":"6767676767676767","token":"1bd18b8f692121212121212121212121","version":"2021.6.0","si":10}'></script>
+</body>
+
+
+
+</html>

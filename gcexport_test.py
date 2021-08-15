@@ -145,6 +145,17 @@ def test_extract_device():
     assert None == extract_device({}, details, None, args, http_req_mock, write_to_file_mock)
 
 
+def test_extract_display_name():
+    with open('html/profile_simple.html') as html:
+        profile_page = html.read()
+    assert 'John.Doe' == extract_display_name(profile_page)
+
+    # some users reported (issue #65) to have an email address as display name
+    with open('html/profile_email.html') as html:
+        profile_page = html.read()
+    assert 'john.doe@email.org' == extract_display_name(profile_page)
+
+
 def test_resolve_path():
     assert resolve_path('root', 'sub/{YYYY}', '2018-03-08 12:23:22') == 'root/sub/2018'
     assert resolve_path('root', 'sub/{MM}', '2018-03-08 12:23:22') == 'root/sub/03'
