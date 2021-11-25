@@ -744,18 +744,17 @@ def load_gear(activity_id, args):
         gear_json = http_req_as_string(URL_GC_GEAR + activity_id)
         gear = json.loads(gear_json)
         if gear:
-            del args # keep 'args' argument in case you need to uncomment write_to_file
-            # write_to_file(join(args.directory, 'activity_' + activity_id + '-gear.json'),
-            #               gear_json, 'w')
+            if args.verbosity > 0:
+                write_to_file(os.path.join(args.directory, 'activity_' + activity_id + '-gear.json'),
+                              gear_json, 'w')
             gear_display_name = gear[0]['displayName'] if present('displayName', gear[0]) else None
             gear_model = gear[0]['customMakeModel'] if present('customMakeModel', gear[0]) else None
             logging.debug("Gear for %s = %s/%s", activity_id, gear_display_name, gear_model)
             return gear_display_name if gear_display_name else gear_model
         return None
-    except HTTPError:
-        pass  # don't abort just for missing gear...
-        # logging.info("Unable to get gear for %d", activity_id)
-        # logging.exception(e)
+    except HTTPError as ex:
+        logging.info("Unable to get gear for %d, error: %s", activity_id, ex)
+        # logging.exception(ex)
 
 
 def export_data_file(activity_id, activity_details, args, file_time, append_desc, date_time):
