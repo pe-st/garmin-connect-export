@@ -8,7 +8,7 @@
 
 Download a copy of your Garmin Connect data, including stats and GPX tracks.
 
-Note that Garmin introduced recently (around May 2018, for GDPR compatibility) a possibility to [download all of your Garmin Connect data](https://www.garmin.com/en-US/account/datamanagement/exportdata/) in one zip file. Depending on your needs this might be enough, but the script here offers additional features like getting GPX tracks instead of the original upload format or limiting the export to just a couple of activities.
+Note that Garmin introduced a while ago (around May 2018, for GDPR compatibility) a possibility to [download all of your Garmin Connect data](https://www.garmin.com/en-US/account/datamanagement/exportdata/) in one zip file. Depending on your needs this might be enough, but the script here offers additional features like getting GPX tracks instead of the original upload format or limiting the export to just a couple of activities.
 
 ## Forks and Branches
 
@@ -134,10 +134,11 @@ If you want to see all of the raw data that Garmin hands to this script, just ch
 The format of the CSV export file can be customized with template files (in Properties format, see the `--template` option); three examples are included:
 
 - `csv_header_default.properties` (the default) gives you my preferred selection of columns, mainly targeted at running and hiking
+- `csv_header_all.properties` gives you all available columns, handy as starting point for your own selection
 - `csv_header_moderation.properties` gives you the same output as **@moderation**'s fork, mainly targeted at cycling
 - `csv_header_kjkjava.properties` gives you an output similar as **@kjkjava**'s original script, mainly targeted at running
 
-You can easily create a template file for your needs, just copy one of the examples and change the appearing columns, their order and/or their title. For the list of available columns see the `csv_write_record` function in the script.
+You can easily create a template file for your needs, just copy one of the examples and change the appearing columns, their order and/or their title.
 
 Some important columns explained:
 
@@ -153,7 +154,7 @@ More information about the API endpoints used in the script is available in [CON
 
 ## History
 
-The original project was written in PHP (formerly in the `old` directory, now deleted), based on "Garmin Connect export to Dailymile" code at http://www.ciscomonkey.net/gc-to-dm-export/ (link has been down for a while). It no longer works due to the way Garmin handles logins. It could be updated, but I (**kjkjava**) decided to rewrite everything in Python for the latest version.
+The original project was written in PHP (formerly in the `old` directory, now deleted), based on "Garmin Connect export to Dailymile" code at <http://www.ciscomonkey.net/gc-to-dm-export/> (link has been down for a while). It no longer works due to the way Garmin handles logins. It could be updated, but I (**kjkjava**) decided to rewrite everything in Python for the latest version.
 
 After 2015, when the original repo stopped being maintained, several forks from **kjkjava** started appearing (see
 Forks and Branches section above).

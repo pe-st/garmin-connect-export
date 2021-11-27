@@ -94,6 +94,8 @@ PARENT_TYPE_ID = {
 # typeId values using pace instead of speed
 USES_PACE = {1, 3, 9}  # running, hiking, walking
 
+HR_ZONES_EMPTY = [ None, None, None, None, None ]
+
 # Maximum number of activities you can request at once.
 # Used to be 100 and enforced by Garmin for older endpoints; for the current endpoint 'URL_GC_LIST'
 # the limit is not known (I have less than 1000 activities and could get them all in one go)
@@ -658,6 +660,16 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('vo2max', str(actvty['vO2MaxValue']) if present('vO2MaxValue', actvty) else None)
     csv_filter.set_column('aerobicEffect', str(round(details['summaryDTO']['trainingEffect'], 2)) if present('trainingEffect', details['summaryDTO']) else None)
     csv_filter.set_column('anaerobicEffect', str(round(details['summaryDTO']['anaerobicTrainingEffect'], 2)) if present('anaerobicTrainingEffect', details['summaryDTO']) else None)
+    csv_filter.set_column('hrZone1Low', str(extract['hrZones'][0]['zoneLowBoundary']) if present('zoneLowBoundary', extract['hrZones'][0]) else None)
+    csv_filter.set_column('hrZone1Seconds', "{0:.0f}".format(extract['hrZones'][0]['secsInZone']) if present('secsInZone', extract['hrZones'][0]) else None)
+    csv_filter.set_column('hrZone2Low', str(extract['hrZones'][1]['zoneLowBoundary']) if present('zoneLowBoundary', extract['hrZones'][1]) else None)
+    csv_filter.set_column('hrZone2Seconds', "{0:.0f}".format(extract['hrZones'][1]['secsInZone']) if present('secsInZone', extract['hrZones'][1]) else None)
+    csv_filter.set_column('hrZone3Low', str(extract['hrZones'][2]['zoneLowBoundary']) if present('zoneLowBoundary', extract['hrZones'][2]) else None)
+    csv_filter.set_column('hrZone3Seconds', "{0:.0f}".format(extract['hrZones'][2]['secsInZone']) if present('secsInZone', extract['hrZones'][2]) else None)
+    csv_filter.set_column('hrZone4Low', str(extract['hrZones'][3]['zoneLowBoundary']) if present('zoneLowBoundary', extract['hrZones'][3]) else None)
+    csv_filter.set_column('hrZone4Seconds', "{0:.0f}".format(extract['hrZones'][3]['secsInZone']) if present('secsInZone', extract['hrZones'][3]) else None)
+    csv_filter.set_column('hrZone5Low', str(extract['hrZones'][4]['zoneLowBoundary']) if present('zoneLowBoundary', extract['hrZones'][4]) else None)
+    csv_filter.set_column('hrZone5Seconds', "{0:.0f}".format(extract['hrZones'][4]['secsInZone']) if present('secsInZone', extract['hrZones'][4]) else None)
     csv_filter.set_column('averageRunCadence', str(round(details['summaryDTO']['averageRunCadence'], 2)) if present('averageRunCadence', details['summaryDTO']) else None)
     csv_filter.set_column('maxRunCadence', str(details['summaryDTO']['maxRunCadence']) if present('maxRunCadence', details['summaryDTO']) else None)
     csv_filter.set_column('strideLength', str(round(details['summaryDTO']['strideLength'], 2)) if present('strideLength', details['summaryDTO']) else None)
@@ -697,11 +709,12 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
     """
     Try to get the device details (and cache them, as they're used for multiple activities)
 
-    :param device_dict:  cache (dict) of already known devices
-    :param details:      dict with the details of an activity, should contain a device ID
-    :param args:         command-line arguments (for the file_writer callback)
-    :param http_caller:  callback to perform the HTTP call for downloading the device details
-    :param file_writer:  callback that saves the device details in a file
+    :param device_dict:        cache (dict) of already known devices
+    :param details:            dict with the details of an activity, should contain a device ID
+    :param start_time_seconds: if given use as timestamp for the file written (in seconds since 1970-01-01)
+    :param args:               command-line arguments (for the file_writer callback)
+    :param http_caller:        callback to perform the HTTP call for downloading the device details
+    :param file_writer:        callback that saves the device details in a file
     :return: string with the device name
     """
     if not present('metadataDTO', details):
@@ -736,6 +749,35 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
                         logging.warning("Device details %s incomplete", device_app_inst_id)
         return device_dict[device_app_inst_id]
     return None
+
+
+def load_zones(activity_id, start_time_seconds, args, http_caller, file_writer):
+    """
+    Try to get the heart rate zones
+
+    :param activity_id:        ID of the activity (as string)
+    :param start_time_seconds: if given use as timestamp for the file written (in seconds since 1970-01-01)
+    :param args:               command-line arguments (for the file_writer callback)
+    :param http_caller:        callback to perform the HTTP call for downloading the device details
+    :param file_writer:        callback that saves the device details in a file
+    :return: array with the heart rate zones
+    """
+    zones = HR_ZONES_EMPTY
+    zones_json = http_caller(URL_GC_ACTIVITY + activity_id + "/hrTimeInZones")
+    file_writer(os.path.join(args.directory, 'activity_' + activity_id + '_zones.json'),
+                zones_json, 'w',
+                start_time_seconds)
+    zones_raw = json.loads(zones_json)
+    if not zones_raw:
+        logging.warning("HR Zones %s are empty", activity_id)
+    else:
+        for raw_zone in zones_raw:
+            if present('zoneNumber', raw_zone):
+                index = raw_zone['zoneNumber'] - 1
+                zones[index] = dict()
+                zones[index]['secsInZone'] = raw_zone['secsInZone']
+                zones[index]['zoneLowBoundary'] = raw_zone['zoneLowBoundary']
+    return zones
 
 
 def load_gear(activity_id, args):
@@ -1274,6 +1316,10 @@ def main(argv):
         extract['gear'] = None
         if csv_filter.is_column_active('gear'):
             extract['gear'] = load_gear(str(actvty['activityId']), args)
+
+        extract['hrZones'] = HR_ZONES_EMPTY
+        if csv_filter.is_column_active('hrZone1Low') or csv_filter.is_column_active('hrZone1Seconds'):
+            extract['hrZones'] = load_zones(str(actvty['activityId']), start_time_seconds, args, http_req_as_string, write_to_file)
 
         # Save the file and inform if it already existed. If the file already existed, do not apped the record to the csv
         if export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc, actvty['startTimeLocal']):
