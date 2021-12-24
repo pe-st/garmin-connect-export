@@ -955,7 +955,7 @@ def extract_display_name(profile_page):
     """
     # the display name should be in the HTML document as
     # \"displayName\":\"John.Doe\"
-    pattern = re.compile(r".*\\\"displayName\\\":\\\"(.+?)\\\".*", re.MULTILINE | re.DOTALL)
+    pattern = re.compile(r".*\"displayName\":\"(.+?)\".*", re.MULTILINE | re.DOTALL)
     match = pattern.match(profile_page)
     if not match:
         raise Exception('Did not find the display name in the profile page.')
