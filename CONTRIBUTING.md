@@ -27,10 +27,11 @@ is a detailed help source on getting involved with development on GitHub.
 
 ### Testing
 
-There is a small set of unit test, using [pytest](https://docs.pytest.org/en/latest/)
+There is a small set of unit test, using [pytest](https://docs.pytest.org/en/latest/);
+these tests are executed automatically whenever a commit is pushed or when a pull request is updated.
 
 I found that the free [PyCharm Community](https://www.jetbrains.com/pycharm/download/) is well suited for running the
-tests, and it's very easy to switch between Python 2.7 and Python 3.x to make sure the tests run with both versions.
+tests.
 
 Unfortunately there are no mocks yet for simulating Garmin Connect during development, so for real tests you'll have to
 run the script against your own Garmin account.

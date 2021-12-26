@@ -3,6 +3,15 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 3.3.0 - 2021-12-26
+
+- added: support for time spent in HR zones (feature request)
+  ([Issue #68](https://github.com/pe-st/garmin-connect-export/issues/68)
+- fixed: adapt display name parsing because of change Garmin Connect behaviour
+  ([Pull Request #69](https://github.com/pe-st/garmin-connect-export/pull/69) by @hannesweisbach)
+- added: Github Action to execute the tests automatically
+
+
 ## 3.2.1 - 2021-08-15
 
 - fixed: make the display name parsing work also for email addresses
