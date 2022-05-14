@@ -528,6 +528,8 @@ def parse_arguments(argv):
     parser.add_argument('-ex', '--exclude', metavar="FILE",
         help="Json file with Array of activity IDs to exclude from download. "
                         "Format example: {\"ids\": [\"6176888711\"]}")
+    parser.add_argument('-tf', '--type_filter',
+        help="comma-seperated list of activity type IDs to allow.")    
 
     return parser.parse_args(argv[1:])
 
@@ -1035,13 +1037,15 @@ def fetch_activity_list(args, total_to_download):
     return activities
 
 
-def annotate_activity_list(activities, start, exclude_list):
+def annotate_activity_list(activities, start, exclude_list, type_filter):
     action_list = []
     for index, a in enumerate(activities):
         if index < (start - 1):
             action = 's'
         elif str(a['activityId']) in exclude_list:
             action = 'e'
+        elif type_filter is not None and a['activityType']['typeId'] not in type_filter:
+            action = 'f'
         else:
             action = 'd'
 
@@ -1232,7 +1236,15 @@ def main(argv):
     event_type_name = load_properties(event_type_props)
 
     activities = fetch_activity_list(args, total_to_download)
-    action_list = annotate_activity_list(activities, args.start_activity_no, exclude_list)
+
+    #if args.type_filter is not None:
+    #    type_filter = args.type_filter.split(',')
+    #else:
+    #    type_filter = None
+
+    type_filter = args.type_filter.split(',')  if args.type_filter is not None else None
+
+    action_list = annotate_activity_list(activities, args.start_activity_no, exclude_list, type_filter)
 
     # Process each activity.
     for item in action_list:
@@ -1255,6 +1267,14 @@ def main(argv):
             print('Excluding  : Garmin Connect activity ', end='')
             print('(', current_index, '/', len(action_list), ') ', sep='', end='')
             print('[', actvty['activityId'], '] ', sep='')
+            continue
+
+        # Action: Filtered out by typeID
+        if action == 'f':
+            # Display which entry we're skipping.
+            print('Filtering out due to typeID   : Garmin Connect activity ', end='')
+            print('(', current_index, '/', len(action_list), ') ', sep='', end='')
+            print('[', actvty['activityId'], ']', sep='')
             continue
 
         # Action: download
