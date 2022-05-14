@@ -474,6 +474,8 @@ def parse_arguments(argv):
         help='give index for first activity to import, i.e. skipping the newest activities')
     parser.add_argument('-ex', '--exclude', metavar='FILE',
         help='JSON file with Array of activity IDs to exclude from download. Format example: {"ids": ["6176888711"]}')
+    parser.add_argument('-tf', '--type_filter',
+        help="comma-seperated list of activity type IDs to allow.")    
     parser.add_argument('-ss', '--session', metavar='DIRECTORY',
         help='enable loading and storing SSO information from/to given directory')
     # fmt: on
@@ -957,7 +959,7 @@ def fetch_activity_list(args, total_to_download):
     return activities
 
 
-def annotate_activity_list(activities, start, exclude_list):
+def annotate_activity_list(activities, start, exclude_list, type_filter):
     """
     Creates an action list with a tuple per activity summary
 
@@ -980,6 +982,8 @@ def annotate_activity_list(activities, start, exclude_list):
             action = 's'
         elif str(activity['activityId']) in exclude_list:
             action = 'e'
+        elif type_filter is not None and activity['activityType']['typeId'] not in type_filter:
+            action = 'f'
         else:
             action = 'd'
 
@@ -1106,7 +1110,7 @@ def copy_details_to_summary(summary, details):
     # fmt: on
 
 
-def process_activity_item(item, number_of_items, device_dict, activity_type_name, event_type_name, csv_filter, args):
+def process_activity_item(item, number_of_items, device_dict, type_filter, activity_type_name, event_type_name, csv_filter, args):
     """
     Process one activity item: download the data, parse it and write a line to the CSV file
 
@@ -1134,6 +1138,14 @@ def process_activity_item(item, number_of_items, device_dict, activity_type_name
         # Display which entry we're skipping.
         print('Excluding  : Garmin Connect activity ', end='')
         print(f"({current_index}/{number_of_items}) [{actvty['activityId']}]")
+        return
+
+    # Action: Filtered out by typeID
+    if action == 'f':
+        # Display which entry we're skipping.
+        print('Filtering out due to typeID   : Garmin Connect activity ', end='')
+        print('(', current_index, '/', len(number_of_items), ') ', sep='', end='')
+        print('[', actvty['activityId'], ']', sep='')
         return
 
     # Action: download
@@ -1268,7 +1280,15 @@ def main(argv):
     event_type_name = load_properties(event_type_props)
 
     activities = fetch_activity_list(args, total_to_download)
-    action_list = annotate_activity_list(activities, args.start_activity_no, exclude_list)
+
+    #if args.type_filter is not None:
+    #    type_filter = args.type_filter.split(',')
+    #else:
+    #    type_filter = None
+
+    type_filter = args.type_filter.split(',')  if args.type_filter is not None else None
+
+    action_list = annotate_activity_list(activities, args.start_activity_no, exclude_list, type_filter)
 
     csv_filename = os.path.join(args.directory, 'activities.csv')
     csv_existed = os.path.isfile(csv_filename)
@@ -1283,7 +1303,7 @@ def main(argv):
 
         # Process each activity.
         for item in action_list:
-            process_activity_item(item, len(action_list), device_dict, activity_type_name, event_type_name, csv_filter, args)
+            process_activity_item(item, len(action_list), device_dict, type_filter, activity_type_name, event_type_name, csv_filter, args)
 
     logging.info('CSV file written.')
 
