@@ -388,10 +388,7 @@ def epoch_seconds_from_summary(summary):
         return summary['beginTimestamp'] // 1000
     elif present('startTimeLocal', summary) and present('startTimeGMT', summary):
         dt = offset_date_time(summary['startTimeLocal'], summary['startTimeGMT'])
-        # with Python 3 this can be simplified to datetime.timestamp()
-        utc = FixedOffset(0, "UTC")
-        seconds = (dt - datetime(1970, 1, 1, tzinfo = utc)).total_seconds()
-        return int(seconds)
+        return int(dt.timestamp())
     else:
         logging.info('No timestamp found in activity %s', summary['activityId'])
         return None
