@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -18,9 +18,6 @@ Activity & event types:
     https://connect.garmin.com/modern/main/js/properties/event_types/event_types.properties
     https://connect.garmin.com/modern/main/js/properties/activity_types/activity_types.properties
 """
-
-# this avoids different pylint behaviour for python 2 and 3
-from __future__ import print_function
 
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
@@ -44,26 +41,16 @@ import zipfile
 
 from filtering import update_download_stats, read_exclude
 
-python3 = sys.version_info.major == 3
-if python3:
-    import http.cookiejar
-    import urllib.error
-    import urllib.parse
-    import urllib.request
-    import urllib
-    from urllib.parse import urlencode
-    from urllib.request import Request, HTTPError, URLError
+import http.cookiejar
+import urllib.error
+import urllib.parse
+import urllib.request
+import urllib
+from urllib.parse import urlencode
+from urllib.request import Request, HTTPError, URLError
 
-    COOKIE_JAR = http.cookiejar.CookieJar()
-    OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
-else:
-    import cookielib
-    import urllib2
-    from urllib import urlencode
-    from urllib2 import Request, HTTPError, URLError
-
-    COOKIE_JAR = cookielib.CookieJar()
-    OPENER = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR), urllib2.HTTPSHandler(debuglevel=0))
+COOKIE_JAR = http.cookiejar.CookieJar()
+OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
 
 SCRIPT_VERSION = '4.0.0-Beta'
 
@@ -239,16 +226,11 @@ def http_req(url, post=None, headers=None):
         like Gecko) Chrome/54.0.2816.0 Safari/537.36')
     request.add_header('nk', 'NT')  # necessary since 2021-02-23 to avoid http error code 402
     if headers:
-        if python3:
-            for header_key, header_value in headers.items():
-                request.add_header(header_key, header_value)
-        else:
-            for header_key, header_value in headers.iteritems():
-                request.add_header(header_key, header_value)
+        for header_key, header_value in headers.items():
+            request.add_header(header_key, header_value)
     if post:
         post = urlencode(post)  # Convert dictionary to POST parameter string.
-        if python3:
-            post = post.encode("utf-8")
+        post = post.encode("utf-8")
     start_time = timer()
     try:
         response = OPENER.open(request, data=post)
@@ -283,10 +265,7 @@ def http_req(url, post=None, headers=None):
 
 def http_req_as_string(url, post=None, headers=None):
     """Helper function that makes the HTTP requests, returning a string instead of bytes."""
-    if python3:
-        return http_req(url, post, headers).decode()
-    else:
-        return http_req(url, post, headers)
+    return http_req(url, post, headers).decode()
 
 
 # idea stolen from https://stackoverflow.com/a/31852401/3686
@@ -356,7 +335,7 @@ class FixedOffset(tzinfo):
     """Fixed offset in minutes east from UTC."""
 
     def __init__(self, offset, name):
-        super(FixedOffset, self).__init__()
+        super().__init__()
         self.__offset = timedelta(minutes=offset)
         self.__name = name
 
@@ -442,7 +421,7 @@ def pace_or_speed_formatted(type_id, parent_type_id, mps):
     return "{0:.1f}".format(round(kmh, 1))
 
 
-class CsvFilter(object):
+class CsvFilter:
     """Collects, filters and writes CSV."""
 
     def __init__(self, csv_file, csv_header_properties):
@@ -472,11 +451,7 @@ class CsvFilter(object):
         the record prepared for the next write_row call
         """
         if value and name in self.__csv_columns:
-            if python3:
-                self.__current_row[self.__csv_headers[name]] = value
-            else:
-                # must encode in UTF-8 because the Python 2 'csv' module doesn't support unicode
-                self.__current_row[self.__csv_headers[name]] = value.encode('utf8')
+            self.__current_row[self.__csv_headers[name]] = value
 
     def is_column_active(self, name):
         """Return True if the column is present in the header template"""
@@ -538,10 +513,7 @@ def login_to_garmin_connect(args):
     """
     Perform all HTTP requests to login to Garmin Connect.
     """
-    if python3:
-        username = args.username if args.username else input('Username: ')
-    else:
-        username = args.username if args.username else raw_input('Username: ')
+    username = args.username if args.username else input('Username: ')
     password = args.password if args.password else getpass()
 
     logging.debug("Login params: %s", urlencode(DATA))
@@ -1181,7 +1153,7 @@ def main(argv):
 
     print('Welcome to Garmin Connect Exporter!')
 
-    if not python3:
+    if sys.version_info.major < 3:
         print('Please upgrade to Python 3.x, version', python_version(), 'isn\'t supported anymore, see https://github.com/pe-st/garmin-connect-export/issues/64')
         sys.exit(1)
 
@@ -1206,10 +1178,7 @@ def main(argv):
     csv_filename = args.directory + '/activities.csv'
     csv_existed = os.path.isfile(csv_filename)
 
-    if python3:
-        csv_file = open(csv_filename, mode='a', encoding='utf-8')
-    else:
-        csv_file = open(csv_filename, 'a')
+    csv_file = open(csv_filename, mode='a', encoding='utf-8')
     csv_filter = CsvFilter(csv_file, args.template)
 
     # Write header to CSV file
