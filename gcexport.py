@@ -191,9 +191,8 @@ def write_to_file(filename, content, mode='w', file_time=None):
     Helper function that persists content to a file.
 
     :param filename:     name of the file to write
-    :param content:      content to write; with Python 2 always of type 'str',
-                         with Python 3 it can be 'bytes' or 'str'. If it's
-                         'bytes' and the mode 'w', it will be converted/decoded
+    :param content:      content to write; can be 'bytes' or 'str'.
+                         If it's 'bytes' and the mode 'w', it will be converted/decoded
     :param mode:         'w' or 'wb'
     :param file_time:    if given use as timestamp for the file written (in seconds since 1970-01-01)
     """
@@ -218,7 +217,7 @@ def http_req(url, post=None, headers=None):
     :param url:          URL for the request
     :param post:         dictionary of POST parameters
     :param headers:      dictionary of headers
-    :return: response body (type 'str' with Python 2, type 'bytes' with Python 3
+    :return: response body (type 'bytes')
     """
     request = Request(url)
     # Tell Garmin we're some supported browser.
