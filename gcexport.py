@@ -339,15 +339,12 @@ class FixedOffset(tzinfo):
         self.__name = name
 
     def utcoffset(self, dt):
-        del dt # unused
         return self.__offset
 
     def tzname(self, dt):
-        del dt # unused
         return self.__name
 
     def dst(self, dt):
-        del dt # unused
         return timedelta(0)
 
 
