@@ -15,9 +15,6 @@ And the effort to still support Python 2 has become to big (see https://github.c
 so to protect users from getting HTTP errors/exceptions with Python 2, the script
 purposely denies running with Python 2.
 
-The code that would support Python 2 will still be around for some time before
-I will clean up the code.
-
 ## Getting started
 
 ### Pull requests
