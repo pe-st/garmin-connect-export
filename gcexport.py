@@ -1237,7 +1237,7 @@ def main(argv):
 
     activities = fetch_activity_list(args, total_to_download)
 
-    type_filter = list(map(int,args.type_filter.split(',')))  if args.type_filter is not None else None
+    type_filter = map(int,args.type_filter.split(','))  if args.type_filter is not None else None
 
     action_list = annotate_activity_list(activities, args.start_activity_no, exclude_list, type_filter)
 
