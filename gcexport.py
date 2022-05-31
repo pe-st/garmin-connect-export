@@ -510,9 +510,9 @@ def parse_arguments(argv):
         help="export format; can be 'gpx', 'tcx', 'original' or 'json' (default: 'gpx')")
     parser.add_argument('-d', '--directory', default=activities_directory,
         help='the directory to export to (default: \'./YYYY-MM-DD_garmin_connect_export\')')
-    parser.add_argument('-s', "--subdir",
-        help="the subdirectory for activity files (tcx, gpx etc.), supported placeholders are {YYYY} and {MM}"
-                        " (default: export directory)" )
+    parser.add_argument('-s', '--subdir',
+        help='the subdirectory for activity files (tcx, gpx etc.), supported placeholders are {YYYY} and {MM}'
+                        ' (default: export directory)')
     parser.add_argument('-l', '--logpath',
         help='the directory to store logfiles (default: same as for --directory')
     parser.add_argument('-u', '--unzip', action='store_true',
@@ -524,12 +524,12 @@ def parse_arguments(argv):
     parser.add_argument('-t', '--template', default=CSV_TEMPLATE,
         help='template file with desired columns for CSV output')
     parser.add_argument('-fp', '--fileprefix', action='count', default=0,
-        help="set the local time as activity file name prefix")
+        help='set the local time as activity file name prefix')
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
-        help="give index for first activity to import, i.e. skipping the newest activities")
-    parser.add_argument('-ex', '--exclude', metavar="FILE",
-        help="Json file with Array of activity IDs to exclude from download. "
-                        "Format example: {\"ids\": [\"6176888711\"]}")
+        help='give index for first activity to import, i.e. skipping the newest activities')
+    parser.add_argument('-ex', '--exclude', metavar='FILE',
+        help='JSON file with Array of activity IDs to exclude from download. '
+                        'Format example: {"ids": ["6176888711"]}')
 
     return parser.parse_args(argv[1:])
 
