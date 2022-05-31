@@ -513,6 +513,8 @@ def parse_arguments(argv):
     parser.add_argument('-s', "--subdir",
         help="the subdirectory for activity files (tcx, gpx etc.), supported placeholders are {YYYY} and {MM}"
                         " (default: export directory)" )
+    parser.add_argument('-l', '--logpath',
+        help='the directory to store logfiles (default: same as for --directory')
     parser.add_argument('-u', '--unzip', action='store_true',
         help='if downloading ZIP files (format: \'original\'), unzip the file and remove the ZIP file')
     parser.add_argument('-ot', '--originaltime', action='store_true',
@@ -931,12 +933,12 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
 
 def setup_logging(args):
     """Setup logging"""
-    # make sure the log file can be created
-    if not os.path.isdir(args.directory):
-        os.makedirs(args.directory)
+    logpath = args.logpath if args.logpath else args.directory
+    if not os.path.isdir(logpath):
+        os.makedirs(logpath)
 
     logging.basicConfig(
-        filename = os.path.join(args.directory, 'gcexport.log'),
+        filename = os.path.join(logpath, 'gcexport.log'),
         level=logging.DEBUG,
         format='%(asctime)s [%(levelname)-7.7s] %(message)s'
     )
