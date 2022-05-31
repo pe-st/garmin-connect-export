@@ -931,6 +931,10 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
 
 def setup_logging(args):
     """Setup logging"""
+    # make sure the log file can be created
+    if not os.path.isdir(args.directory):
+        os.makedirs(args.directory)
+
     logging.basicConfig(
         filename = os.path.join(args.directory, 'gcexport.log'),
         level=logging.DEBUG,
