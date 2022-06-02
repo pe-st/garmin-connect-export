@@ -46,8 +46,9 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import urllib
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
-from urllib.request import Request, HTTPError, URLError
+from urllib.request import Request
 
 COOKIE_JAR = http.cookiejar.CookieJar()
 OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
