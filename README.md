@@ -53,12 +53,12 @@ You will need a little experience running things from the command line to use th
 usage: gcexport.py [-h] [--version] [-v] [--username USERNAME]
                    [--password PASSWORD] [-c COUNT] [-e EXTERNAL] [-a ARGS]
                    [-f {gpx,tcx,original,json}] [-d DIRECTORY] [-s SUBDIR]
-                   [-u] [-ot] [--desc [DESC]] [-t TEMPLATE] [-fp]
-                   [-sa START_ACTIVITY_NO] [-ex FILE]
+                   [-lp LOGPATH] [-u] [-ot] [--desc [DESC]] [-t TEMPLATE]
+                   [-fp] [-sa START_ACTIVITY_NO] [-ex FILE]
 
 Garmin Connect Exporter
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   --version             print version and exit
   -v, --verbosity       increase output and log verbosity, save more intermediate files
@@ -76,6 +76,8 @@ optional arguments:
   -s SUBDIR, --subdir SUBDIR
                         the subdirectory for activity files (tcx, gpx etc.), supported placeholders are {YYYY} and {MM}
                         (default: export directory)
+  -lp LOGPATH, --logpath LOGPATH
+                        the directory to store logfiles (default: same as for --directory
   -u, --unzip           if downloading ZIP files (format: 'original'), unzip the file and remove the ZIP file
   -ot, --originaltime   will set downloaded (and possibly unzipped) file time to the activity start time
   --desc [DESC]         append the activity's description to the file name of the download; limit size if number is given
@@ -85,7 +87,7 @@ optional arguments:
   -sa START_ACTIVITY_NO, --start_activity_no START_ACTIVITY_NO
                         give index for first activity to import, i.e. skipping the newest activities
   -ex FILE, --exclude FILE
-                        Json file with Array of activity IDs to exclude from download.
+                        JSON file with Array of activity IDs to exclude from download.
                         Format example: {"ids": ["6176888711"]}
 ```
 
