@@ -528,6 +528,8 @@ def parse_arguments(argv):
     parser.add_argument('-ex', '--exclude', metavar="FILE",
         help="Json file with Array of activity IDs to exclude from download. "
                         "Format example: {\"ids\": [\"6176888711\"]}")
+    parser.add_argument('-x', '--exitondup', action='store_true',
+        help="Stop further downloads after the first duplicate file occurs")
 
     return parser.parse_args(argv[1:])
 
@@ -813,7 +815,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     :param file_time:        if given the desired time stamp for the activity file (in seconds since 1970-01-01)
     :param append_desc:      suffix to the default filename
     :param date_time:        datetime in ISO format used for '--fileprefix' and '--subdir' options
-    :return:                 True if the file was written, False if the file existed already
+    :raise FileExistsError:  if the file existed already
     """
     # Time dependent subdirectory for activity files, e.g. '{YYYY}'
     if not args.subdir is None:
@@ -856,14 +858,14 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
         logging.debug('Data file for %s already exists', activity_id)
         print('\tData file already exists; skipping...')
         # Inform the main program that the file already exists
-        return False
+        raise FileExistsError
 
     # Regardless of unzip setting, don't redownload if the ZIP or FIT/GPX/TCX original file exists.
     if args.format == 'original' and (os.path.isfile(original_basename + '.fit') or os.path.isfile(original_basename + '.gpx') or os.path.isfile(original_basename + '.tcx')):
         logging.debug('Original data file for %s already exists', activity_id)
         print('\tOriginal data file already exists; skipping...')
         # Inform the main program that the file already exists
-        return False
+        raise FileExistsError
 
     if args.format != 'json':
         # Download the data file from Garmin Connect. If the download fails (e.g., due to timeout),
@@ -926,8 +928,6 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                 print('\tSkipping 0Kb zip file.')
             os.remove(data_filename)
 
-    # Inform the main program that the file is new
-    return True
 
 def setup_logging():
     """Setup logging"""
@@ -1322,7 +1322,14 @@ def main(argv):
             extract['hrZones'] = load_zones(str(actvty['activityId']), start_time_seconds, args, http_req_as_string, write_to_file)
 
         # Save the file and inform if it already existed. If the file already existed, do not apped the record to the csv
-        if export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc, actvty['startTimeLocal']):
+        try:
+            export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc, actvty['startTimeLocal'])
+        except FileExistsError:
+            if args.exitondup:
+                logging.info('--exitondup flag enabled. Skipping the remaining activities.')
+                print('--exitondup flag enabled. Skipping the remaining activities.')
+                break
+        else:
             # Write stats to CSV.
             csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name)
 

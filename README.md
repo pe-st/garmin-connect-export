@@ -54,7 +54,7 @@ usage: gcexport.py [-h] [--version] [-v] [--username USERNAME]
                    [--password PASSWORD] [-c COUNT] [-e EXTERNAL] [-a ARGS]
                    [-f {gpx,tcx,original,json}] [-d DIRECTORY] [-s SUBDIR]
                    [-u] [-ot] [--desc [DESC]] [-t TEMPLATE] [-fp]
-                   [-sa START_ACTIVITY_NO] [-ex FILE]
+                   [-sa START_ACTIVITY_NO] [-ex FILE] [-x]
 
 Garmin Connect Exporter
 
@@ -87,6 +87,7 @@ optional arguments:
   -ex FILE, --exclude FILE
                         Json file with Array of activity IDs to exclude from download.
                         Format example: {"ids": ["6176888711"]}
+  -x, --exitondup       Stop further downloads after the first duplicate file occurs
 ```
 
 ### Examples
