@@ -87,7 +87,7 @@ optional arguments:
   -ex FILE, --exclude FILE
                         Json file with Array of activity IDs to exclude from download.
                         Format example: {"ids": ["6176888711"]}
-  -x, --exitondup       Stop further downloads after the first duplicate file occurs
+  -x, --exitondup       stop further downloads after the first duplicate file occurs
 ```
 
 ### Examples

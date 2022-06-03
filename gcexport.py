@@ -529,7 +529,7 @@ def parse_arguments(argv):
         help="Json file with Array of activity IDs to exclude from download. "
                         "Format example: {\"ids\": [\"6176888711\"]}")
     parser.add_argument('-x', '--exitondup', action='store_true',
-        help="Stop further downloads after the first duplicate file occurs")
+        help="stop further downloads after the first duplicate file occurs")
 
     return parser.parse_args(argv[1:])
 
