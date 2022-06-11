@@ -82,7 +82,7 @@ PARENT_TYPE_ID = {
 # typeId values using pace instead of speed
 USES_PACE = {1, 3, 9}  # running, hiking, walking
 
-HR_ZONES_EMPTY = [ None, None, None, None, None ]
+HR_ZONES_EMPTY = [None, None, None, None, None]
 
 # Maximum number of activities you can request at once.
 # Used to be 100 and enforced by Garmin for older endpoints; for the current endpoint 'URL_GC_LIST'
@@ -287,7 +287,7 @@ def load_properties(multiline, separator='=', comment_char='#', keys=None):
             key = key_value[0].strip()
             value = separator.join(key_value[1:]).strip().strip('"')
             props[key] = value
-            if keys != None:
+            if keys is not None:
                 keys.append(key)
     return props
 
@@ -711,8 +711,8 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
                 else:
                     device_details = json.loads(device_json)
                     if present('productDisplayName', device_details):
-                        device_dict[device_app_inst_id] = device_details['productDisplayName'] + ' ' \
-                                                          + device_details['versionString']
+                        device_dict[device_app_inst_id] = \
+                            device_details['productDisplayName'] + ' ' + device_details['versionString']
                     else:
                         logging.warning("Device details %s incomplete", device_app_inst_id)
         return device_dict[device_app_inst_id]
@@ -784,7 +784,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     :return:                 True if the file was written, False if the file existed already
     """
     # Time dependent subdirectory for activity files, e.g. '{YYYY}'
-    if not args.subdir is None:
+    if args.subdir is not None:
         directory = resolve_path(args.directory, args.subdir, date_time)
     # export activities to root directory
     else:
@@ -896,6 +896,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
     # Inform the main program that the file is new
     return True
 
+
 def setup_logging(args):
     """Setup logging"""
     logpath = args.logpath if args.logpath else args.directory
@@ -903,7 +904,7 @@ def setup_logging(args):
         os.makedirs(logpath)
 
     logging.basicConfig(
-        filename = os.path.join(logpath, 'gcexport.log'),
+        filename=os.path.join(logpath, 'gcexport.log'),
         level=logging.DEBUG,
         format='%(asctime)s [%(levelname)-7.7s] %(message)s'
     )
@@ -1270,7 +1271,7 @@ def main(argv):
                 samples = json.loads(activity_measurements)
                 extract['samples'] = samples
             except HTTPError:
-                pass # don't abort just for missing samples...
+                pass  # don't abort just for missing samples...
                 # logging.info("Unable to get samples for %d", actvty['activityId'])
                 # logging.exception(e)
 
@@ -1286,7 +1287,6 @@ def main(argv):
         if export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc, actvty['startTimeLocal']):
             # Write stats to CSV.
             csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name)
-
 
     # End for loop for activities / action items
 

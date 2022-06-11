@@ -1,0 +1,10 @@
+[flake8]
+ignore =
+   E501, # line too long
+   E128 # continuation line under-indented for visual indent
+exclude =
+   .git,
+   __pycache__,
+   extras,
+   venv,
+   ./gcexport_test.py
