@@ -258,7 +258,7 @@ def http_req(url, post=None, headers=None):
         logging.info('Got 204 for %s, returning empty response', url)
         return b''
     elif response.getcode() != 200:
-        raise Exception('Bad return code (' + str(response.getcode()) + ') for: ' + url)
+        raise Exception(f'Bad return code ({response.getcode()}) for: {url}')
 
     return response.read()
 
@@ -372,7 +372,7 @@ def datetime_from_iso(iso_date_time):
     pattern = re.compile(r"(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})(\.\d+)?")
     match = pattern.match(iso_date_time)
     if not match:
-        raise Exception('Invalid ISO timestamp ' + iso_date_time + '.')
+        raise Exception(f'Invalid ISO timestamp {iso_date_time}.')
     micros = match.group(3) if match.group(3) else ".0"
     iso_with_micros = match.group(1) + ' ' + match.group(2) + micros
     return datetime.strptime(iso_with_micros, "%Y-%m-%d %H:%M:%S.%f")
@@ -859,7 +859,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                 data = ''
             else:
                 logging.info('Got %s for %s', ex.code, download_url)
-                raise Exception('Failed. Got an HTTP error ' + str(ex.code) + ' for ' + download_url)
+                raise Exception(f'Failed. Got an HTTP error {ex.code} for {download_url}')
     else:
         data = activity_details
 
@@ -1100,8 +1100,7 @@ def fetch_details(activity_id, http_caller):
             logging.info("Retrying activity details download %s", URL_GC_ACTIVITY + str(activity_id))
             tries -= 1
             if tries == 0:
-                raise Exception(
-                    'Didn\'t get "summaryDTO" after ' + str(MAX_TRIES) + ' tries for ' + str(activity_id))
+                raise Exception(f'Didn\'t get "summaryDTO" after {MAX_TRIES} tries for {activity_id}')
     return activity_details, details
 
 
