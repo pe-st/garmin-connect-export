@@ -1213,24 +1213,20 @@ def main(argv):
         if action == 's':
             # Display which entry we're skipping.
             print('Skipping   : Garmin Connect activity ', end='')
-            print('(', current_index, '/', len(action_list), ') ', sep='', end='')
-            print('[', actvty['activityId'], ']', sep='')
+            print(f"({current_index}/{len(action_list)}) [{actvty['activityId']}]")
             continue
 
         # Action: excluding
         if action == 'e':
             # Display which entry we're skipping.
             print('Excluding  : Garmin Connect activity ', end='')
-            print('(', current_index, '/', len(action_list), ') ', sep='', end='')
-            print('[', actvty['activityId'], '] ', sep='')
+            print(f"({current_index}/{len(action_list)}) [{actvty['activityId']}]")
             continue
 
         # Action: download
         # Display which entry we're working on.
         print('Downloading: Garmin Connect activity ', end='')
-        print('(', current_index, '/', len(action_list), ') ', sep='', end='')
-        print('[', actvty['activityId'], '] ', sep='', end='')
-        print(actvty['activityName'])
+        print(f"({current_index}/{len(action_list)}) [{actvty['activityId']}] actvty['activityName']")
 
         # Retrieve also the detail data from the activity (the one displayed on
         # the https://connect.garmin.com/modern/activity/xxx page), because some
