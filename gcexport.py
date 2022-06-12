@@ -702,7 +702,7 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
             device_id = device_meta['deviceId'] if present('deviceId', device_meta) else None
             if 'deviceId' not in device_meta or device_id and device_id != '0':
                 device_json = http_caller(URL_GC_DEVICE + str(device_app_inst_id))
-                file_writer(os.path.join(args.directory, 'device_' + str(device_app_inst_id) + '.json'),
+                file_writer(os.path.join(args.directory, f'device_{device_app_inst_id}.json'),
                             device_json, 'w',
                             start_time_seconds)
                 if not device_json:
@@ -731,8 +731,8 @@ def load_zones(activity_id, start_time_seconds, args, http_caller, file_writer):
     :return: array with the heart rate zones
     """
     zones = HR_ZONES_EMPTY
-    zones_json = http_caller(URL_GC_ACTIVITY + activity_id + "/hrTimeInZones")
-    file_writer(os.path.join(args.directory, 'activity_' + activity_id + '_zones.json'),
+    zones_json = http_caller(f'{URL_GC_ACTIVITY}{activity_id}/hrTimeInZones')
+    file_writer(os.path.join(args.directory, f'activity_{activity_id}_zones.json'),
                 zones_json, 'w',
                 start_time_seconds)
     zones_raw = json.loads(zones_json)
@@ -755,7 +755,7 @@ def load_gear(activity_id, args):
         gear = json.loads(gear_json)
         if gear:
             if args.verbosity > 0:
-                write_to_file(os.path.join(args.directory, 'activity_' + activity_id + '-gear.json'),
+                write_to_file(os.path.join(args.directory, f'activity_{activity_id}-gear.json'),
                               gear_json, 'w')
             gear_display_name = gear[0]['displayName'] if present('displayName', gear[0]) else None
             gear_model = gear[0]['customMakeModel'] if present('customMakeModel', gear[0]) else None
@@ -801,21 +801,21 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
 
     original_basename = None
     if args.format == 'gpx':
-        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.gpx')
-        download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
+        data_filename = os.path.join(directory, f'{prefix}activity_{activity_id}{append_desc}.gpx')
+        download_url = f'{URL_GC_GPX_ACTIVITY}{activity_id}?full=true'
         file_mode = 'w'
     elif args.format == 'tcx':
-        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.tcx')
-        download_url = URL_GC_TCX_ACTIVITY + activity_id + '?full=true'
+        data_filename = os.path.join(directory, f'{prefix}activity_{activity_id}{append_desc}.tcx')
+        download_url = f'{URL_GC_TCX_ACTIVITY}{activity_id}?full=true'
         file_mode = 'w'
     elif args.format == 'original':
-        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.zip')
+        data_filename = os.path.join(directory, f'{prefix}activity_{activity_id}{append_desc}.zip')
         # not all 'original' files are in FIT format, some are GPX or TCX...
-        original_basename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc)
+        original_basename = os.path.join(directory, f'{prefix}activity_{activity_id}{append_desc}')
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
     elif args.format == 'json':
-        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.json')
+        data_filename = os.path.join(directory, f'{prefix}activity_{activity_id}{append_desc}.json')
         file_mode = 'w'
     else:
         raise Exception('Unrecognized format.')
@@ -884,7 +884,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                     # note that 'new_name' should match 'original_basename' elsewhere in this script to
                     # avoid downloading the same files again
                     name_base = name_base.replace('_ACTIVITY', '')
-                    new_name = os.path.join(directory, prefix + 'activity_' + name_base + append_desc + name_ext)
+                    new_name = os.path.join(directory, f'{prefix}activity_{name_base}{append_desc}{name_ext}')
                     logging.debug('renaming %s to %s', unzipped_name, new_name)
                     os.rename(unzipped_name, new_name)
                     if file_time:
@@ -1042,9 +1042,7 @@ def fetch_activity_chunk(args, num_to_download, total_downloaded):
 
     # Persist JSON activities list
     current_index = total_downloaded + 1
-    activities_list_filename = 'activities-' \
-                               + str(current_index) + '-' \
-                               + str(total_downloaded + num_to_download) + '.json'
+    activities_list_filename = f'activities-{current_index}-{total_downloaded+num_to_download}.json'
     write_to_file(os.path.join(args.directory, activities_list_filename), result, 'w')
     activity_summaries = json.loads(result)
     fetch_multisports(activity_summaries, http_req_as_string, args)
@@ -1072,7 +1070,7 @@ def fetch_multisports(activity_summaries, http_caller, args):
             for child_id in reversed(child_ids):
                 child_string, child_details = fetch_details(child_id, http_caller)
                 if args.verbosity > 0:
-                    write_to_file(os.path.join(args.directory, 'child_' + str(child_id) + '.json'), child_string, 'w')
+                    write_to_file(os.path.join(args.directory, f'child_{child_id}.json'), child_string, 'w')
                 child_summary = dict()
                 copy_details_to_summary(child_summary, child_details)
                 activity_summaries.insert(idx + 1, child_summary)
@@ -1266,8 +1264,8 @@ def main(argv):
         if csv_filter.is_column_active('sampleCount'):
             try:
                 # TODO implement retries here, I have observed temporary failures
-                activity_measurements = http_req_as_string(URL_GC_ACTIVITY + str(actvty['activityId']) + "/details")
-                write_to_file(os.path.join(args.directory, 'activity_' + str(actvty['activityId']) + '_samples.json'),
+                activity_measurements = http_req_as_string(f"{URL_GC_ACTIVITY}{actvty['activityId']}/details")
+                write_to_file(os.path.join(args.directory, f"activity_{actvty['activityId']}_samples.json"),
                               activity_measurements, 'w',
                               start_time_seconds)
                 samples = json.loads(activity_measurements)
