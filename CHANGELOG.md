@@ -5,7 +5,7 @@ This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1
 
 ## Unreleased (will become 4.0.0)
 
-- added: new option `--logpath` (BREAKING change, you might need `--logfile=.` for the old behaviour)
+- added: new option `--logpath` (BREAKING change, you might need `--logpath=.` for the old behaviour)
   ([Pull Request #74](https://github.com/pe-st/garmin-connect-export/pull/74) by @cristian5th and @bxsx)
 - removed: Python 2 leftovers
   ([Pull Request #73](https://github.com/pe-st/garmin-connect-export/pull/73) by @bxsx)
