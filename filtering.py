@@ -16,11 +16,11 @@ def read_exclude(file):
     """
 
     if not path.exists(file):
-        print("File not found: " + file)
+        print("File not found:", file)
         return None
 
     if not path.isfile(file):
-        print("Not a file: " + file)
+        print("Not a file:", file)
         return None
 
     with open(file, 'r') as f:
@@ -31,7 +31,7 @@ def read_exclude(file):
 
         # except JSONDecodeError: only in Python3, use the more generic type instead
         except ValueError:
-            print("No valid json in: " + file)
+            print("No valid json in:", file)
             return None
 
 
