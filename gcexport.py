@@ -374,7 +374,7 @@ def datetime_from_iso(iso_date_time):
     if not match:
         raise Exception(f'Invalid ISO timestamp {iso_date_time}.')
     micros = match.group(3) if match.group(3) else ".0"
-    iso_with_micros = match.group(1) + ' ' + match.group(2) + micros
+    iso_with_micros = f'{match.group(1)} {match.group(2)}{micros}'
     return datetime.strptime(iso_with_micros, "%Y-%m-%d %H:%M:%S.%f")
 
 
@@ -457,7 +457,7 @@ def parse_arguments(argv):
     Setup the argument parser and parse the command line arguments.
     """
     current_date = datetime.now().strftime('%Y-%m-%d')
-    activities_directory = './' + current_date + '_garmin_connect_export'
+    activities_directory = f'./{current_date}_garmin_connect_export'
 
     parser = argparse.ArgumentParser(description='Garmin Connect Exporter')
 
@@ -537,7 +537,7 @@ def login_to_garmin_connect(args):
 
     print('Requesting Login ticket...', end='')
     logging.info('Requesting Login ticket')
-    login_response = http_req_as_string(URL_GC_LOGIN + '#', post_data, headers)
+    login_response = http_req_as_string(f'{URL_GC_LOGIN}#', post_data, headers)
 
     for cookie in COOKIE_JAR:
         logging.debug("Cookie %s : %s", cookie.name, cookie.value)
@@ -554,8 +554,8 @@ def login_to_garmin_connect(args):
     print(' Done. Ticket=', login_ticket, sep='')
 
     print("Authenticating...", end='')
-    logging.info('Authentication URL %s', URL_GC_POST_AUTH + 'ticket=' + login_ticket)
-    http_req(URL_GC_POST_AUTH + 'ticket=' + login_ticket)
+    logging.info('Authentication URL %s', f'{URL_GC_POST_AUTH}ticket={login_ticket}')
+    http_req(f'{URL_GC_POST_AUTH}ticket={login_ticket}')
     print(' Done.')
 
 
@@ -1088,7 +1088,7 @@ def fetch_details(activity_id, http_caller):
     details = None
     tries = MAX_TRIES
     while tries > 0:
-        activity_details = http_caller(URL_GC_ACTIVITY + str(activity_id))
+        activity_details = http_caller(f'{URL_GC_ACTIVITY}{activity_id}')
         details = json.loads(activity_details)
         # I observed a failure to get a complete JSON detail in about 5-10 calls out of 1000
         # retrying then statistically gets a better JSON ;-)
