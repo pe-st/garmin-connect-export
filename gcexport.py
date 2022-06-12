@@ -849,8 +849,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                 # are no tracks. One could be generated here, but that's a bit much. Use the GPX
                 # format if you want actual data in every file, as I believe Garmin provides a GPX
                 # file for every activity.
-                logging.info('Writing empty file since Garmin did not generate a TCX file for this \
-                             activity...')
+                logging.info('Writing empty file since Garmin did not generate a TCX file for this activity...')
                 data = ''
             elif ex.code == 404 and args.format == 'original':
                 # For manual activities (i.e., entered in online without a file upload), there is
