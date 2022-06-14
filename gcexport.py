@@ -1223,7 +1223,7 @@ def main(argv):
         # Action: download
         # Display which entry we're working on.
         print('Downloading: Garmin Connect activity ', end='')
-        print(f"({current_index}/{len(action_list)}) [{actvty['activityId']}] actvty['activityName']")
+        print(f"({current_index}/{len(action_list)}) [{actvty['activityId']}] {actvty['activityName']}")
 
         # Retrieve also the detail data from the activity (the one displayed on
         # the https://connect.garmin.com/modern/activity/xxx page), because some
