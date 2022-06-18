@@ -258,7 +258,7 @@ def http_req(url, post=None, headers=None):
         logging.info('Got 204 for %s, returning empty response', url)
         return b''
     elif response.getcode() != 200:
-        raise Exception('Bad return code (' + str(response.getcode()) + ') for: ' + url)
+        raise Exception(f'Bad return code ({response.getcode()}) for: {url}')
 
     return response.read()
 
@@ -372,9 +372,9 @@ def datetime_from_iso(iso_date_time):
     pattern = re.compile(r"(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})(\.\d+)?")
     match = pattern.match(iso_date_time)
     if not match:
-        raise Exception('Invalid ISO timestamp ' + iso_date_time + '.')
+        raise Exception(f'Invalid ISO timestamp {iso_date_time}.')
     micros = match.group(3) if match.group(3) else ".0"
-    iso_with_micros = match.group(1) + ' ' + match.group(2) + micros
+    iso_with_micros = f'{match.group(1)} {match.group(2)}{micros}'
     return datetime.strptime(iso_with_micros, "%Y-%m-%d %H:%M:%S.%f")
 
 
@@ -457,7 +457,7 @@ def parse_arguments(argv):
     Setup the argument parser and parse the command line arguments.
     """
     current_date = datetime.now().strftime('%Y-%m-%d')
-    activities_directory = './' + current_date + '_garmin_connect_export'
+    activities_directory = f'./{current_date}_garmin_connect_export'
 
     parser = argparse.ArgumentParser(description='Garmin Connect Exporter')
 
@@ -537,7 +537,7 @@ def login_to_garmin_connect(args):
 
     print('Requesting Login ticket...', end='')
     logging.info('Requesting Login ticket')
-    login_response = http_req_as_string(URL_GC_LOGIN + '#', post_data, headers)
+    login_response = http_req_as_string(f'{URL_GC_LOGIN}#', post_data, headers)
 
     for cookie in COOKIE_JAR:
         logging.debug("Cookie %s : %s", cookie.name, cookie.value)
@@ -554,8 +554,8 @@ def login_to_garmin_connect(args):
     print(' Done. Ticket=', login_ticket, sep='')
 
     print("Authenticating...", end='')
-    logging.info('Authentication URL %s', URL_GC_POST_AUTH + 'ticket=' + login_ticket)
-    http_req(URL_GC_POST_AUTH + 'ticket=' + login_ticket)
+    logging.info('Authentication URL %s', f'{URL_GC_POST_AUTH}ticket={login_ticket}')
+    http_req(f'{URL_GC_POST_AUTH}ticket={login_ticket}')
     print(' Done.')
 
 
@@ -702,7 +702,7 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
             device_id = device_meta['deviceId'] if present('deviceId', device_meta) else None
             if 'deviceId' not in device_meta or device_id and device_id != '0':
                 device_json = http_caller(URL_GC_DEVICE + str(device_app_inst_id))
-                file_writer(os.path.join(args.directory, 'device_' + str(device_app_inst_id) + '.json'),
+                file_writer(os.path.join(args.directory, f'device_{device_app_inst_id}.json'),
                             device_json, 'w',
                             start_time_seconds)
                 if not device_json:
@@ -731,8 +731,8 @@ def load_zones(activity_id, start_time_seconds, args, http_caller, file_writer):
     :return: array with the heart rate zones
     """
     zones = HR_ZONES_EMPTY
-    zones_json = http_caller(URL_GC_ACTIVITY + activity_id + "/hrTimeInZones")
-    file_writer(os.path.join(args.directory, 'activity_' + activity_id + '_zones.json'),
+    zones_json = http_caller(f'{URL_GC_ACTIVITY}{activity_id}/hrTimeInZones')
+    file_writer(os.path.join(args.directory, f'activity_{activity_id}_zones.json'),
                 zones_json, 'w',
                 start_time_seconds)
     zones_raw = json.loads(zones_json)
@@ -755,7 +755,7 @@ def load_gear(activity_id, args):
         gear = json.loads(gear_json)
         if gear:
             if args.verbosity > 0:
-                write_to_file(os.path.join(args.directory, 'activity_' + activity_id + '-gear.json'),
+                write_to_file(os.path.join(args.directory, f'activity_{activity_id}-gear.json'),
                               gear_json, 'w')
             gear_display_name = gear[0]['displayName'] if present('displayName', gear[0]) else None
             gear_model = gear[0]['customMakeModel'] if present('customMakeModel', gear[0]) else None
@@ -801,21 +801,21 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
 
     original_basename = None
     if args.format == 'gpx':
-        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.gpx')
-        download_url = URL_GC_GPX_ACTIVITY + activity_id + '?full=true'
+        data_filename = os.path.join(directory, f'{prefix}activity_{activity_id}{append_desc}.gpx')
+        download_url = f'{URL_GC_GPX_ACTIVITY}{activity_id}?full=true'
         file_mode = 'w'
     elif args.format == 'tcx':
-        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.tcx')
-        download_url = URL_GC_TCX_ACTIVITY + activity_id + '?full=true'
+        data_filename = os.path.join(directory, f'{prefix}activity_{activity_id}{append_desc}.tcx')
+        download_url = f'{URL_GC_TCX_ACTIVITY}{activity_id}?full=true'
         file_mode = 'w'
     elif args.format == 'original':
-        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.zip')
+        data_filename = os.path.join(directory, f'{prefix}activity_{activity_id}{append_desc}.zip')
         # not all 'original' files are in FIT format, some are GPX or TCX...
-        original_basename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc)
+        original_basename = os.path.join(directory, f'{prefix}activity_{activity_id}{append_desc}')
         download_url = URL_GC_ORIGINAL_ACTIVITY + activity_id
         file_mode = 'wb'
     elif args.format == 'json':
-        data_filename = os.path.join(directory, prefix + 'activity_' + activity_id + append_desc + '.json')
+        data_filename = os.path.join(directory, f'{prefix}activity_{activity_id}{append_desc}.json')
         file_mode = 'w'
     else:
         raise Exception('Unrecognized format.')
@@ -849,8 +849,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                 # are no tracks. One could be generated here, but that's a bit much. Use the GPX
                 # format if you want actual data in every file, as I believe Garmin provides a GPX
                 # file for every activity.
-                logging.info('Writing empty file since Garmin did not generate a TCX file for this \
-                             activity...')
+                logging.info('Writing empty file since Garmin did not generate a TCX file for this activity...')
                 data = ''
             elif ex.code == 404 and args.format == 'original':
                 # For manual activities (i.e., entered in online without a file upload), there is
@@ -859,7 +858,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                 data = ''
             else:
                 logging.info('Got %s for %s', ex.code, download_url)
-                raise Exception('Failed. Got an HTTP error ' + str(ex.code) + ' for ' + download_url)
+                raise Exception(f'Failed. Got an HTTP error {ex.code} for {download_url}')
     else:
         data = activity_details
 
@@ -884,7 +883,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                     # note that 'new_name' should match 'original_basename' elsewhere in this script to
                     # avoid downloading the same files again
                     name_base = name_base.replace('_ACTIVITY', '')
-                    new_name = os.path.join(directory, prefix + 'activity_' + name_base + append_desc + name_ext)
+                    new_name = os.path.join(directory, f'{prefix}activity_{name_base}{append_desc}{name_ext}')
                     logging.debug('renaming %s to %s', unzipped_name, new_name)
                     os.rename(unzipped_name, new_name)
                     if file_time:
@@ -1042,9 +1041,7 @@ def fetch_activity_chunk(args, num_to_download, total_downloaded):
 
     # Persist JSON activities list
     current_index = total_downloaded + 1
-    activities_list_filename = 'activities-' \
-                               + str(current_index) + '-' \
-                               + str(total_downloaded + num_to_download) + '.json'
+    activities_list_filename = f'activities-{current_index}-{total_downloaded+num_to_download}.json'
     write_to_file(os.path.join(args.directory, activities_list_filename), result, 'w')
     activity_summaries = json.loads(result)
     fetch_multisports(activity_summaries, http_req_as_string, args)
@@ -1072,7 +1069,7 @@ def fetch_multisports(activity_summaries, http_caller, args):
             for child_id in reversed(child_ids):
                 child_string, child_details = fetch_details(child_id, http_caller)
                 if args.verbosity > 0:
-                    write_to_file(os.path.join(args.directory, 'child_' + str(child_id) + '.json'), child_string, 'w')
+                    write_to_file(os.path.join(args.directory, f'child_{child_id}.json'), child_string, 'w')
                 child_summary = dict()
                 copy_details_to_summary(child_summary, child_details)
                 activity_summaries.insert(idx + 1, child_summary)
@@ -1090,7 +1087,7 @@ def fetch_details(activity_id, http_caller):
     details = None
     tries = MAX_TRIES
     while tries > 0:
-        activity_details = http_caller(URL_GC_ACTIVITY + str(activity_id))
+        activity_details = http_caller(f'{URL_GC_ACTIVITY}{activity_id}')
         details = json.loads(activity_details)
         # I observed a failure to get a complete JSON detail in about 5-10 calls out of 1000
         # retrying then statistically gets a better JSON ;-)
@@ -1100,8 +1097,7 @@ def fetch_details(activity_id, http_caller):
             logging.info("Retrying activity details download %s", URL_GC_ACTIVITY + str(activity_id))
             tries -= 1
             if tries == 0:
-                raise Exception(
-                    'Didn\'t get "summaryDTO" after ' + str(MAX_TRIES) + ' tries for ' + str(activity_id))
+                raise Exception(f'Didn\'t get "summaryDTO" after {MAX_TRIES} tries for {activity_id}')
     return activity_details, details
 
 
@@ -1214,24 +1210,20 @@ def main(argv):
         if action == 's':
             # Display which entry we're skipping.
             print('Skipping   : Garmin Connect activity ', end='')
-            print('(', current_index, '/', len(action_list), ') ', sep='', end='')
-            print('[', actvty['activityId'], ']', sep='')
+            print(f"({current_index}/{len(action_list)}) [{actvty['activityId']}]")
             continue
 
         # Action: excluding
         if action == 'e':
             # Display which entry we're skipping.
             print('Excluding  : Garmin Connect activity ', end='')
-            print('(', current_index, '/', len(action_list), ') ', sep='', end='')
-            print('[', actvty['activityId'], '] ', sep='')
+            print(f"({current_index}/{len(action_list)}) [{actvty['activityId']}]")
             continue
 
         # Action: download
         # Display which entry we're working on.
         print('Downloading: Garmin Connect activity ', end='')
-        print('(', current_index, '/', len(action_list), ') ', sep='', end='')
-        print('[', actvty['activityId'], '] ', sep='', end='')
-        print(actvty['activityName'])
+        print(f"({current_index}/{len(action_list)}) [{actvty['activityId']}] {actvty['activityName']}")
 
         # Retrieve also the detail data from the activity (the one displayed on
         # the https://connect.garmin.com/modern/activity/xxx page), because some
@@ -1271,8 +1263,8 @@ def main(argv):
         if csv_filter.is_column_active('sampleCount'):
             try:
                 # TODO implement retries here, I have observed temporary failures
-                activity_measurements = http_req_as_string(URL_GC_ACTIVITY + str(actvty['activityId']) + "/details")
-                write_to_file(os.path.join(args.directory, 'activity_' + str(actvty['activityId']) + '_samples.json'),
+                activity_measurements = http_req_as_string(f"{URL_GC_ACTIVITY}{actvty['activityId']}/details")
+                write_to_file(os.path.join(args.directory, f"activity_{actvty['activityId']}_samples.json"),
                               activity_measurements, 'w',
                               start_time_seconds)
                 samples = json.loads(activity_measurements)
