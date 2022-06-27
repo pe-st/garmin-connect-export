@@ -1267,9 +1267,8 @@ def main(argv):
         # Action: Filtered out by typeID
         if action == 'f':
             # Display which entry we're skipping.
-            print('Filtering out due to typeID, {} not in {}   : Garmin Connect activity '.format(actvty['activityType']['typeId'], type_filter), end='')
-            print('(', current_index, '/', len(action_list), ') ', sep='', end='')
-            print('[', actvty['activityId'], ']', sep='')
+            print(f'Filtering out due to typeID, {actvty['activityType']['typeId']} not in {type_filter}   : Garmin Connect activity ', end='')
+            print(f'({current_index}/{len(action_list)}) [{actvty['activityId']}]')
             continue
 
         # Action: download
