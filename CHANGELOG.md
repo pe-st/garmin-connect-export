@@ -3,6 +3,14 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## Unreleased (will become 4.0.0)
+
+- added: new option `--logpath` (BREAKING change, you might need `--logpath=.` for the old behaviour)
+  ([Pull Request #74](https://github.com/pe-st/garmin-connect-export/pull/74) by @cristian5th and @bxsx)
+- removed: Python 2 leftovers
+  ([Pull Request #73](https://github.com/pe-st/garmin-connect-export/pull/73) by @bxsx)
+
+
 ## 3.3.0 - 2021-12-26
 
 - added: support for time spent in HR zones (feature request)
