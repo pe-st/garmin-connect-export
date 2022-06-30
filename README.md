@@ -51,7 +51,8 @@ You will need a little experience running things from the command line to use th
 
 ```
 usage: gcexport.py [-h] [--version] [-v] [--username USERNAME]
-                   [--password PASSWORD] [-c COUNT] [-e EXTERNAL] [-a ARGS]
+                   [--password PASSWORD] [--bitwarden [BW search term]]
+                   [-c COUNT] [-e EXTERNAL] [-a ARGS]
                    [-f {gpx,tcx,original,json}] [-d DIRECTORY] [-s SUBDIR]
                    [-lp LOGPATH] [-u] [-ot] [--desc [DESC]] [-t TEMPLATE]
                    [-fp] [-sa START_ACTIVITY_NO] [-ex FILE]
@@ -64,6 +65,8 @@ options:
   -v, --verbosity       increase output and log verbosity, save more intermediate files
   --username USERNAME   your Garmin Connect username or email address (otherwise, you will be prompted)
   --password PASSWORD   your Garmin Connect password (otherwise, you will be prompted)
+  --bitwarden [BW search term]
+                        use BitWarden password manager for Garmin Connect credentials (default: garmin.com)
   -c COUNT, --count COUNT
                         number of recent activities to download, or 'all' (default: 1)
   -e EXTERNAL, --external EXTERNAL
