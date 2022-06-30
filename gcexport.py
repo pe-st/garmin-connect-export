@@ -23,7 +23,7 @@ from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
 from platform import python_version
-from subprocess import call
+from subprocess import call, run
 from timeit import default_timer as timer
 
 import argparse
@@ -469,6 +469,8 @@ def parse_arguments(argv):
         help='your Garmin Connect username or email address (otherwise, you will be prompted)')
     parser.add_argument('--password',
         help='your Garmin Connect password (otherwise, you will be prompted)')
+    parser.add_argument('--bitwarden', type=str, nargs='?', const='garmin.com', default=None, metavar='BW search term',
+        help='use BitWarden password manager for Garmin Connect credentials (default: garmin.com)')
     parser.add_argument('-c', '--count', default='1',
         help='number of recent activities to download, or \'all\' (default: 1)')
     parser.add_argument('-e', '--external',
@@ -507,8 +509,17 @@ def login_to_garmin_connect(args):
     """
     Perform all HTTP requests to login to Garmin Connect.
     """
-    username = args.username if args.username else input('Username: ')
-    password = args.password if args.password else getpass()
+    if args.bitwarden:
+        if any((args.username, args.password)):
+            logging.error('BitWarden cannot be used with the --username/--password arguments.')
+            sys.exit(1)
+
+        with BitWarden(args.bitwarden) as bw:
+            username = bw.user
+            password = bw.password
+    else:
+        username = args.username if args.username else input('Username: ')
+        password = args.password if args.password else getpass()
 
     logging.debug("Login params: %s", urlencode(DATA))
 
@@ -1130,6 +1141,56 @@ def copy_details_to_summary(summary, details):
     summary['maxHR'] = details['summaryDTO']['maxHR'] if 'summaryDTO' in details and 'maxHR' in details['summaryDTO'] else None
     summary['averageHR'] = details['summaryDTO']['averageHR'] if 'summaryDTO' in details and 'averageHR' in details['summaryDTO'] else None
     summary['elevationCorrected'] = details['metadataDTO']['elevationCorrected'] if 'metadataDTO' in details and 'elevationCorrected' in details['metadataDTO'] else None
+
+
+class BitWarden:
+    META = "BW_SESSION="
+
+    def __init__(self, url="garmin.com"):
+        self.user = None
+        self.password = None
+        self.session = None
+        self.url = url
+
+    def lock(self):
+        self.user = None
+        self.password = None
+        self.session = None
+        run(["bw", "lock"])
+
+    def __enter__(self):
+        print("Enter your master password: ", end="", flush=True)
+        bw = run(["bw", "unlock"], capture_output=True)
+        print()
+
+        output = bw.stdout.decode()
+        try:
+            session_start = output.index(self.META) + len(self.META)
+            session_stop = output.index('"', session_start + 1)
+        except ValueError:
+            logging.error(bw.stderr.decode())
+            self.lock()
+            sys.exit(1)
+
+        self.session = output[session_start:session_stop]
+        self.user = run(
+            ["bw", "get", "username", self.url, "--session", self.session],
+            capture_output=True,
+        ).stdout.decode()
+        self.password = run(
+            ["bw", "get", "password", self.url, "--session", self.session],
+            capture_output=True,
+        ).stdout.decode()
+
+        if not all((self.user, self.password)):
+            logging.error("BitWarden cannot find credentials for: %s", self.url)
+            self.lock()
+            sys.exit(1)
+
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.lock()
 
 
 def main(argv):
