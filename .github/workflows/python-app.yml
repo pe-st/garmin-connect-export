@@ -5,7 +5,9 @@ name: Python application
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
+      - 'feature/**'
   pull_request:
     branches: [ master ]
 
@@ -32,4 +34,7 @@ jobs:
       run: |
         pip install flake8
         flake8 .
-      continue-on-error: true
+    - name: Lint with pylint
+      run: |
+        pip install pylint
+        pylint *.py

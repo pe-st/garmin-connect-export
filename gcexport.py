@@ -198,11 +198,11 @@ def write_to_file(filename, content, mode='w', file_time=None):
     :param file_time:    if given use as timestamp for the file written (in seconds since 1970-01-01)
     """
     if mode == 'w':
-        write_file = io.open(filename, mode, encoding="utf-8")
+        write_file = io.open(filename, mode, encoding='utf-8')
         if isinstance(content, bytes):
-            content = content.decode("utf-8")
+            content = content.decode('utf-8')
     elif mode == 'wb':
-        write_file = io.open(filename, mode)
+        write_file = io.open(filename, 'wb')
     else:
         raise Exception('Unsupported file mode: ', mode)
     write_file.write(content)
@@ -238,15 +238,11 @@ def http_req(url, post=None, headers=None):
         if hasattr(ex, 'code'):
             logging.error('Server couldn\'t fulfill the request, code %s, error: %s', ex.code, ex)
             logging.info('Headers returned:\n%s', ex.info())
-            raise
-        else:
-            raise
+        raise
     except URLError as ex:
         if hasattr(ex, 'reason'):
             logging.error('Failed to reach url %s, error: %s', url, ex)
-            raise
-        else:
-            raise
+        raise
     logging.debug('Got %s in %s s from %s', response.getcode(), timer() - start_time, url)
     logging.debug('Headers returned:\n%s', response.info())
 
@@ -257,7 +253,7 @@ def http_req(url, post=None, headers=None):
         # Write an empty file to prevent redownloading it.
         logging.info('Got 204 for %s, returning empty response', url)
         return b''
-    elif response.getcode() != 200:
+    if response.getcode() != 200:
         raise Exception(f'Bad return code ({response.getcode()}) for: {url}')
 
     return response.read()
@@ -301,7 +297,7 @@ def present(element, act):
     """Return True if act[element] is valid and not None"""
     if not act:
         return False
-    elif element not in act:
+    if element not in act:
         return False
     return act[element]
 
@@ -310,9 +306,9 @@ def absent_or_null(element, act):
     """Return False only if act[element] is valid and not None"""
     if not act:
         return True
-    elif element not in act:
+    if element not in act:
         return True
-    elif act[element]:
+    if act[element]:
         return False
     return True
 
@@ -387,12 +383,11 @@ def epoch_seconds_from_summary(summary):
     """
     if present('beginTimestamp', summary):
         return summary['beginTimestamp'] // 1000
-    elif present('startTimeLocal', summary) and present('startTimeGMT', summary):
-        dt = offset_date_time(summary['startTimeLocal'], summary['startTimeGMT'])
-        return int(dt.timestamp())
-    else:
-        logging.info('No timestamp found in activity %s', summary['activityId'])
-        return None
+    if present('startTimeLocal', summary) and present('startTimeGMT', summary):
+        date_time = offset_date_time(summary['startTimeLocal'], summary['startTimeGMT'])
+        return int(date_time.timestamp())
+    logging.info('No timestamp found in activity %s', summary['activityId'])
+    return None
 
 
 def pace_or_speed_raw(type_id, parent_type_id, mps):
@@ -420,7 +415,7 @@ class CsvFilter:
 
     def __init__(self, csv_file, csv_header_properties):
         self.__csv_file = csv_file
-        with open(csv_header_properties, 'r') as prop:
+        with open(csv_header_properties, 'r', encoding='utf-8') as prop:
             csv_header_props = prop.read()
         self.__csv_columns = []
         self.__csv_headers = load_properties(csv_header_props, keys=self.__csv_columns)
@@ -698,7 +693,7 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
             # details['metadataDTO']['deviceMetaDataDTO']['deviceId'] == '0' -> device unknown
             # details['metadataDTO']['deviceMetaDataDTO']['deviceId'] == 'someid' -> device known
             device_dict[device_app_inst_id] = None
-            device_meta = metadata['deviceMetaDataDTO'] if present('deviceMetaDataDTO', metadata) else None
+            device_meta = metadata['deviceMetaDataDTO'] if present('deviceMetaDataDTO', metadata) else {}
             device_id = device_meta['deviceId'] if present('deviceId', device_meta) else None
             if 'deviceId' not in device_meta or device_id and device_id != '0':
                 device_json = http_caller(URL_GC_DEVICE + str(device_app_inst_id))
@@ -742,7 +737,7 @@ def load_zones(activity_id, start_time_seconds, args, http_caller, file_writer):
         for raw_zone in zones_raw:
             if present('zoneNumber', raw_zone):
                 index = raw_zone['zoneNumber'] - 1
-                zones[index] = dict()
+                zones[index] = {}
                 zones[index]['secsInZone'] = raw_zone['secsInZone']
                 zones[index]['zoneLowBoundary'] = raw_zone['zoneLowBoundary']
     return zones
@@ -765,6 +760,7 @@ def load_gear(activity_id, args):
     except HTTPError as ex:
         logging.info("Unable to get gear for %d, error: %s", activity_id, ex)
         # logging.exception(ex)
+        return None
 
 
 def export_data_file(activity_id, activity_details, args, file_time, append_desc, date_time):
@@ -858,7 +854,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                 data = ''
             else:
                 logging.info('Got %s for %s', ex.code, download_url)
-                raise Exception(f'Failed. Got an HTTP error {ex.code} for {download_url}')
+                raise Exception(f'Failed. Got an HTTP error {ex.code} for {download_url}') from ex
     else:
         data = activity_details
 
@@ -1008,16 +1004,32 @@ def fetch_activity_list(args, total_to_download):
 
 
 def annotate_activity_list(activities, start, exclude_list):
+    """
+    Creates an action list with a tuple per activity summary
+
+    The tuple per activity contains three values:
+    - index:    the index of the activity summary in the activities argument
+                (the first gets index 0, the second index 1 etc)
+    - activity  the activity summary from the activites argument
+    - action    the action to take for this activity (d=download, s=skip, e=exclude)
+
+    :param activities:    List of activity summaries
+    :param start:         One-based index of the first non-skipped activity
+                          (i.e. with 1 no activity gets skipped, with 2 the first activity gets skipped etc)
+    :param exclude_list:  List of activity ids that have to be skipped explicitly
+    :return:              List of action tuples
+    """
+
     action_list = []
-    for index, a in enumerate(activities):
+    for index, activity in enumerate(activities):
         if index < (start - 1):
             action = 's'
-        elif str(a['activityId']) in exclude_list:
+        elif str(activity['activityId']) in exclude_list:
             action = 'e'
         else:
             action = 'd'
 
-        action_list.append(dict(index=index, action=action, activity=a))
+        action_list.append(dict(index=index, action=action, activity=activity))
 
     return action_list
 
@@ -1062,16 +1074,16 @@ def fetch_multisports(activity_summaries, http_caller, args):
     for idx, child_summary in enumerate(activity_summaries):
         type_key = None if absent_or_null('activityType', child_summary) else child_summary['activityType']['typeKey']
         if type_key == 'multi_sport':
-            details_string, details = fetch_details(child_summary['activityId'], http_caller)
+            _, details = fetch_details(child_summary['activityId'], http_caller)
 
             child_ids = details['metadataDTO']['childIds'] if 'metadataDTO' in details and 'childIds' in details['metadataDTO'] else None
-            # insert the childs in reversed order always at the same index to get
+            # insert the children in reversed order always at the same index to get
             # the correct order in activity_summaries
             for child_id in reversed(child_ids):
                 child_string, child_details = fetch_details(child_id, http_caller)
                 if args.verbosity > 0:
                     write_to_file(os.path.join(args.directory, f'child_{child_id}.json'), child_string, 'w')
-                child_summary = dict()
+                child_summary = {}
                 copy_details_to_summary(child_summary, child_details)
                 activity_summaries.insert(idx + 1, child_summary)
 
@@ -1185,7 +1197,7 @@ def main(argv):
     else:
         total_to_download = int(args.count)
 
-    device_dict = dict()
+    device_dict = {}
 
     # load some dictionaries with lookup data from REST services
     activity_type_props = http_req_as_string(URL_GC_ACT_PROPS)
@@ -1228,7 +1240,7 @@ def main(argv):
 
         # Retrieve also the detail data from the activity (the one displayed on
         # the https://connect.garmin.com/modern/activity/xxx page), because some
-        # data are missing from 'a' (or are even different, e.g. for my activities
+        # data are missing from 'actvty' (or are even different, e.g. for my activities
         # 86497297 or 86516281)
         activity_details, details = fetch_details(actvty['activityId'], http_req_as_string)
 

@@ -50,7 +50,7 @@ ignore-paths=
 # Files or directories matching the regex patterns are skipped. The regex
 # matches against base names, not paths. The default value ignores Emacs file
 # locks
-ignore-patterns=^\.#
+ignore-patterns=^\.#,(.)*_test\.py
 
 # List of module names for which member attributes should not be checked
 # (useful for modules/projects where namespaces are manipulated during runtime
@@ -149,7 +149,18 @@ disable=raw-checker-failed,
         suppressed-message,
         useless-suppression,
         deprecated-pragma,
-        use-symbolic-message-instead
+        use-symbolic-message-instead,
+        import-error,
+        line-too-long,
+        too-many-arguments,
+        too-many-branches,
+        too-many-lines,
+        too-many-locals,
+        too-many-statements,
+        consider-using-f-string,
+        consider-using-with,
+        wrong-import-order,
+        fixme
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

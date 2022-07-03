@@ -1,7 +1,10 @@
-import logging
+"""
+Helper functions for filtering the list of activities to download.
+"""
 
-from os import path
 import json
+import logging
+import os
 
 DOWNLOADED_IDS_FILE_NAME = "downloaded_ids.json"
 KEY_IDS = "ids"
@@ -14,54 +17,52 @@ def read_exclude(file):
     :return: List with IDs or, if file not found, None.
     """
 
-    if not path.exists(file):
+    if not os.path.exists(file):
         print("File not found:", file)
-        return
+        return None
 
-    if not path.isfile(file):
+    if not os.path.isfile(file):
         print("Not a file:", file)
-        return
+        return None
 
-    with open(file, 'r') as f:
+    with open(file, 'r', encoding='utf-8') as json_file:
 
         try:
-            obj = json.load(f)
+            obj = json.load(json_file)
             return obj['ids']
 
-        # except JSONDecodeError: only in Python3, use the more generic type instead
-        except ValueError:
+        except json.JSONDecodeError:
             print("No valid json in:", file)
-            return
+            return None
 
 
-def update_download_stats(activity_id, dir):
+def update_download_stats(activity_id, directory):
     """
     Add item to download_stats file, if not already there. Call this for every successful downloaded activity.
     The statistic is independent of the downloaded file type.
     :param activity_id: String with activity ID
-    :param dir: Download root directory
+    :param directory: Download root directory
     """
-    file = path.join(dir, DOWNLOADED_IDS_FILE_NAME)
+    file = os.path.join(directory, DOWNLOADED_IDS_FILE_NAME)
 
     # Very first time: touch the file
-    if not path.exists(file):
-        with open(file, 'w') as read_obj:
+    if not os.path.exists(file):
+        with open(file, 'w', encoding='utf-8') as read_obj:
             read_obj.write(json.dumps(""))
 
     # read file
-    with open(file, 'r') as read_obj:
+    with open(file, 'r', encoding='utf-8') as read_obj:
         data = read_obj.read()
 
         try:
             obj = json.loads(data)
 
-        # except JSONDecodeError: only in Python3, use the more generic type instead
-        except ValueError:
+        except json.JSONDecodeError:
             obj = ""
 
     # Sanitize wrong formats
-    if not type(obj) is dict:
-        obj = dict()
+    if not isinstance(obj, dict):
+        obj = {}
 
     if KEY_IDS not in obj:
         obj[KEY_IDS] = []
@@ -73,5 +74,5 @@ def update_download_stats(activity_id, dir):
     obj[KEY_IDS].append(activity_id)
     obj[KEY_IDS].sort()
 
-    with open(file, 'w') as write_obj:
+    with open(file, 'w', encoding='utf-8') as write_obj:
         write_obj.write(json.dumps(obj))
