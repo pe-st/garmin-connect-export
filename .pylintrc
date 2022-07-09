@@ -158,7 +158,6 @@ disable=raw-checker-failed,
         too-many-locals,
         too-many-statements,
         consider-using-f-string,
-        consider-using-with,
         wrong-import-order,
         fixme
 
