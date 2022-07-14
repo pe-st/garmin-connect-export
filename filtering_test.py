@@ -1,11 +1,14 @@
-import unittest
-import filtering
+# Standard library imports
+import json
 import tempfile
+import unittest
 from os import path
 from os import remove
+
+# Local application/library specific imports
+import filtering
 from filtering import DOWNLOADED_IDS_FILE_NAME
 from filtering import KEY_IDS
-import json
 
 DIR = tempfile.gettempdir()
 

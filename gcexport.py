@@ -19,15 +19,10 @@ Activity & event types:
     https://connect.garmin.com/modern/main/js/properties/activity_types/activity_types.properties
 """
 
-from datetime import datetime, timedelta, tzinfo
-from getpass import getpass
-from math import floor
-from platform import python_version
-from subprocess import call
-from timeit import default_timer as timer
-
+# Standard library imports
 import argparse
 import csv
+import http.cookiejar
 import io
 import json
 import logging
@@ -37,18 +32,20 @@ import re
 import string
 import sys
 import unicodedata
-import zipfile
-
-from filtering import update_download_stats, read_exclude
-
-import http.cookiejar
-import urllib.error
-import urllib.parse
 import urllib.request
-import urllib
+import zipfile
+from datetime import datetime, timedelta, tzinfo
+from getpass import getpass
+from math import floor
+from platform import python_version
+from subprocess import call
+from timeit import default_timer as timer
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request
+
+# Local application/library specific imports
+from filtering import read_exclude, update_download_stats
 
 COOKIE_JAR = http.cookiejar.CookieJar()
 OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
