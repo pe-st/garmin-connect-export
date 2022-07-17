@@ -157,7 +157,6 @@ disable=raw-checker-failed,
         too-many-lines,
         too-many-locals,
         too-many-statements,
-        consider-using-f-string,
         fixme
 
 # Enable the message, report, category or checker with the given id(s). You can

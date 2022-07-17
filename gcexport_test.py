@@ -19,6 +19,16 @@ def test_pace_or_speed_raw_running():
     assert pace_or_speed_raw(1, 4, 10.0/3) == 5.0
 
 
+def test_pace_or_speed_formatted_cycling():
+    # 10 m/s is 36 km/h
+    assert pace_or_speed_formatted(2, 4, 10.0) == '36.0'
+
+
+def test_pace_or_speed_formatted_running():
+    # 3.33 m/s is 12 km/h is 5 min/km
+    assert pace_or_speed_formatted(1, 4, 10.0/3) == '05:00'
+
+
 def test_trunc6_more():
     assert trunc6(0.123456789) == '0.123456'
 

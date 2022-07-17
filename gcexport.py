@@ -57,7 +57,7 @@ SCRIPT_VERSION = '4.0.0-Beta'
 ALMOST_RFC_1123 = "%a, %d %b %Y %H:%M"
 
 # used by sanitize_filename()
-VALID_FILENAME_CHARS = "-_.() %s%s" % (string.ascii_letters, string.digits)
+VALID_FILENAME_CHARS = f'-_.() {string.ascii_letters}{string.digits}'
 
 # map the numeric parentTypeId to its name for the CSV output
 PARENT_TYPE_ID = {
@@ -319,7 +319,7 @@ def from_activities_or_detail(element, act, detail, detail_container):
 
 def trunc6(some_float):
     """Return the given float as string formatted with six digit precision"""
-    return "{0:12.6f}".format(floor(some_float * 1000000) / 1000000).lstrip()
+    return f'{floor(some_float * 1000000) / 1000000:12.6f}'.lstrip()
 
 
 # A class building tzinfo objects for fixed-offset time zones.
@@ -403,8 +403,9 @@ def pace_or_speed_formatted(type_id, parent_type_id, mps):
     kmh = 3.6 * mps
     if (type_id in USES_PACE) or (parent_type_id in USES_PACE):
         # format seconds per kilometer as MM:SS, see https://stackoverflow.com/a/27751293
-        return '{0:02d}:{1:02d}'.format(*divmod(int(round(3600 / kmh)), 60))
-    return "{0:.1f}".format(round(kmh, 1))
+        div_mod = divmod(int(round(3600 / kmh)), 60)
+        return f'{div_mod[0]:02d}:{div_mod[1]:02d}'
+    return f'{round(kmh, 1):.1f}'
 
 
 class CsvFilter:
@@ -587,7 +588,7 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('elapsedDuration', hhmmss_from_seconds(round(extract['elapsed_duration'])) if extract['elapsed_duration'] else None)
     csv_filter.set_column('movingDurationRaw', str(round(details['summaryDTO']['movingDuration'], 3)) if present('movingDuration', details['summaryDTO']) else None)
     csv_filter.set_column('movingDuration', hhmmss_from_seconds(round(details['summaryDTO']['movingDuration'])) if present('movingDuration', details['summaryDTO']) else None)
-    csv_filter.set_column('distanceRaw', "{0:.5f}".format(actvty['distance'] / 1000) if present('distance', actvty) else None)
+    csv_filter.set_column('distanceRaw', f"{actvty['distance'] / 1000:.5f}" if present('distance', actvty) else None)
     csv_filter.set_column('averageSpeedRaw', kmh_from_mps(details['summaryDTO']['averageSpeed']) if present('averageSpeed', details['summaryDTO']) else None)
     csv_filter.set_column('averageSpeedPaceRaw', trunc6(pace_or_speed_raw(type_id, parent_type_id, actvty['averageSpeed'])) if present('averageSpeed', actvty) else None)
     csv_filter.set_column('averageSpeedPace', pace_or_speed_formatted(type_id, parent_type_id, actvty['averageSpeed']) if present('averageSpeed', actvty) else None)
@@ -612,24 +613,24 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('elevationCorrected', 'true' if actvty['elevationCorrected'] else 'false')
     # csv_record += empty_record  # no minimum heart rate in JSON
     csv_filter.set_column('maxHRRaw', str(details['summaryDTO']['maxHR']) if present('maxHR', details['summaryDTO']) else None)
-    csv_filter.set_column('maxHR', "{0:.0f}".format(actvty['maxHR']) if present('maxHR', actvty) else None)
+    csv_filter.set_column('maxHR', f"{actvty['maxHR']:.0f}" if present('maxHR', actvty) else None)
     csv_filter.set_column('averageHRRaw', str(details['summaryDTO']['averageHR']) if present('averageHR', details['summaryDTO']) else None)
-    csv_filter.set_column('averageHR', "{0:.0f}".format(actvty['averageHR']) if present('averageHR', actvty) else None)
+    csv_filter.set_column('averageHR', f"{actvty['averageHR']:.0f}" if present('averageHR', actvty) else None)
     csv_filter.set_column('caloriesRaw', str(details['summaryDTO']['calories']) if present('calories', details['summaryDTO']) else None)
-    csv_filter.set_column('calories', "{0:.0f}".format(details['summaryDTO']['calories']) if present('calories', details['summaryDTO']) else None)
+    csv_filter.set_column('calories', f"{details['summaryDTO']['calories']:.0f}" if present('calories', details['summaryDTO']) else None)
     csv_filter.set_column('vo2max', str(actvty['vO2MaxValue']) if present('vO2MaxValue', actvty) else None)
     csv_filter.set_column('aerobicEffect', str(round(details['summaryDTO']['trainingEffect'], 2)) if present('trainingEffect', details['summaryDTO']) else None)
     csv_filter.set_column('anaerobicEffect', str(round(details['summaryDTO']['anaerobicTrainingEffect'], 2)) if present('anaerobicTrainingEffect', details['summaryDTO']) else None)
     csv_filter.set_column('hrZone1Low', str(extract['hrZones'][0]['zoneLowBoundary']) if present('zoneLowBoundary', extract['hrZones'][0]) else None)
-    csv_filter.set_column('hrZone1Seconds', "{0:.0f}".format(extract['hrZones'][0]['secsInZone']) if present('secsInZone', extract['hrZones'][0]) else None)
+    csv_filter.set_column('hrZone1Seconds', f"{extract['hrZones'][0]['secsInZone']:.0f}" if present('secsInZone', extract['hrZones'][0]) else None)
     csv_filter.set_column('hrZone2Low', str(extract['hrZones'][1]['zoneLowBoundary']) if present('zoneLowBoundary', extract['hrZones'][1]) else None)
-    csv_filter.set_column('hrZone2Seconds', "{0:.0f}".format(extract['hrZones'][1]['secsInZone']) if present('secsInZone', extract['hrZones'][1]) else None)
+    csv_filter.set_column('hrZone2Seconds', f"{extract['hrZones'][1]['secsInZone']:.0f}" if present('secsInZone', extract['hrZones'][1]) else None)
     csv_filter.set_column('hrZone3Low', str(extract['hrZones'][2]['zoneLowBoundary']) if present('zoneLowBoundary', extract['hrZones'][2]) else None)
-    csv_filter.set_column('hrZone3Seconds', "{0:.0f}".format(extract['hrZones'][2]['secsInZone']) if present('secsInZone', extract['hrZones'][2]) else None)
+    csv_filter.set_column('hrZone3Seconds', f"{extract['hrZones'][2]['secsInZone']:.0f}" if present('secsInZone', extract['hrZones'][2]) else None)
     csv_filter.set_column('hrZone4Low', str(extract['hrZones'][3]['zoneLowBoundary']) if present('zoneLowBoundary', extract['hrZones'][3]) else None)
-    csv_filter.set_column('hrZone4Seconds', "{0:.0f}".format(extract['hrZones'][3]['secsInZone']) if present('secsInZone', extract['hrZones'][3]) else None)
+    csv_filter.set_column('hrZone4Seconds', f"{extract['hrZones'][3]['secsInZone']:.0f}" if present('secsInZone', extract['hrZones'][3]) else None)
     csv_filter.set_column('hrZone5Low', str(extract['hrZones'][4]['zoneLowBoundary']) if present('zoneLowBoundary', extract['hrZones'][4]) else None)
-    csv_filter.set_column('hrZone5Seconds', "{0:.0f}".format(extract['hrZones'][4]['secsInZone']) if present('secsInZone', extract['hrZones'][4]) else None)
+    csv_filter.set_column('hrZone5Seconds', f"{extract['hrZones'][4]['secsInZone']:.0f}" if present('secsInZone', extract['hrZones'][4]) else None)
     csv_filter.set_column('averageRunCadence', str(round(details['summaryDTO']['averageRunCadence'], 2)) if present('averageRunCadence', details['summaryDTO']) else None)
     csv_filter.set_column('maxRunCadence', str(details['summaryDTO']['maxRunCadence']) if present('maxRunCadence', details['summaryDTO']) else None)
     csv_filter.set_column('strideLength', str(round(details['summaryDTO']['strideLength'], 2)) if present('strideLength', details['summaryDTO']) else None)
@@ -788,7 +789,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
 
     # timestamp as prefix for filename
     if args.fileprefix > 0:
-        prefix = "{}-".format(date_time.replace("-", "").replace(":", "").replace(" ", "-"))
+        prefix = f'{date_time.replace("-", "").replace(":", "").replace(" ", "-")}-'
     else:
         prefix = ""
 
@@ -1192,7 +1193,7 @@ def process_activity_item(item, number_of_items, device_dict, activity_type_name
     print('\t', extract['start_time_with_offset'].isoformat(), ', ', sep='', end='')
     print(hhmmss_from_seconds(extract['elapsed_seconds']), ', ', sep='', end='')
     if 'distance' in actvty and isinstance(actvty['distance'], (float)):
-        print("{0:.3f}".format(actvty['distance'] / 1000), 'km', sep='')
+        print(f"{actvty['distance'] / 1000:.3f} km")
     else:
         print('0.000 km')
 
