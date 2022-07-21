@@ -8,12 +8,25 @@ A hearty welcome and thank you! There are many ways you can contribute:
 - Setting up an automated toolchain with mock endpoints for the HTTP calls for easier testing
 - Improve our examples, tutorials, and documentation.
 
-## Python 2 vs 3
+## Python Versions
+
+### Python 2 vs 3
 
 At the time of this writing (2021-07) Python 2 has long passed its [sunset](https://python3statement.org/).
 And the effort to still support Python 2 has become to big (see https://github.com/pe-st/garmin-connect-export/issues/64),
 so to protect users from getting HTTP errors/exceptions with Python 2, the script
 purposely denies running with Python 2.
+
+### Python 3.x Versions
+
+The script should be usable for a wide range of users and Python versions.
+
+For that reason the script should be compatible with the oldest still [supported
+Python version](https://devguide.python.org/versions/). At the time of this writing
+(July 2022) this is Python 3.7, whose end-of-life is currently scheduled for June 2023.
+
+The Github Actions (see `github/workflows/python-app.yml`) thus run all steps twice,
+once with the oldest supported Python version, and once with the newest released version.
 
 ## Getting started
 

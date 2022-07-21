@@ -1,6 +1,6 @@
 # garmin-connect-export script
 
-:exclamation: | This script [now requires Python 3.x](https://github.com/pe-st/garmin-connect-export/issues/64)
+:exclamation: | This script [now requires Python 3.7 or newer](https://github.com/pe-st/garmin-connect-export/issues/64)
 ---|---
 
 :exclamation: | There is a [report of a deactivated user account that might by caused by using this script](https://github.com/pe-st/garmin-connect-export/issues/60). The exact reasons are not known, and my account has never been deactivated. But be aware that I can give no guarantee that Garmin tolerates requests made from this script. I believe though that this script is fair use (it doesn't do anything other than automating stuff that you do in the browser). But be careful if you plan to run the script as periodical task (with `cron` etc)
