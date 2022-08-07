@@ -485,7 +485,7 @@ def parse_arguments(argv):
         help='the subdirectory for activity files (tcx, gpx etc.), supported placeholders are {YYYY} and {MM}'
                         ' (default: export directory)')
     parser.add_argument('-lp', '--logpath',
-        help='the directory to store logfiles (default: same as for --directory')
+        help='the directory to store logfiles (default: same as for --directory)')
     parser.add_argument('-u', '--unzip', action='store_true',
         help='if downloading ZIP files (format: \'original\'), unzip the file and remove the ZIP file')
     parser.add_argument('-ot', '--originaltime', action='store_true',
