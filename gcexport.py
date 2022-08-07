@@ -470,8 +470,8 @@ def parse_arguments(argv):
         help='your Garmin Connect username or email address (otherwise, you will be prompted)')
     parser.add_argument('--password',
         help='your Garmin Connect password (otherwise, you will be prompted)')
-    parser.add_argument('--bitwarden', type=str, nargs='?', const='garmin.com', default=None, metavar='BW search term',
-        help='use BitWarden password manager for Garmin Connect credentials (default: garmin.com)')
+    parser.add_argument('--passmanager', type=str, metavar='PASSWORD_MANAGER',
+        help='use password manager for Garmin Connect credentials (supported: BitWarden)')
     parser.add_argument('-c', '--count', default='1',
         help='number of recent activities to download, or \'all\' (default: 1)')
     parser.add_argument('-e', '--external',
@@ -510,14 +510,21 @@ def login_to_garmin_connect(args):
     """
     Perform all HTTP requests to login to Garmin Connect.
     """
-    if args.bitwarden:
-        if any((args.username, args.password)):
-            logging.error('BitWarden cannot be used with the --username/--password arguments.')
+    PASSWORD_MANAGERS = (BitWarden, )
+
+    if args.passmanager:
+        if not args.passmanager in (pm.__qualname__ for pm in PASSWORD_MANAGERS):
+            logging.error(f'{args.passmanager} password manager is not supported.')
             sys.exit(1)
 
-        with BitWarden(args.bitwarden) as bw:
-            username = bw.user
-            password = bw.password
+        if any((args.username, args.password)):
+            logging.error('Password manager cannot be used with the --username/--password arguments.')
+            sys.exit(1)
+
+        if args.passmanager.lower() == 'bitwarden':
+            with BitWarden() as bw:
+                username = bw.user
+                password = bw.password
     else:
         username = args.username if args.username else input('Username: ')
         password = args.password if args.password else getpass()

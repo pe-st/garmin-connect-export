@@ -65,8 +65,8 @@ options:
   -v, --verbosity       increase output and log verbosity, save more intermediate files
   --username USERNAME   your Garmin Connect username or email address (otherwise, you will be prompted)
   --password PASSWORD   your Garmin Connect password (otherwise, you will be prompted)
-  --bitwarden [BW search term]
-                        use BitWarden password manager for Garmin Connect credentials (default: garmin.com)
+  --passmanager PASSWORD_MANAGER
+                        use password manager for Garmin Connect credentials (supported: BitWarden)
   -c COUNT, --count COUNT
                         number of recent activities to download, or 'all' (default: 1)
   -e EXTERNAL, --external EXTERNAL

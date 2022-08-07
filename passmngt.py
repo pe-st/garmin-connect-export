@@ -1,4 +1,9 @@
 # Password Managers support
+#
+# Credentials must be stored in the following metafields:
+# - URL: garmin.com
+# - login: username
+# - password: password
 
 import logging
 import sys
