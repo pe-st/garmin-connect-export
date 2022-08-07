@@ -59,3 +59,46 @@ class BitWarden:
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.lock()
 
+
+class OnePassword:
+    name = "1Password"
+
+    def __init__(self, url="garmin.com"):
+        self.user = None
+        self.password = None
+        self.session = None
+        self.url = url
+
+    def lock(self):
+        self.user = None
+        self.password = None
+        self.session = None
+        run(["op", "signout"])
+
+    def __enter__(self):
+        op = run(["op", "signin", "--raw"], capture_output=True)
+
+        if op.returncode:
+            logging.error(op.stderr.decode())
+            self.lock()
+            sys.exit(1)
+
+        self.session = op.stdout.decode()
+        self.user = run(
+            ["op", "item", "get", self.url, "--fields", "label=username", f"--session={self.session}"],
+            capture_output=True,
+        ).stdout.decode().rstrip()
+        self.password = run(
+            ["op", "item", "get", self.url, "--fields", "label=password", f"--session={self.session}"],
+            capture_output=True,
+        ).stdout.decode().rstrip()
+
+        if not all((self.user, self.password)):
+            logging.error(f"{name} cannot find credentials for: {self.url}")
+            self.lock()
+            sys.exit(1)
+
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.lock()
