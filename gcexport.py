@@ -40,7 +40,6 @@ import unicodedata
 import zipfile
 
 from filtering import update_download_stats, read_exclude
-from passmngt import BitWarden
 
 import http.cookiejar
 import urllib.error
@@ -471,7 +470,7 @@ def parse_arguments(argv):
     parser.add_argument('--password',
         help='your Garmin Connect password (otherwise, you will be prompted)')
     parser.add_argument('--passmanager', type=str, metavar='PASSWORD_MANAGER',
-        help='use password manager for Garmin Connect credentials (supported: BitWarden)')
+        help='use password manager for Garmin Connect credentials (supported: BitWarden, 1Password)')
     parser.add_argument('-c', '--count', default='1',
         help='number of recent activities to download, or \'all\' (default: 1)')
     parser.add_argument('-e', '--external',
@@ -507,24 +506,24 @@ def parse_arguments(argv):
 
 
 def login_to_garmin_connect(args):
-    """
-    Perform all HTTP requests to login to Garmin Connect.
-    """
-    PASSWORD_MANAGERS = (BitWarden, )
-
+    """Perform all HTTP requests to login to Garmin Connect."""
     if args.passmanager:
-        if not args.passmanager in (pm.__qualname__ for pm in PASSWORD_MANAGERS):
-            logging.error(f'{args.passmanager} password manager is not supported.')
-            sys.exit(1)
-
         if any((args.username, args.password)):
             logging.error('Password manager cannot be used with the --username/--password arguments.')
             sys.exit(1)
 
-        if args.passmanager.lower() == 'bitwarden':
-            with BitWarden() as bw:
-                username = bw.user
-                password = bw.password
+        passmanager = args.passmanager.lower()
+        if passmanager == 'bitwarden':
+            from passmngt import BitWarden as PasswordManager
+        elif passmanager == '1password':
+            from passmngt import OnePassword as PasswordManager
+        else:
+            logging.error(f'{passmanager} password manager is not supported.')
+            sys.exit(1)
+
+        with PasswordManager() as pm:
+            username = pm.user
+            password = pm.password
     else:
         username = args.username if args.username else input('Username: ')
         password = args.password if args.password else getpass()
