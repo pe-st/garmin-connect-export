@@ -1,7 +1,8 @@
 [flake8]
-ignore =
+extend-ignore =
    E501, # line too long
-   E128 # continuation line under-indented for visual indent
+   E128, # continuation line under-indented for visual indent
+   E203 # for playing well with Black
 exclude =
    .git,
    __pycache__,

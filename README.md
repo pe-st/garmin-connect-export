@@ -116,7 +116,9 @@ Alternatively, you may run it with `./gcexport.py` if you set the file as execut
 
 ### Python
 
-Of course, you must have Python installed to run this, any recent 3.x version should work.
+Of course, you must have Python installed to run this, any recent 3.x version should work
+(see also [Python 3.x Versions](./CONTRIBUTING.md#python-3x-versions)).
+
 Most Mac and Linux users should already have Python.
 Note that if you run into the [TLSV1 ALERT problem](https://github.com/pe-st/garmin-connect-export/issues/16)
 or the [HTTP 403 Authentication Error](https://github.com/pe-st/garmin-connect-export/issues/59),

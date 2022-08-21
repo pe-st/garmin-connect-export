@@ -13,9 +13,10 @@ A hearty welcome and thank you! There are many ways you can contribute:
 ### Python 2 vs 3
 
 At the time of this writing (2021-07) Python 2 has long passed its [sunset](https://python3statement.org/).
-And the effort to still support Python 2 has become to big (see https://github.com/pe-st/garmin-connect-export/issues/64),
-so to protect users from getting HTTP errors/exceptions with Python 2, the script
-purposely denies running with Python 2.
+And the effort to still support Python 2 has become too big (see https://github.com/pe-st/garmin-connect-export/issues/64);
+the script now uses features from Python 3 which Python 2 doesn't understand,
+so if you try to run the script with Python 2 you will get complaints about
+invalid syntax or other similar error messages.
 
 ### Python 3.x Versions
 

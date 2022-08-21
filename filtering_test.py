@@ -14,7 +14,6 @@ DIR = tempfile.gettempdir()
 
 
 class TestExcludeFile(unittest.TestCase):
-
     @property
     def file_under_test(self):
         return path.join(DIR, "exclude.json")
@@ -51,7 +50,6 @@ class TestExcludeFile(unittest.TestCase):
 
 
 class TestDownloadStats(unittest.TestCase):
-
     @property
     def file_under_test(self):
         return path.join(DIR, DOWNLOADED_IDS_FILE_NAME)

@@ -52,6 +52,9 @@ OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_J
 
 SCRIPT_VERSION = '4.0.0'
 
+# This version here should correspond to what is written in CONTRIBUTING.md#python-3x-versions
+MINIMUM_PYTHON_VERSION = (3, 7)
+
 # this is almost the datetime format Garmin used in the activity-search-service
 # JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
 ALMOST_RFC_1123 = "%a, %d %b %Y %H:%M"
@@ -73,7 +76,7 @@ PARENT_TYPE_ID = {
     83: 'transition',
     144: 'diving',
     149: 'yoga',
-    165: 'winter_sports'
+    165: 'winter_sports',
 }
 
 # typeId values using pace instead of speed
@@ -123,7 +126,7 @@ DATA = {
     'mobile': 'false',
     'connectLegalTerms': 'true',
     'locationPromptShown': 'true',
-    'showPassword': 'true'
+    'showPassword': 'true',
 }
 
 # URLs for various services.
@@ -219,8 +222,10 @@ def http_req(url, post=None, headers=None):
     """
     request = Request(url)
     # Tell Garmin we're some supported browser.
-    request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, \
-        like Gecko) Chrome/54.0.2816.0 Safari/537.36')
+    request.add_header(
+        'User-Agent',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2816.0 Safari/537.36',
+    )
     request.add_header('nk', 'NT')  # necessary since 2021-02-23 to avoid http error code 402
     if headers:
         for header_key, header_value in headers.items():
@@ -233,7 +238,7 @@ def http_req(url, post=None, headers=None):
         response = OPENER.open(request, data=post)
     except HTTPError as ex:
         if hasattr(ex, 'code'):
-            logging.error('Server couldn\'t fulfill the request, code %s, error: %s', ex.code, ex)
+            logging.error('Server couldn\'t fulfill the request, url %s, code %s, error: %s', url, ex.code, ex)
             logging.info('Headers returned:\n%s', ex.info())
         raise
     except URLError as ex:
@@ -454,6 +459,7 @@ def parse_arguments(argv):
 
     parser = argparse.ArgumentParser(description='Garmin Connect Exporter')
 
+    # fmt: off
     parser.add_argument('--version', action='version', version='%(prog)s ' + SCRIPT_VERSION,
         help='print version and exit')
     parser.add_argument('-v', '--verbosity', action='count', default=0,
@@ -473,8 +479,7 @@ def parse_arguments(argv):
     parser.add_argument('-d', '--directory', default=activities_directory,
         help='the directory to export to (default: \'./YYYY-MM-DD_garmin_connect_export\')')
     parser.add_argument('-s', '--subdir',
-        help='the subdirectory for activity files (tcx, gpx etc.), supported placeholders are {YYYY} and {MM}'
-                        ' (default: export directory)')
+        help='the subdirectory for activity files (tcx, gpx etc.), supported placeholders are {YYYY} and {MM} (default: export directory)')
     parser.add_argument('-lp', '--logpath',
         help='the directory to store logfiles (default: same as for --directory)')
     parser.add_argument('-u', '--unzip', action='store_true',
@@ -490,8 +495,8 @@ def parse_arguments(argv):
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
         help='give index for first activity to import, i.e. skipping the newest activities')
     parser.add_argument('-ex', '--exclude', metavar='FILE',
-        help='JSON file with Array of activity IDs to exclude from download. '
-                        'Format example: {"ids": ["6176888711"]}')
+        help='JSON file with Array of activity IDs to exclude from download. Format example: {"ids": ["6176888711"]}')
+    # fmt: on
 
     return parser.parse_args(argv[1:])
 
@@ -521,12 +526,10 @@ def login_to_garmin_connect(args):
         'username': username,
         'password': password,
         'embed': 'false',
-        'rememberme': 'on'
+        'rememberme': 'on',
     }
 
-    headers = {
-        'referer': URL_GC_LOGIN
-    }
+    headers = {'referer': URL_GC_LOGIN}
 
     print('Requesting Login ticket...', end='')
     logging.info('Requesting Login ticket')
@@ -541,8 +544,9 @@ def login_to_garmin_connect(args):
     pattern = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE | re.DOTALL)
     match = pattern.match(login_response)
     if not match:
-        raise Exception('Couldn\'t find ticket in the login response. Cannot log in. '
-                        'Did you enter the correct username and password?')
+        raise Exception(
+            'Couldn\'t find ticket in the login response. Cannot log in. Did you enter the correct username and password?'
+        )
     login_ticket = match.group(1)
     print(' Done. Ticket=', login_ticket, sep='')
 
@@ -571,6 +575,7 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     end_latitude = from_activities_or_detail('endLatitude', actvty, details, 'summaryDTO')
     end_longitude = from_activities_or_detail('endLongitude', actvty, details, 'summaryDTO')
 
+    # fmt: off
     csv_filter.set_column('id', str(actvty['activityId']))
     csv_filter.set_column('url', 'https://connect.garmin.com/modern/activity/' + str(actvty['activityId']))
     csv_filter.set_column('activityName', actvty['activityName'] if present('activityName', actvty) else None)
@@ -662,6 +667,7 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('endLongitudeRaw', str(end_longitude) if end_longitude else None)
     csv_filter.set_column('endLongitude', trunc6(end_longitude) if end_longitude else None)
     csv_filter.set_column('sampleCount', str(extract['samples']['metricsCount']) if present('metricsCount', extract['samples']) else None)
+    # fmt: on
 
     csv_filter.write_row()
 
@@ -683,7 +689,9 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
         return None
 
     metadata = details['metadataDTO']
-    device_app_inst_id = metadata['deviceApplicationInstallationId'] if present('deviceApplicationInstallationId', metadata) else None
+    device_app_inst_id = (
+        metadata['deviceApplicationInstallationId'] if present('deviceApplicationInstallationId', metadata) else None
+    )
     if device_app_inst_id:
         if device_app_inst_id not in device_dict:
             # observed from my stock of activities:
@@ -695,17 +703,16 @@ def extract_device(device_dict, details, start_time_seconds, args, http_caller, 
             device_id = device_meta['deviceId'] if present('deviceId', device_meta) else None
             if 'deviceId' not in device_meta or device_id and device_id != '0':
                 device_json = http_caller(URL_GC_DEVICE + str(device_app_inst_id))
-                file_writer(os.path.join(args.directory, f'device_{device_app_inst_id}.json'),
-                            device_json, 'w',
-                            start_time_seconds)
+                file_writer(os.path.join(args.directory, f'device_{device_app_inst_id}.json'), device_json, 'w', start_time_seconds)
                 if not device_json:
                     logging.warning("Device Details %s are empty", device_app_inst_id)
                     device_dict[device_app_inst_id] = "device-id:" + str(device_app_inst_id)
                 else:
                     device_details = json.loads(device_json)
                     if present('productDisplayName', device_details):
-                        device_dict[device_app_inst_id] = \
+                        device_dict[device_app_inst_id] = (
                             device_details['productDisplayName'] + ' ' + device_details['versionString']
+                        )
                     else:
                         logging.warning("Device details %s incomplete", device_app_inst_id)
         return device_dict[device_app_inst_id]
@@ -725,9 +732,7 @@ def load_zones(activity_id, start_time_seconds, args, http_caller, file_writer):
     """
     zones = HR_ZONES_EMPTY
     zones_json = http_caller(f'{URL_GC_ACTIVITY}{activity_id}/hrTimeInZones')
-    file_writer(os.path.join(args.directory, f'activity_{activity_id}_zones.json'),
-                zones_json, 'w',
-                start_time_seconds)
+    file_writer(os.path.join(args.directory, f'activity_{activity_id}_zones.json'), zones_json, 'w', start_time_seconds)
     zones_raw = json.loads(zones_json)
     if not zones_raw:
         logging.warning("HR Zones %s are empty", activity_id)
@@ -748,8 +753,7 @@ def load_gear(activity_id, args):
         gear = json.loads(gear_json)
         if gear:
             if args.verbosity > 0:
-                write_to_file(os.path.join(args.directory, f'activity_{activity_id}-gear.json'),
-                              gear_json, 'w')
+                write_to_file(os.path.join(args.directory, f'activity_{activity_id}-gear.json'), gear_json, 'w')
             gear_display_name = gear[0]['displayName'] if present('displayName', gear[0]) else None
             gear_model = gear[0]['customMakeModel'] if present('customMakeModel', gear[0]) else None
             logging.debug("Gear for %s = %s/%s", activity_id, gear_display_name, gear_model)
@@ -821,7 +825,11 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
         return False
 
     # Regardless of unzip setting, don't redownload if the ZIP or FIT/GPX/TCX original file exists.
-    if args.format == 'original' and (os.path.isfile(original_basename + '.fit') or os.path.isfile(original_basename + '.gpx') or os.path.isfile(original_basename + '.tcx')):
+    if args.format == 'original' and (
+        os.path.isfile(original_basename + '.fit')
+        or os.path.isfile(original_basename + '.gpx')
+        or os.path.isfile(original_basename + '.tcx')
+    ):
         logging.debug('Original data file for %s already exists', activity_id)
         print('\tOriginal data file already exists; skipping...')
         # Inform the main program that the file already exists
@@ -896,9 +904,7 @@ def setup_logging(args):
         os.makedirs(logpath)
 
     logging.basicConfig(
-        filename=os.path.join(logpath, 'gcexport.log'),
-        level=logging.DEBUG,
-        format='%(asctime)s [%(levelname)-7.7s] %(message)s'
+        filename=os.path.join(logpath, 'gcexport.log'), level=logging.DEBUG, format='%(asctime)s [%(levelname)-7.7s] %(message)s'
     )
 
     # set up logging to console
@@ -1041,9 +1047,7 @@ def fetch_activity_chunk(args, num_to_download, total_downloaded):
 
     search_params = {'start': total_downloaded, 'limit': num_to_download}
     # Query Garmin Connect
-    print('Querying list of activities ', total_downloaded + 1,
-          '..', total_downloaded + num_to_download,
-          '...', sep='', end='')
+    print('Querying list of activities ', total_downloaded + 1, '..', total_downloaded + num_to_download, '...', sep='', end='')
     logging.info('Activity list URL %s', URL_GC_LIST + urlencode(search_params))
     result = http_req_as_string(URL_GC_LIST + urlencode(search_params))
     print(' Done.')
@@ -1072,7 +1076,9 @@ def fetch_multisports(activity_summaries, http_caller, args):
         if type_key == 'multi_sport':
             _, details = fetch_details(child_summary['activityId'], http_caller)
 
-            child_ids = details['metadataDTO']['childIds'] if 'metadataDTO' in details and 'childIds' in details['metadataDTO'] else None
+            child_ids = (
+                details['metadataDTO']['childIds'] if 'metadataDTO' in details and 'childIds' in details['metadataDTO'] else None
+            )
             # insert the children in reversed order always at the same index to get
             # the correct order in activity_summaries
             for child_id in reversed(child_ids):
@@ -1122,6 +1128,7 @@ def copy_details_to_summary(summary, details):
     :param summary: summary dict, will be modified in-place
     :param details: details dict
     """
+    # fmt: off
     summary['activityId'] = details['activityId']
     summary['activityName'] = details['activityName']
     summary['description'] = details['description'] if present('description', details) else None
@@ -1139,6 +1146,7 @@ def copy_details_to_summary(summary, details):
     summary['maxHR'] = details['summaryDTO']['maxHR'] if 'summaryDTO' in details and 'maxHR' in details['summaryDTO'] else None
     summary['averageHR'] = details['summaryDTO']['averageHR'] if 'summaryDTO' in details and 'averageHR' in details['summaryDTO'] else None
     summary['elevationCorrected'] = details['metadataDTO']['elevationCorrected'] if 'metadataDTO' in details and 'elevationCorrected' in details['metadataDTO'] else None
+    # fmt: on
 
 
 def process_activity_item(item, number_of_items, device_dict, activity_type_name, event_type_name, csv_filter, args):
@@ -1184,15 +1192,17 @@ def process_activity_item(item, number_of_items, device_dict, activity_type_name
 
     extract = {}
     extract['start_time_with_offset'] = offset_date_time(actvty['startTimeLocal'], actvty['startTimeGMT'])
-    elapsed_duration = details['summaryDTO']['elapsedDuration'] if 'summaryDTO' in details and 'elapsedDuration' in \
-                                                                   details['summaryDTO'] else None
+    if 'summaryDTO' in details and 'elapsedDuration' in details['summaryDTO']:
+        elapsed_duration = details['summaryDTO']['elapsedDuration']
+    else:
+        elapsed_duration = None
     extract['elapsed_duration'] = elapsed_duration if elapsed_duration else actvty['duration']
     extract['elapsed_seconds'] = int(round(extract['elapsed_duration']))
     extract['end_time_with_offset'] = extract['start_time_with_offset'] + timedelta(seconds=extract['elapsed_seconds'])
 
     print('\t', extract['start_time_with_offset'].isoformat(), ', ', sep='', end='')
     print(hhmmss_from_seconds(extract['elapsed_seconds']), ', ', sep='', end='')
-    if 'distance' in actvty and isinstance(actvty['distance'], (float)):
+    if 'distance' in actvty and isinstance(actvty['distance'], float):
         print(f"{actvty['distance'] / 1000:.3f} km")
     else:
         print('0.000 km')
@@ -1207,8 +1217,7 @@ def process_activity_item(item, number_of_items, device_dict, activity_type_name
     else:
         start_time_seconds = None
 
-    extract['device'] = extract_device(device_dict, details, start_time_seconds, args, http_req_as_string,
-                                       write_to_file)
+    extract['device'] = extract_device(device_dict, details, start_time_seconds, args, http_req_as_string, write_to_file)
 
     # try to get the JSON with all the samples (not all activities have it...),
     # but only if it's really needed for the CSV output
@@ -1217,15 +1226,17 @@ def process_activity_item(item, number_of_items, device_dict, activity_type_name
         try:
             # TODO implement retries here, I have observed temporary failures
             activity_measurements = http_req_as_string(f"{URL_GC_ACTIVITY}{actvty['activityId']}/details")
-            write_to_file(os.path.join(args.directory, f"activity_{actvty['activityId']}_samples.json"),
-                          activity_measurements, 'w',
-                          start_time_seconds)
+            write_to_file(
+                os.path.join(args.directory, f"activity_{actvty['activityId']}_samples.json"),
+                activity_measurements,
+                'w',
+                start_time_seconds,
+            )
             samples = json.loads(activity_measurements)
             extract['samples'] = samples
-        except HTTPError:
-            pass  # don't abort just for missing samples...
-            # logging.info("Unable to get samples for %d", actvty['activityId'])
-            # logging.exception(e)
+        except HTTPError as ex:
+            logging.info("Unable to get samples for %d", actvty['activityId'])
+            logging.exception(ex)
 
     extract['gear'] = None
     if csv_filter.is_column_active('gear'):
@@ -1233,12 +1244,12 @@ def process_activity_item(item, number_of_items, device_dict, activity_type_name
 
     extract['hrZones'] = HR_ZONES_EMPTY
     if csv_filter.is_column_active('hrZone1Low') or csv_filter.is_column_active('hrZone1Seconds'):
-        extract['hrZones'] = load_zones(str(actvty['activityId']), start_time_seconds, args, http_req_as_string,
-                                        write_to_file)
+        extract['hrZones'] = load_zones(str(actvty['activityId']), start_time_seconds, args, http_req_as_string, write_to_file)
 
     # Save the file and inform if it already existed. If the file already existed, do not apped the record to the csv
-    if export_data_file(str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc,
-                        actvty['startTimeLocal']):
+    if export_data_file(
+        str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc, actvty['startTimeLocal']
+    ):
         # Write stats to CSV.
         csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name)
 
@@ -1254,9 +1265,13 @@ def main(argv):
 
     print('Welcome to Garmin Connect Exporter!')
 
-    if sys.version_info.major < 3:
-        print('Please upgrade to Python 3.x, version', python_version(), 'isn\'t supported anymore, see https://github.com/pe-st/garmin-connect-export/issues/64')
-        sys.exit(1)
+    if sys.version_info < MINIMUM_PYTHON_VERSION:
+        logging.warning(
+            "Python version %s is older than %s.%s.x, results might be unexpected",
+            python_version(),
+            MINIMUM_PYTHON_VERSION[0],
+            MINIMUM_PYTHON_VERSION[1],
+        )
 
     # Get filter list with IDs to exclude
     if args.exclude is not None:
@@ -1268,9 +1283,9 @@ def main(argv):
 
     # Create directory for data files.
     if os.path.isdir(args.directory):
-        logging.warning("Output directory %s already exists. "
-                        "Will skip already-downloaded files and append to the CSV file.",
-                        args.directory)
+        logging.warning(
+            'Output directory %s already exists. Will skip already-downloaded files and append to the CSV file.', args.directory
+        )
     else:
         os.mkdir(args.directory)
 
@@ -1312,8 +1327,7 @@ def main(argv):
 
         # Process each activity.
         for item in action_list:
-            process_activity_item(item, len(action_list), device_dict, activity_type_name, event_type_name,
-                                  csv_filter, args)
+            process_activity_item(item, len(action_list), device_dict, activity_type_name, event_type_name, csv_filter, args)
 
     if args.external:
         print('Open CSV output.')

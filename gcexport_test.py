@@ -16,7 +16,7 @@ def test_pace_or_speed_raw_cycling():
 
 def test_pace_or_speed_raw_running():
     # 3.33 m/s is 12 km/h is 5 min/km
-    assert pace_or_speed_raw(1, 4, 10.0/3) == 5.0
+    assert pace_or_speed_raw(1, 4, 10.0 / 3) == 5.0
 
 
 def test_pace_or_speed_formatted_cycling():
@@ -26,7 +26,7 @@ def test_pace_or_speed_formatted_cycling():
 
 def test_pace_or_speed_formatted_running():
     # 3.33 m/s is 12 km/h is 5 min/km
-    assert pace_or_speed_formatted(1, 4, 10.0/3) == '05:00'
+    assert pace_or_speed_formatted(1, 4, 10.0 / 3) == '05:00'
 
 
 def test_trunc6_more():
@@ -38,8 +38,12 @@ def test_trunc6_less():
 
 
 def test_offset_date_time():
-    assert offset_date_time("2018-03-08 12:23:22", "2018-03-08 11:23:22") == datetime(2018, 3, 8, 12, 23, 22, 0, FixedOffset(60, "LCL"))
-    assert offset_date_time("2018-03-08 12:23:22", "2018-03-08 12:23:22") == datetime(2018, 3, 8, 12, 23, 22, 0, FixedOffset(0, "LCL"))
+    assert offset_date_time("2018-03-08 12:23:22", "2018-03-08 11:23:22") == datetime(
+        2018, 3, 8, 12, 23, 22, 0, FixedOffset(60, "LCL")
+    )
+    assert offset_date_time("2018-03-08 12:23:22", "2018-03-08 12:23:22") == datetime(
+        2018, 3, 8, 12, 23, 22, 0, FixedOffset(0, "LCL")
+    )
 
 
 def test_datetime_from_iso():
@@ -124,7 +128,7 @@ def test_csv_write_record():
     csv_filter = CsvFilter(csv_file, 'csv_header_all.properties')
     csv_write_record(csv_filter, extract, activities[0], details, activity_type_name, event_type_name)
     expected = '"Biel 🏛 Pavillon"'
-    assert csv_file.getvalue()[69:69 + len(expected)] == expected
+    assert csv_file.getvalue()[69 : 69 + len(expected)] == expected
 
 
 def write_to_file_mock(filename, content, mode, file_time=None):
@@ -197,6 +201,7 @@ def test_resolve_path():
 
 
 mock_details_multi_counter = 0
+
 
 def http_req_mock_details_multi(url, post=None, headers=None):
 

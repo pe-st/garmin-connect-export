@@ -61,8 +61,7 @@ def update_download_stats(activity_id, directory):
             obj = ""
 
     # Sanitize wrong formats
-    if not isinstance(obj, dict):
-        obj = {}
+    obj = dict(obj)
 
     if KEY_IDS not in obj:
         obj[KEY_IDS] = []

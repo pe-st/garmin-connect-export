@@ -9,8 +9,8 @@ This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1
   ([Pull Request #74](https://github.com/pe-st/garmin-connect-export/pull/74) by @cristian5th and @bxsx)
 - removed: Python 2 leftovers
   ([Pull Request #73](https://github.com/pe-st/garmin-connect-export/pull/73) by @bxsx)
-- added: configurations for flake8 and pylint (including the needed improvements of the code for them)
-- changed: Github Action now executes also flake8 and pylint tasks
+- added: configurations for flake8, pylint and black (including the needed improvements of the code for them)
+- changed: Github Actions now execute also flake8, pylint and black tasks
 
 
 ## 3.3.0 - 2021-12-26
