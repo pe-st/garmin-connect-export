@@ -58,7 +58,7 @@ usage: gcexport.py [-h] [--version] [-v] [--username USERNAME]
 
 Garmin Connect Exporter
 
-options:
+optional arguments:
   -h, --help            show this help message and exit
   --version             print version and exit
   -v, --verbosity       increase output and log verbosity, save more intermediate files
