@@ -1112,7 +1112,8 @@ def fetch_details(activity_id, http_caller):
             logging.info("Retrying activity details download %s", URL_GC_ACTIVITY + str(activity_id))
             tries -= 1
             if tries == 0:
-                raise Exception(f'Didn\'t get "summaryDTO" after {MAX_TRIES} tries for {activity_id}')
+                print('Exception: didn\'t get "summaryDTO" after {MAX_TRIES} tries for {activity_id}')
+                pass
     return activity_details, details
 
 
