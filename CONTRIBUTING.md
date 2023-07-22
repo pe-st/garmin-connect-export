@@ -24,10 +24,19 @@ The script should be usable for a wide range of users and Python versions.
 
 For that reason the script should be compatible with the oldest still [supported
 Python version](https://devguide.python.org/versions/). At the time of this writing
-(July 2022) this is Python 3.7, whose end-of-life is currently scheduled for June 2023.
+(July 2023) this is Python 3.8, whose end-of-life is currently scheduled for October 2024.
 
 The Github Actions (see `github/workflows/python-app.yml`) thus run all steps twice,
 once with the oldest supported Python version, and once with the newest released version.
+
+### Updating the minimum Python version
+
+- bump at least the minor version in `gcexport.py` : `SCRIPT_VERSION`
+- `gcexport.py` : `MINIMUM_PYTHON_VERSION`
+- `.github/workflows/python-app.yml` : `jobs.build.strategy.matrix.version`
+- the paragraph just above
+- `README.md` : near the top
+- `CHANGELOG.md` : mention it
 
 ## Getting started
 

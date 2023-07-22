@@ -53,7 +53,7 @@ OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_J
 SCRIPT_VERSION = '4.1.0'
 
 # This version here should correspond to what is written in CONTRIBUTING.md#python-3x-versions
-MINIMUM_PYTHON_VERSION = (3, 7)
+MINIMUM_PYTHON_VERSION = (3, 8)
 
 # this is almost the datetime format Garmin used in the activity-search-service
 # JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
@@ -147,6 +147,10 @@ URL_GC_TCX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/
 URL_GC_ORIGINAL_ACTIVITY = 'http://connect.garmin.com/proxy/download-service/files/activity/'
 
 
+class GarminException(Exception):
+    """Exception for problems with Garmin Connect (connection, data consistency etc)."""
+
+
 def resolve_path(directory, subdir, time):
     """
     Replace time variables and returns changed path. Supported place holders are {YYYY} and {MM}
@@ -207,7 +211,7 @@ def write_to_file(filename, content, mode='w', file_time=None):
         with io.open(filename, 'wb') as binary_file:
             binary_file.write(content)
     else:
-        raise Exception('Unsupported file mode: ', mode)
+        raise ValueError('Unsupported file mode: ', mode)
     if file_time:
         os.utime(filename, (file_time, file_time))
 
@@ -257,7 +261,7 @@ def http_req(url, post=None, headers=None):
         logging.info('Got 204 for %s, returning empty response', url)
         return b''
     if response.getcode() != 200:
-        raise Exception(f'Bad return code ({response.getcode()}) for: {url}')
+        raise GarminException(f'Bad return code ({response.getcode()}) for: {url}')
 
     return response.read()
 
@@ -371,7 +375,7 @@ def datetime_from_iso(iso_date_time):
     pattern = re.compile(r"(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})(\.\d+)?")
     match = pattern.match(iso_date_time)
     if not match:
-        raise Exception(f'Invalid ISO timestamp {iso_date_time}.')
+        raise GarminException(f'Invalid ISO timestamp {iso_date_time}.')
     micros = match.group(3) if match.group(3) else ".0"
     iso_with_micros = f'{match.group(1)} {match.group(2)}{micros}'
     return datetime.strptime(iso_with_micros, "%Y-%m-%d %H:%M:%S.%f")
@@ -545,7 +549,7 @@ def login_to_garmin_connect(args):
     pattern = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE | re.DOTALL)
     match = pattern.match(login_response)
     if not match:
-        raise Exception(
+        raise GarminException(
             'Couldn\'t find ticket in the login response. Cannot log in. Did you enter the correct username and password?'
         )
     login_ticket = match.group(1)
@@ -817,7 +821,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
         data_filename = os.path.join(directory, f'{prefix}activity_{activity_id}{append_desc}.json')
         file_mode = 'w'
     else:
-        raise Exception('Unrecognized format.')
+        raise ValueError('Unrecognized format.')
 
     if os.path.isfile(data_filename):
         logging.debug('Data file for %s already exists', activity_id)
@@ -861,7 +865,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                 data = ''
             else:
                 logging.info('Got %s for %s', ex.code, download_url)
-                raise Exception(f'Failed. Got an HTTP error {ex.code} for {download_url}') from ex
+                raise GarminException(f'Failed. Got an HTTP error {ex.code} for {download_url}') from ex
     else:
         data = activity_details
 
@@ -970,7 +974,7 @@ def extract_display_name(profile_page):
     pattern = re.compile(r".*\"displayName\":\"(.+?)\".*", re.MULTILINE | re.DOTALL)
     match = pattern.match(profile_page)
     if not match:
-        raise Exception('Did not find the display name in the profile page.')
+        raise GarminException('Did not find the display name in the profile page.')
     display_name = match.group(1)
     return display_name
 
@@ -1032,7 +1036,7 @@ def annotate_activity_list(activities, start, exclude_list):
         else:
             action = 'd'
 
-        action_list.append(dict(index=index, action=action, activity=activity))
+        action_list.append({"index": index, "action": action, "activity": activity})
 
     return action_list
 
@@ -1113,7 +1117,7 @@ def fetch_details(activity_id, http_caller):
             logging.info("Retrying activity details download %s", URL_GC_ACTIVITY + str(activity_id))
             tries -= 1
             if tries == 0:
-                raise Exception(f'Didn\'t get "summaryDTO" after {MAX_TRIES} tries for {activity_id}')
+                raise GarminException(f'Didn\'t get "summaryDTO" after {MAX_TRIES} tries for {activity_id}')
     return activity_details, details
 
 

@@ -26,7 +26,6 @@ def read_exclude(file):
         return None
 
     with open(file, 'r', encoding='utf-8') as json_file:
-
         try:
             obj = json.load(json_file)
             return obj['ids']

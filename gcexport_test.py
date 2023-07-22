@@ -204,7 +204,6 @@ mock_details_multi_counter = 0
 
 
 def http_req_mock_details_multi(url, post=None, headers=None):
-
     global mock_details_multi_counter
     mock_details_multi_counter += 1
 

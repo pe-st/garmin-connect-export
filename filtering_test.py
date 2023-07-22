@@ -71,7 +71,6 @@ class TestDownloadStats(unittest.TestCase):
             self.assertEqual(actual[KEY_IDS][0], '1000')
 
     def test_1000_items(self):
-
         r = range(1, 1000)
 
         for i in r:
