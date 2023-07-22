@@ -1,0 +1,1098 @@
+[
+    {
+        "typeId": 1,
+        "typeKey": "running",
+        "parentTypeId": 17,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 2,
+        "typeKey": "cycling",
+        "parentTypeId": 17,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 3,
+        "typeKey": "hiking",
+        "parentTypeId": 17,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 4,
+        "typeKey": "other",
+        "parentTypeId": 17,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 5,
+        "typeKey": "mountain_biking",
+        "parentTypeId": 2,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 6,
+        "typeKey": "trail_running",
+        "parentTypeId": 1,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 7,
+        "typeKey": "street_running",
+        "parentTypeId": 1,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 8,
+        "typeKey": "track_running",
+        "parentTypeId": 1,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 9,
+        "typeKey": "walking",
+        "parentTypeId": 17,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 10,
+        "typeKey": "road_biking",
+        "parentTypeId": 2,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 11,
+        "typeKey": "indoor_cardio",
+        "parentTypeId": 29,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 13,
+        "typeKey": "strength_training",
+        "parentTypeId": 29,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 15,
+        "typeKey": "casual_walking",
+        "parentTypeId": 9,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 16,
+        "typeKey": "speed_walking",
+        "parentTypeId": 9,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 17,
+        "typeKey": "all",
+        "parentTypeId": null,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 18,
+        "typeKey": "treadmill_running",
+        "parentTypeId": 1,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 19,
+        "typeKey": "cyclocross",
+        "parentTypeId": 2,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 20,
+        "typeKey": "downhill_biking",
+        "parentTypeId": 2,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 21,
+        "typeKey": "track_cycling",
+        "parentTypeId": 2,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 22,
+        "typeKey": "recumbent_cycling",
+        "parentTypeId": 2,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 25,
+        "typeKey": "indoor_cycling",
+        "parentTypeId": 2,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 26,
+        "typeKey": "swimming",
+        "parentTypeId": 17,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 27,
+        "typeKey": "lap_swimming",
+        "parentTypeId": 26,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 28,
+        "typeKey": "open_water_swimming",
+        "parentTypeId": 26,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 29,
+        "typeKey": "fitness_equipment",
+        "parentTypeId": 17,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 30,
+        "typeKey": "elliptical",
+        "parentTypeId": 29,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 31,
+        "typeKey": "stair_climbing",
+        "parentTypeId": 29,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 32,
+        "typeKey": "indoor_rowing",
+        "parentTypeId": 29,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 37,
+        "typeKey": "mountaineering",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 41,
+        "typeKey": "wind_kite_surfing",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": true
+    },
+    {
+        "typeId": 44,
+        "typeKey": "horseback_riding",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 49,
+        "typeKey": "driving_general",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 52,
+        "typeKey": "flying",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 60,
+        "typeKey": "whitewater_rafting_kayaking",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": true
+    },
+    {
+        "typeId": 63,
+        "typeKey": "inline_skating",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 88,
+        "typeKey": "golf",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 89,
+        "typeKey": "multi_sport",
+        "parentTypeId": 17,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 108,
+        "typeKey": "steps",
+        "parentTypeId": 17,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 131,
+        "typeKey": "bmx",
+        "parentTypeId": 2,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 133,
+        "typeKey": "hunting_fishing",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": true
+    },
+    {
+        "typeId": 134,
+        "typeKey": "sky_diving",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 136,
+        "typeKey": "rc_drone",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 139,
+        "typeKey": "rock_climbing",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 140,
+        "typeKey": "hang_gliding",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 141,
+        "typeKey": "wingsuit_flying",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 143,
+        "typeKey": "gravel_cycling",
+        "parentTypeId": 2,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 144,
+        "typeKey": "diving",
+        "parentTypeId": 17,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 145,
+        "typeKey": "single_gas_diving",
+        "parentTypeId": 144,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 146,
+        "typeKey": "multi_gas_diving",
+        "parentTypeId": 144,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 147,
+        "typeKey": "gauge_diving",
+        "parentTypeId": 144,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 148,
+        "typeKey": "apnea_diving",
+        "parentTypeId": 144,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 150,
+        "typeKey": "floor_climbing",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 151,
+        "typeKey": "stop_watch",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 152,
+        "typeKey": "virtual_ride",
+        "parentTypeId": 2,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 153,
+        "typeKey": "virtual_run",
+        "parentTypeId": 1,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 154,
+        "typeKey": "obstacle_run",
+        "parentTypeId": 1,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 155,
+        "typeKey": "apnea_hunting",
+        "parentTypeId": 144,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 156,
+        "typeKey": "indoor_running",
+        "parentTypeId": 1,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 157,
+        "typeKey": "safety",
+        "parentTypeId": 17,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 158,
+        "typeKey": "assistance",
+        "parentTypeId": 157,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 159,
+        "typeKey": "incident_detected",
+        "parentTypeId": 157,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 160,
+        "typeKey": "pilates",
+        "parentTypeId": 29,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 161,
+        "typeKey": "ccr_diving",
+        "parentTypeId": 144,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 162,
+        "typeKey": "auto_racing",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 163,
+        "typeKey": "yoga",
+        "parentTypeId": 29,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 164,
+        "typeKey": "breathwork",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 165,
+        "typeKey": "winter_sports",
+        "parentTypeId": 17,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 166,
+        "typeKey": "snowmobiling_ws",
+        "parentTypeId": 165,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 167,
+        "typeKey": "snow_shoe_ws",
+        "parentTypeId": 165,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 168,
+        "typeKey": "skating_ws",
+        "parentTypeId": 165,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 169,
+        "typeKey": "backcountry_skiing_snowboarding_ws",
+        "parentTypeId": 165,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": true
+    },
+    {
+        "typeId": 170,
+        "typeKey": "skate_skiing_ws",
+        "parentTypeId": 165,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 171,
+        "typeKey": "cross_country_skiing_ws",
+        "parentTypeId": 165,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 172,
+        "typeKey": "resort_skiing_snowboarding_ws",
+        "parentTypeId": 165,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": true
+    },
+    {
+        "typeId": 173,
+        "typeKey": "indoor_climbing",
+        "parentTypeId": 29,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 174,
+        "typeKey": "bouldering",
+        "parentTypeId": 29,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 175,
+        "typeKey": "e_bike_mountain",
+        "parentTypeId": 2,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 176,
+        "typeKey": "e_bike_fitness",
+        "parentTypeId": 2,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 180,
+        "typeKey": "hiit",
+        "parentTypeId": 29,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 181,
+        "typeKey": "ultra_run",
+        "parentTypeId": 1,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 182,
+        "typeKey": "e_sport",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 185,
+        "typeKey": "motorcycling_v2",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 186,
+        "typeKey": "motocross_v2",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 187,
+        "typeKey": "atv_v2",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 189,
+        "typeKey": "transition_v2",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 190,
+        "typeKey": "swimToBikeTransition_v2",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 191,
+        "typeKey": "bikeToRunTransition_v2",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 192,
+        "typeKey": "runToBikeTransition_v2",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 193,
+        "typeKey": "hunting",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 203,
+        "typeKey": "backcountry_skiing",
+        "parentTypeId": 165,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 204,
+        "typeKey": "backcountry_snowboarding",
+        "parentTypeId": 165,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 205,
+        "typeKey": "disc_golf",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 206,
+        "typeKey": "team_sports",
+        "parentTypeId": 17,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 207,
+        "typeKey": "cricket",
+        "parentTypeId": 206,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 208,
+        "typeKey": "rugby",
+        "parentTypeId": 206,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 209,
+        "typeKey": "ice_hockey",
+        "parentTypeId": 206,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 210,
+        "typeKey": "field_hockey",
+        "parentTypeId": 206,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 211,
+        "typeKey": "lacrosse",
+        "parentTypeId": 206,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 212,
+        "typeKey": "volleyball",
+        "parentTypeId": 206,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 213,
+        "typeKey": "ultimate_disc",
+        "parentTypeId": 206,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 214,
+        "typeKey": "softball",
+        "parentTypeId": 206,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 215,
+        "typeKey": "soccer",
+        "parentTypeId": 206,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 216,
+        "typeKey": "american_football",
+        "parentTypeId": 206,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 217,
+        "typeKey": "basketball",
+        "parentTypeId": 206,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 218,
+        "typeKey": "baseball",
+        "parentTypeId": 206,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 219,
+        "typeKey": "racket_sports",
+        "parentTypeId": 17,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 220,
+        "typeKey": "table_tennis",
+        "parentTypeId": 219,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 221,
+        "typeKey": "platform_tennis",
+        "parentTypeId": 219,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 222,
+        "typeKey": "racquetball",
+        "parentTypeId": 219,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 223,
+        "typeKey": "squash",
+        "parentTypeId": 219,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 224,
+        "typeKey": "badminton",
+        "parentTypeId": 219,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 225,
+        "typeKey": "pickleball",
+        "parentTypeId": 219,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 226,
+        "typeKey": "paddelball",
+        "parentTypeId": 219,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 227,
+        "typeKey": "tennis_v2",
+        "parentTypeId": 219,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 228,
+        "typeKey": "water_sports",
+        "parentTypeId": 17,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 229,
+        "typeKey": "boating_v2",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 230,
+        "typeKey": "fishing_v2",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 231,
+        "typeKey": "kayaking_v2",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 232,
+        "typeKey": "kiteboarding_v2",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 233,
+        "typeKey": "offshore_grinding_v2",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 234,
+        "typeKey": "onshore_grinding_v2",
+        "parentTypeId": 29,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 235,
+        "typeKey": "paddling_v2",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 236,
+        "typeKey": "whitewater_rafting_v2",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 237,
+        "typeKey": "rowing_v2",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 238,
+        "typeKey": "sailing_v2",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 239,
+        "typeKey": "stand_up_paddleboarding_v2",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 240,
+        "typeKey": "surfing_v2",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 241,
+        "typeKey": "water_tubing",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 242,
+        "typeKey": "windsurfing_v2",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 243,
+        "typeKey": "wakeboarding_v2",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 244,
+        "typeKey": "wakesurfing",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 245,
+        "typeKey": "waterskiing",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": false,
+        "restricted": false
+    },
+    {
+        "typeId": 246,
+        "typeKey": "boxing",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 247,
+        "typeKey": "archery",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 248,
+        "typeKey": "mixed_martial_arts",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 249,
+        "typeKey": "overland",
+        "parentTypeId": 4,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    },
+    {
+        "typeId": 250,
+        "typeKey": "snorkeling",
+        "parentTypeId": 228,
+        "isHidden": false,
+        "trimmable": true,
+        "restricted": false
+    }
+]

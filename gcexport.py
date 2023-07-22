@@ -50,7 +50,7 @@ from filtering import read_exclude, update_download_stats
 COOKIE_JAR = http.cookiejar.CookieJar()
 OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
 
-SCRIPT_VERSION = '4.0.0'
+SCRIPT_VERSION = '4.1.0'
 
 # This version here should correspond to what is written in CONTRIBUTING.md#python-3x-versions
 MINIMUM_PYTHON_VERSION = (3, 7)
@@ -63,20 +63,21 @@ ALMOST_RFC_1123 = "%a, %d %b %Y %H:%M"
 VALID_FILENAME_CHARS = f'-_.() {string.ascii_letters}{string.digits}'
 
 # map the numeric parentTypeId to its name for the CSV output
+# this comes from https://connect.garmin.com/activity-service/activity/activityTypes
 PARENT_TYPE_ID = {
     1: 'running',
     2: 'cycling',
-    3: 'hiking',
     4: 'other',
     9: 'walking',
     17: 'any',
     26: 'swimming',
     29: 'fitness_equipment',
-    71: 'motorcycling',
-    83: 'transition',
     144: 'diving',
-    149: 'yoga',
+    157: 'safety',
     165: 'winter_sports',
+    206: 'team_sports',
+    219: 'racket_sports',
+    228: 'water_sports',
 }
 
 # typeId values using pace instead of speed
@@ -567,9 +568,9 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
         parent_type_key = PARENT_TYPE_ID[parent_type_id]
     else:
         parent_type_key = None
-        logging.warning("Unknown parentType %s, please tell script author", str(parent_type_id))
+        logging.warning("Unknown parentType %s in %s, please tell script author", str(parent_type_id), str(actvty['activityId']))
 
-    # get some values from detail if present, from a otherwise
+    # get some values from detail if present, from actvty otherwise
     start_latitude = from_activities_or_detail('startLatitude', actvty, details, 'summaryDTO')
     start_longitude = from_activities_or_detail('startLongitude', actvty, details, 'summaryDTO')
     end_latitude = from_activities_or_detail('endLatitude', actvty, details, 'summaryDTO')
@@ -1309,7 +1310,7 @@ def main(argv):
     activity_type_name = load_properties(activity_type_props)
     event_type_props = http_req_as_string(URL_GC_EVT_PROPS)
     if args.verbosity > 0:
-        write_to_file(os.path.join(args.directory, 'event_types.properties'), activity_type_props, 'w')
+        write_to_file(os.path.join(args.directory, 'event_types.properties'), event_type_props, 'w')
     event_type_name = load_properties(event_type_props)
 
     activities = fetch_activity_list(args, total_to_download)
@@ -1328,6 +1329,8 @@ def main(argv):
         # Process each activity.
         for item in action_list:
             process_activity_item(item, len(action_list), device_dict, activity_type_name, event_type_name, csv_filter, args)
+
+    logging.info('CSV file written.')
 
     if args.external:
         print('Open CSV output.')

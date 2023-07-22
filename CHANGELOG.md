@@ -3,6 +3,11 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 4.1.0 - 2023-07-22
+
+- changed: updated the list of parent activities (`PARENT_TYPE_ID`) to the new set Garmin is now using
+
+
 ## 4.0.0 - 2022-10-06
 
 - added: new option `--logpath` (BREAKING change, you might need `--logpath=.` for the old behaviour)

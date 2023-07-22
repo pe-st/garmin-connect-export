@@ -84,3 +84,12 @@ Endpoints to get information about a specific activity:
 
 - The timezones provided are just the names (e.g. for Central European Time CET you can get either "Europe/Paris" or "(GMT+01:00) Central European Time"), but not the exact offset. Note that the "GMT+01:00" part of the name is hardcoded, so in summer (daylight savings time) Garmin Connect still uses +01:00 in the name even if the offset then is +02:00. To get the offset you need to calculate the difference between the startTimeLocal and the startTimeGMT.
 
+## Adapting to changes in Garmin Connect
+
+### Unknown parentType xxx
+
+Manually get hold of the content of `https://connect.garmin.com/activity-service/activity/activityTypes`,
+e.g. when logged into Garmin Connect in the browser, using the browser's developer tools. There is an example
+file (from July 2023) in `/json/activityTypes.json`.
+
+Find in this file the new parentType and add it to the definition of `PARENT_TYPE_ID` in `gcexport.py`

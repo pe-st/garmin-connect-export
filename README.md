@@ -122,7 +122,7 @@ Of course, you must have Python installed to run this, any recent 3.x version sh
 Most Mac and Linux users should already have Python.
 Note that if you run into the [TLSV1 ALERT problem](https://github.com/pe-st/garmin-connect-export/issues/16)
 or the [HTTP 403 Authentication Error](https://github.com/pe-st/garmin-connect-export/issues/59),
-your Python installation might not be recent enough).
+your Python installation might not be recent enough.
 In this case you can install a more recent Python on your Mac using [Homebrew](https://docs.brew.sh/Homebrew-and-Python)
 and/or [pyenv](https://github.com/pyenv/pyenv).
 
@@ -133,7 +133,7 @@ Also, as stated above, you should have some basic command line experience.
 
 This tool is not guaranteed to get all of your data, or even download it correctly. I have only tested it with my account and it works fine, but different account settings or different data types could potentially cause problems. Also, because this is not an official feature of Garmin Connect, Garmin may very well make changes that break this utility (and they certainly have since I created this project).
 
-If you want to see all of the raw data that Garmin hands to this script, just choose the JSON export format (`-f json`); in this case only metadata is exported, no track data.
+If you want to see all the raw data that Garmin hands to this script, just choose the JSON export format (`-f json`); in this case only metadata is exported, no track data.
 
 The format of the CSV export file can be customized with template files (in Properties format, see the `--template` option); three examples are included:
 
