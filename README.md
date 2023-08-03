@@ -51,7 +51,9 @@ You will need a little experience running things from the command line to use th
 
 ```
 usage: gcexport.py [-h] [--version] [-v] [--username USERNAME]
-                   [--password PASSWORD] [-c COUNT] [-e EXTERNAL] [-a ARGS]
+                   [--password PASSWORD] [-c COUNT] 
+                   [-sd START_DATE] [-ed END_DATE] 
+                   [-e EXTERNAL] [-a ARGS]
                    [-f {gpx,tcx,original,json}] [-d DIRECTORY] [-s SUBDIR]
                    [-lp LOGPATH] [-u] [-ot] [--desc [DESC]] [-t TEMPLATE]
                    [-fp] [-sa START_ACTIVITY_NO] [-ex FILE]
@@ -66,6 +68,10 @@ optional arguments:
   --password PASSWORD   your Garmin Connect password (otherwise, you will be prompted)
   -c COUNT, --count COUNT
                         number of recent activities to download, or 'all' (default: 1)
+  -sd START_DATE, --start_date START_DATE
+                        the start date to get activities from (inclusive). Format example: 2023-07-31
+  -ed END_DATE, --end_date END_DATE
+                        the end date to get activities to (inclusive). Format example: 2023-07-31
   -e EXTERNAL, --external EXTERNAL
                         path to external program to pass CSV file too
   -a ARGS, --args ARGS  additional arguments to pass to external program
@@ -104,6 +110,8 @@ optional arguments:
 
 - `python gcexport.py -d ~/MyActivities -c 3 -f original -u --username bobbyjoe --password bestpasswordever1`  
   will download your three most recent activities in the FIT file format (or whatever they were uploaded as) into the `~/MyActivities` directory (unless they already exist). Using the `--password` flags is not recommended because your password will be stored in your command line history. Instead, omit it to be prompted (and note that nothing will be displayed when you type your password). Equally you might not want to have the username stored in your command line history; in this case avoid also to give the `--username` option, and you'll be prompted for it. Note also that depending on the age of your garmin account your username is the email address (I myself still can login both with username and email address, but I've had a report that for some users the email address is mandatory to login).
+
+- `python gcexport.py -c all --start_date 2023-07-31 --end_date 2023-08-03` will download all activities from July 31st through August 3rd (the range is inclusive). These start and end date flags may be used together or individually. They may also be used in combination with `--count` and `start_activity_no`.
 
 Alternatively, you may run it with `./gcexport.py` if you set the file as executable (i.e., `chmod u+x gcexport.py`).
 

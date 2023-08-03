@@ -475,6 +475,10 @@ def parse_arguments(argv):
         help='your Garmin Connect password (otherwise, you will be prompted)')
     parser.add_argument('-c', '--count', default='1',
         help='number of recent activities to download, or \'all\' (default: 1)')
+    parser.add_argument('-sd', '--start_date', default='',
+        help='the start date to get activities from (inclusive). Format example: 2023-07-31')
+    parser.add_argument('-ed', '--end_date', default='',
+        help='the end date to get activities to (inclusive). Format example: 2023-07-31')
     parser.add_argument('-e', '--external',
         help='path to external program to pass CSV file too')
     parser.add_argument('-a', '--args',
@@ -1051,6 +1055,11 @@ def fetch_activity_chunk(args, num_to_download, total_downloaded):
     """
 
     search_params = {'start': total_downloaded, 'limit': num_to_download}
+    if args.start_date != "":
+        search_params['startDate'] = args.start_date
+    if args.end_date != "":
+        search_params['endDate'] = args.end_date
+    
     # Query Garmin Connect
     print('Querying list of activities ', total_downloaded + 1, '..', total_downloaded + num_to_download, '...', sep='', end='')
     logging.info('Activity list URL %s', URL_GC_LIST + urlencode(search_params))
