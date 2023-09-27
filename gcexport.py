@@ -34,6 +34,7 @@ import sys
 import unicodedata
 import urllib.request
 import zipfile
+import garth
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
@@ -135,15 +136,15 @@ DATA = {
 URL_GC_LOGIN = 'https://sso.garmin.com/sso/signin?' + urlencode(DATA)
 URL_GC_POST_AUTH = 'https://connect.garmin.com/modern/activities?'
 URL_GC_PROFILE = 'https://connect.garmin.com/modern/profile'
-URL_GC_USERSTATS = 'https://connect.garmin.com/modern/proxy/userstats-service/statistics/'
-URL_GC_LIST = 'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
-URL_GC_ACTIVITY = 'https://connect.garmin.com/modern/proxy/activity-service/activity/'
-URL_GC_DEVICE = 'https://connect.garmin.com/modern/proxy/device-service/deviceservice/app-info/'
-URL_GC_GEAR = 'https://connect.garmin.com/modern/proxy/gear-service/gear/filterGear?activityId='
+URL_GC_USERSTATS = 'https://connect.garmin.com/userstats-service/statistics/'
+URL_GC_LIST = 'https://connect.garmin.com/activitylist-service/activities/search/activities?'
+URL_GC_ACTIVITY = 'https://connect.garmin.com/activity-service/activity/'
+URL_GC_DEVICE = 'https://connect.garmin.com/device-service/deviceservice/app-info/'
+URL_GC_GEAR = 'https://connect.garmin.com/gear-service/gear/filterGear?activityId='
 URL_GC_ACT_PROPS = 'https://connect.garmin.com/modern/main/js/properties/activity_types/activity_types.properties'
 URL_GC_EVT_PROPS = 'https://connect.garmin.com/modern/main/js/properties/event_types/event_types.properties'
-URL_GC_GPX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/export/gpx/activity/'
-URL_GC_TCX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
+URL_GC_GPX_ACTIVITY = 'https://connect.garmin.com/download-service/export/gpx/activity/'
+URL_GC_TCX_ACTIVITY = 'https://connect.garmin.com/download-service/export/tcx/activity/'
 URL_GC_ORIGINAL_ACTIVITY = 'http://connect.garmin.com/proxy/download-service/files/activity/'
 
 
@@ -232,6 +233,8 @@ def http_req(url, post=None, headers=None):
         'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2816.0 Safari/537.36',
     )
     request.add_header('nk', 'NT')  # necessary since 2021-02-23 to avoid http error code 402
+    request.add_header('authorization', garth.client.oauth2_token.__str__())
+    request.add_header('di-backend', 'connectapi.garmin.com')
     if headers:
         for header_key, header_value in headers.items():
             request.add_header(header_key, header_value)
@@ -513,52 +516,15 @@ def login_to_garmin_connect(args):
     username = args.username if args.username else input('Username: ')
     password = args.password if args.password else getpass()
 
-    logging.debug("Login params: %s", urlencode(DATA))
-
-    # Initially, we need to get a valid session cookie, so we pull the login page.
-    print('Connecting to Garmin Connect...', end='')
-    logging.info('Connecting to %s', URL_GC_LOGIN)
-    connect_response = http_req_as_string(URL_GC_LOGIN)
-    if args.verbosity > 0:
-        write_to_file(os.path.join(args.directory, 'connect_response.html'), connect_response, 'w')
-    for cookie in COOKIE_JAR:
-        logging.debug("Cookie %s : %s", cookie.name, cookie.value)
+    print('Authenticating using OAuth...', end=' ')
+    garth.login(username, password)
     print(' Done.')
 
-    # Now we'll actually login.
-    # Fields that are passed in a typical Garmin login.
-    post_data = {
-        'username': username,
-        'password': password,
-        'embed': 'false',
-        'rememberme': 'on',
-    }
+    token = garth.client.oauth2_token
+    if not token:
+        raise Exception("Could not get token")
 
-    headers = {'referer': URL_GC_LOGIN}
-
-    print('Requesting Login ticket...', end='')
-    logging.info('Requesting Login ticket')
-    login_response = http_req_as_string(f'{URL_GC_LOGIN}#', post_data, headers)
-
-    for cookie in COOKIE_JAR:
-        logging.debug("Cookie %s : %s", cookie.name, cookie.value)
-    if args.verbosity > 0:
-        write_to_file(os.path.join(args.directory, 'login_response.html'), login_response, 'w')
-
-    # extract the ticket from the login response
-    pattern = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE | re.DOTALL)
-    match = pattern.match(login_response)
-    if not match:
-        raise GarminException(
-            'Couldn\'t find ticket in the login response. Cannot log in. Did you enter the correct username and password?'
-        )
-    login_ticket = match.group(1)
-    print(' Done. Ticket=', login_ticket, sep='')
-
-    print("Authenticating...", end='')
-    logging.info('Authentication URL %s', f'{URL_GC_POST_AUTH}ticket={login_ticket}')
-    http_req(f'{URL_GC_POST_AUTH}ticket={login_ticket}')
-    print(' Done.')
+    return garth.client.oauth2_token
 
 
 def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name):
@@ -979,7 +945,7 @@ def extract_display_name(profile_page):
     return display_name
 
 
-def fetch_activity_list(args, total_to_download):
+def fetch_activity_list(args):
     """
     Fetch the first 'total_to_download' activity summaries; as a side effect save them in json format.
     :param args:              command-line arguments (for args.directory etc)
@@ -987,26 +953,15 @@ def fetch_activity_list(args, total_to_download):
     :return:                  List of activity summaries
     """
 
-    # This while loop will download data from the server in multiple chunks, if necessary.
     activities = []
-
-    total_downloaded = 0
-    while total_downloaded < total_to_download:
-        # Maximum chunk size 'LIMIT_MAXIMUM' ... 400 return status if over maximum.  So download
-        # maximum or whatever remains if less than maximum.
-        # As of 2018-03-06 I get return status 500 if over maximum
-        if total_to_download - total_downloaded > LIMIT_MAXIMUM:
-            num_to_download = LIMIT_MAXIMUM
-        else:
-            num_to_download = total_to_download - total_downloaded
-
-        chunk = fetch_activity_chunk(args, num_to_download, total_downloaded)
+    # This while loop will download data from the server in multiple chunks, if necessary.
+    # The absolute limit for activities is 10.000 on server side
+    while len(activities) <= 10000 - LIMIT_MAXIMUM:
+        chunk = fetch_activity_chunk(args, LIMIT_MAXIMUM, len(activities))
         activities.extend(chunk)
-        total_downloaded += num_to_download
+        if len(chunk) != LIMIT_MAXIMUM:
+            break
 
-    # it seems that parent multisport activities are not counted in userstats
-    if len(activities) != total_to_download:
-        logging.info('Expected %s activities, got %s.', total_to_download, len(activities))
     return activities
 
 
@@ -1294,16 +1249,7 @@ def main(argv):
     else:
         os.mkdir(args.directory)
 
-    login_to_garmin_connect(args)
-
-    # Query the userstats (activities totals on the profile page). Needed for
-    # filtering and for downloading 'all' to know how many activities are available
-    userstats_json = fetch_userstats(args)
-
-    if args.count == 'all':
-        total_to_download = int(userstats_json['userMetrics'][0]['totalActivities'])
-    else:
-        total_to_download = int(args.count)
+    login_to_garmin_connect(args).__str__()
 
     device_dict = {}
 
@@ -1317,7 +1263,7 @@ def main(argv):
         write_to_file(os.path.join(args.directory, 'event_types.properties'), event_type_props, 'w')
     event_type_name = load_properties(event_type_props)
 
-    activities = fetch_activity_list(args, total_to_download)
+    activities = fetch_activity_list(args)
     action_list = annotate_activity_list(activities, args.start_activity_no, exclude_list)
 
     csv_filename = os.path.join(args.directory, 'activities.csv')
