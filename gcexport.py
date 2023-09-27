@@ -89,7 +89,9 @@ HR_ZONES_EMPTY = [None, None, None, None, None]
 # Maximum number of activities you can request at once.
 # Used to be 100 and enforced by Garmin for older endpoints; for the current endpoint 'URL_GC_LIST'
 # the limit is not known (I have less than 1000 activities and could get them all in one go)
-LIMIT_MAXIMUM = 1000
+SINGLE_REQUEST_LIMIT = 1000
+# The absolute limit for activities is 10.000 on server side
+TOTAL_ACTIVITY_LIMIT = 10_000
 
 MAX_TRIES = 3
 
@@ -947,17 +949,22 @@ def fetch_activity_list(args):
     """
     Fetch the first 'total_to_download' activity summaries; as a side effect save them in json format.
     :param args:              command-line arguments (for args.directory etc)
-    :param total_to_download: number of activities to download
     :return:                  List of activity summaries
     """
 
+    if args.count == 'all':
+        total_to_download = TOTAL_ACTIVITY_LIMIT
+    else:
+        total_to_download = min(int(args.count), TOTAL_ACTIVITY_LIMIT)
+
     activities = []
     # This while loop will download data from the server in multiple chunks, if necessary.
-    # The absolute limit for activities is 10.000 on server side
-    while len(activities) <= 10000 - LIMIT_MAXIMUM:
-        chunk = fetch_activity_chunk(args, LIMIT_MAXIMUM, len(activities))
+    while len(activities) <= TOTAL_ACTIVITY_LIMIT - SINGLE_REQUEST_LIMIT:
+        num_downloaded = len(activities)
+        num_to_download = min(SINGLE_REQUEST_LIMIT, total_to_download - num_downloaded)
+        chunk = fetch_activity_chunk(args, num_to_download, num_downloaded)
         activities.extend(chunk)
-        if len(chunk) != LIMIT_MAXIMUM:
+        if len(chunk) != SINGLE_REQUEST_LIMIT:
             break
 
     return activities
