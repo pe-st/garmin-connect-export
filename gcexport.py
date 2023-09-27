@@ -517,13 +517,11 @@ def login_to_garmin_connect(args):
     password = args.password if args.password else getpass()
 
     print('Authenticating using OAuth...', end=' ')
-    garth.login(username, password)
+    try:
+        garth.login(username, password)
+    except Exception as ex:
+        raise GarminException(f'Authentication failure ({ex}). Did you enter correct credentials?')
     print(' Done.')
-
-    token = garth.client.oauth2_token
-    if not token:
-        raise Exception("Could not get token")
-
     return garth.client.oauth2_token
 
 
