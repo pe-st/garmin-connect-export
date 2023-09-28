@@ -34,7 +34,6 @@ import sys
 import unicodedata
 import urllib.request
 import zipfile
-import garth
 from datetime import datetime, timedelta, tzinfo
 from getpass import getpass
 from math import floor
@@ -44,6 +43,7 @@ from timeit import default_timer as timer
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request
+import garth
 
 # Local application/library specific imports
 from filtering import read_exclude, update_download_stats
@@ -198,7 +198,7 @@ def http_req(url, post=None, headers=None):
         'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2816.0 Safari/537.36',
     )
     request.add_header('nk', 'NT')  # necessary since 2021-02-23 to avoid http error code 402
-    request.add_header('authorization', garth.client.oauth2_token.__str__())
+    request.add_header('authorization', str(garth.client.oauth2_token))
     request.add_header('di-backend', 'connectapi.garmin.com')
     if headers:
         for header_key, header_value in headers.items():
@@ -485,9 +485,8 @@ def login_to_garmin_connect(args):
     try:
         garth.login(username, password)
     except Exception as ex:
-        raise GarminException(f'Authentication failure ({ex}). Did you enter correct credentials?')
+        raise GarminException(f'Authentication failure ({ex}). Did you enter correct credentials?') from ex
     print(' Done.')
-    return garth.client.oauth2_token
 
 
 def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name):
@@ -1201,7 +1200,7 @@ def main(argv):
     else:
         os.mkdir(args.directory)
 
-    login_to_garmin_connect(args).__str__()
+    login_to_garmin_connect(args)
 
     # Get user stats
     fetch_userstats(args)
