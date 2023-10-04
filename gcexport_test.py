@@ -174,23 +174,6 @@ def test_load_zones():
     assert 2462.848 == zones[0]['secsInZone']
 
 
-def test_extract_display_name():
-    with open('html/profile_simple.html') as html:
-        profile_page = html.read()
-    assert 'John.Doe' == extract_display_name(profile_page)
-
-    # some users reported (issue #65) to have an email address as display name
-    with open('html/profile_email.html') as html:
-        profile_page = html.read()
-    assert 'john.doe@email.org' == extract_display_name(profile_page)
-
-    # some users reported to have a UUID as display name:
-    # https://github.com/moderation/garmin-connect-export/issues/31
-    with open('html/profile_uuid.html') as html:
-        profile_page = html.read()
-    assert '36e29d65-715c-456b-9115-84f0b9a0c0ba' == extract_display_name(profile_page)
-
-
 def test_resolve_path():
     assert resolve_path('root', 'sub/{YYYY}', '2018-03-08 12:23:22') == 'root/sub/2018'
     assert resolve_path('root', 'sub/{MM}', '2018-03-08 12:23:22') == 'root/sub/03'
