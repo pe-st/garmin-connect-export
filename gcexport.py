@@ -89,9 +89,7 @@ HR_ZONES_EMPTY = [None, None, None, None, None]
 # Maximum number of activities you can request at once.
 # Used to be 100 and enforced by Garmin for older endpoints; for the current endpoint 'URL_GC_LIST'
 # the limit is not known (I have less than 1000 activities and could get them all in one go)
-SINGLE_REQUEST_LIMIT = 1000
-# The absolute limit for activities is 10.000 on server side
-TOTAL_ACTIVITY_LIMIT = 10_000
+LIMIT_MAXIMUM = 1000
 
 MAX_TRIES = 3
 
@@ -891,28 +889,34 @@ def fetch_userstats(args):
     return json.loads(result)
 
 
-def fetch_activity_list(args):
+def fetch_activity_list(args, total_to_download):
     """
     Fetch the first 'total_to_download' activity summaries; as a side effect save them in json format.
     :param args:              command-line arguments (for args.directory etc)
+    :param total_to_download: number of activities to download
     :return:                  List of activity summaries
     """
 
-    if args.count == 'all':
-        total_to_download = TOTAL_ACTIVITY_LIMIT
-    else:
-        total_to_download = min(int(args.count), TOTAL_ACTIVITY_LIMIT)
-
-    activities = []
     # This while loop will download data from the server in multiple chunks, if necessary.
-    while len(activities) <= TOTAL_ACTIVITY_LIMIT - SINGLE_REQUEST_LIMIT:
-        num_downloaded = len(activities)
-        num_to_download = min(SINGLE_REQUEST_LIMIT, total_to_download - num_downloaded)
-        chunk = fetch_activity_chunk(args, num_to_download, num_downloaded)
-        activities.extend(chunk)
-        if len(chunk) != SINGLE_REQUEST_LIMIT:
-            break
+    activities = []
 
+    total_downloaded = 0
+    while total_downloaded < total_to_download:
+        # Maximum chunk size 'LIMIT_MAXIMUM' ... 400 return status if over maximum.  So download
+        # maximum or whatever remains if less than maximum.
+        # As of 2018-03-06 I get return status 500 if over maximum
+        if total_to_download - total_downloaded > LIMIT_MAXIMUM:
+            num_to_download = LIMIT_MAXIMUM
+        else:
+            num_to_download = total_to_download - total_downloaded
+
+        chunk = fetch_activity_chunk(args, num_to_download, total_downloaded)
+        activities.extend(chunk)
+        total_downloaded += num_to_download
+
+    # it seems that parent multisport activities are not counted in userstats
+    if len(activities) != total_to_download:
+        logging.info('Expected %s activities, got %s.', total_to_download, len(activities))
     return activities
 
 
@@ -1203,7 +1207,7 @@ def main(argv):
     login_to_garmin_connect(args)
 
     # Get user stats
-    fetch_userstats(args)
+    userstats = fetch_userstats(args)
 
     # Load some dictionaries with lookup data from REST services
     activity_type_props = http_req_as_string(URL_GC_ACT_PROPS)
@@ -1215,7 +1219,7 @@ def main(argv):
         write_to_file(os.path.join(args.directory, 'event_types.properties'), event_type_props, 'w')
     event_type_name = load_properties(event_type_props)
 
-    activities = fetch_activity_list(args)
+    activities = fetch_activity_list(args, userstats['userMetrics'][0]['totalActivities'])
     action_list = annotate_activity_list(activities, args.start_activity_no, exclude_list)
 
     csv_filename = os.path.join(args.directory, 'activities.csv')
