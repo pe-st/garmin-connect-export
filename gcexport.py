@@ -43,6 +43,7 @@ from timeit import default_timer as timer
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request
+import garth
 
 # Local application/library specific imports
 from filtering import read_exclude, update_download_stats
@@ -94,57 +95,20 @@ MAX_TRIES = 3
 
 CSV_TEMPLATE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "csv_header_default.properties")
 
-WEBHOST = "https://connect.garmin.com"
-REDIRECT = "https://connect.garmin.com/modern/"
-BASE_URL = "https://connect.garmin.com/en-US/signin"
-SSO = "https://sso.garmin.com/sso"
-CSS = "https://static.garmincdn.com/com.garmin.connect/ui/css/gauth-custom-v1.2-min.css"
-
-DATA = {
-    'service': REDIRECT,
-    'webhost': WEBHOST,
-    'source': BASE_URL,
-    'redirectAfterAccountLoginUrl': REDIRECT,
-    'redirectAfterAccountCreationUrl': REDIRECT,
-    'gauthHost': SSO,
-    'locale': 'en_US',
-    'id': 'gauth-widget',
-    'cssUrl': CSS,
-    'clientId': 'GarminConnect',
-    'rememberMeShown': 'true',
-    'rememberMeChecked': 'false',
-    'createAccountShown': 'true',
-    'openCreateAccount': 'false',
-    'displayNameShown': 'false',
-    'consumeServiceTicket': 'false',
-    'initialFocus': 'true',
-    'embedWidget': 'false',
-    'generateExtraServiceTicket': 'true',
-    'generateTwoExtraServiceTickets': 'false',
-    'generateNoServiceTicket': 'false',
-    'globalOptInShown': 'true',
-    'globalOptInChecked': 'false',
-    'mobile': 'false',
-    'connectLegalTerms': 'true',
-    'locationPromptShown': 'true',
-    'showPassword': 'true',
-}
+GARMIN_BASE_URL = "https://connect.garmin.com"
 
 # URLs for various services.
-
-URL_GC_LOGIN = 'https://sso.garmin.com/sso/signin?' + urlencode(DATA)
-URL_GC_POST_AUTH = 'https://connect.garmin.com/modern/activities?'
-URL_GC_PROFILE = 'https://connect.garmin.com/modern/profile'
-URL_GC_USERSTATS = 'https://connect.garmin.com/modern/proxy/userstats-service/statistics/'
-URL_GC_LIST = 'https://connect.garmin.com/modern/proxy/activitylist-service/activities/search/activities?'
-URL_GC_ACTIVITY = 'https://connect.garmin.com/modern/proxy/activity-service/activity/'
-URL_GC_DEVICE = 'https://connect.garmin.com/modern/proxy/device-service/deviceservice/app-info/'
-URL_GC_GEAR = 'https://connect.garmin.com/modern/proxy/gear-service/gear/filterGear?activityId='
-URL_GC_ACT_PROPS = 'https://connect.garmin.com/modern/main/js/properties/activity_types/activity_types.properties'
-URL_GC_EVT_PROPS = 'https://connect.garmin.com/modern/main/js/properties/event_types/event_types.properties'
-URL_GC_GPX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/export/gpx/activity/'
-URL_GC_TCX_ACTIVITY = 'https://connect.garmin.com/modern/proxy/download-service/export/tcx/activity/'
-URL_GC_ORIGINAL_ACTIVITY = 'http://connect.garmin.com/proxy/download-service/files/activity/'
+URL_GC_USER = f'{GARMIN_BASE_URL}/userprofile-service/socialProfile'
+URL_GC_USERSTATS = f'{GARMIN_BASE_URL}/userstats-service/statistics/'
+URL_GC_LIST = f'{GARMIN_BASE_URL}/activitylist-service/activities/search/activities?'
+URL_GC_ACTIVITY = f'{GARMIN_BASE_URL}/activity-service/activity/'
+URL_GC_DEVICE = f'{GARMIN_BASE_URL}/device-service/deviceservice/app-info/'
+URL_GC_GEAR = f'{GARMIN_BASE_URL}/gear-service/gear/filterGear?activityId='
+URL_GC_ACT_PROPS = f'{GARMIN_BASE_URL}/modern/main/js/properties/activity_types/activity_types.properties'
+URL_GC_EVT_PROPS = f'{GARMIN_BASE_URL}/modern/main/js/properties/event_types/event_types.properties'
+URL_GC_GPX_ACTIVITY = f'{GARMIN_BASE_URL}/download-service/export/gpx/activity/'
+URL_GC_TCX_ACTIVITY = f'{GARMIN_BASE_URL}/download-service/export/tcx/activity/'
+URL_GC_ORIGINAL_ACTIVITY = f'{GARMIN_BASE_URL}/download-service/files/activity/'
 
 
 class GarminException(Exception):
@@ -232,6 +196,8 @@ def http_req(url, post=None, headers=None):
         'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2816.0 Safari/537.36',
     )
     request.add_header('nk', 'NT')  # necessary since 2021-02-23 to avoid http error code 402
+    request.add_header('authorization', str(garth.client.oauth2_token))
+    request.add_header('di-backend', 'connectapi.garmin.com')
     if headers:
         for header_key, header_value in headers.items():
             request.add_header(header_key, header_value)
@@ -513,51 +479,11 @@ def login_to_garmin_connect(args):
     username = args.username if args.username else input('Username: ')
     password = args.password if args.password else getpass()
 
-    logging.debug("Login params: %s", urlencode(DATA))
-
-    # Initially, we need to get a valid session cookie, so we pull the login page.
-    print('Connecting to Garmin Connect...', end='')
-    logging.info('Connecting to %s', URL_GC_LOGIN)
-    connect_response = http_req_as_string(URL_GC_LOGIN)
-    if args.verbosity > 0:
-        write_to_file(os.path.join(args.directory, 'connect_response.html'), connect_response, 'w')
-    for cookie in COOKIE_JAR:
-        logging.debug("Cookie %s : %s", cookie.name, cookie.value)
-    print(' Done.')
-
-    # Now we'll actually login.
-    # Fields that are passed in a typical Garmin login.
-    post_data = {
-        'username': username,
-        'password': password,
-        'embed': 'false',
-        'rememberme': 'on',
-    }
-
-    headers = {'referer': URL_GC_LOGIN}
-
-    print('Requesting Login ticket...', end='')
-    logging.info('Requesting Login ticket')
-    login_response = http_req_as_string(f'{URL_GC_LOGIN}#', post_data, headers)
-
-    for cookie in COOKIE_JAR:
-        logging.debug("Cookie %s : %s", cookie.name, cookie.value)
-    if args.verbosity > 0:
-        write_to_file(os.path.join(args.directory, 'login_response.html'), login_response, 'w')
-
-    # extract the ticket from the login response
-    pattern = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE | re.DOTALL)
-    match = pattern.match(login_response)
-    if not match:
-        raise GarminException(
-            'Couldn\'t find ticket in the login response. Cannot log in. Did you enter the correct username and password?'
-        )
-    login_ticket = match.group(1)
-    print(' Done. Ticket=', login_ticket, sep='')
-
-    print("Authenticating...", end='')
-    logging.info('Authentication URL %s', f'{URL_GC_POST_AUTH}ticket={login_ticket}')
-    http_req(f'{URL_GC_POST_AUTH}ticket={login_ticket}')
+    print('Authenticating using OAuth...', end=' ')
+    try:
+        garth.login(username, password)
+    except Exception as ex:
+        raise GarminException(f'Authentication failure ({ex}). Did you enter correct credentials?') from ex
     print(' Done.')
 
 
@@ -582,7 +508,7 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
 
     # fmt: off
     csv_filter.set_column('id', str(actvty['activityId']))
-    csv_filter.set_column('url', 'https://connect.garmin.com/modern/activity/' + str(actvty['activityId']))
+    csv_filter.set_column('url', f'{GARMIN_BASE_URL}/modern/activity/' + str(actvty['activityId']))
     csv_filter.set_column('activityName', actvty['activityName'] if present('activityName', actvty) else None)
     csv_filter.set_column('description', actvty['description'] if present('description', actvty) else None)
     csv_filter.set_column('startTimeIso', extract['start_time_with_offset'].isoformat())
@@ -944,12 +870,12 @@ def fetch_userstats(args):
     :return:        json with user statistics
     """
     print('Getting display name...', end='')
-    logging.info('Profile page %s', URL_GC_PROFILE)
-    profile_page = http_req_as_string(URL_GC_PROFILE)
+    logging.info('Profile page %s', URL_GC_USER)
+    profile_page = http_req_as_string(URL_GC_USER)
     if args.verbosity > 0:
-        write_to_file(os.path.join(args.directory, 'profile.html'), profile_page, 'w')
+        write_to_file(os.path.join(args.directory, 'user.json'), profile_page, 'w')
 
-    display_name = extract_display_name(profile_page)
+    display_name = json.loads(profile_page)['displayName']
     print(' Done. displayName=', display_name, sep='')
 
     print('Fetching user stats...', end='')
@@ -961,22 +887,6 @@ def fetch_userstats(args):
     write_to_file(os.path.join(args.directory, 'userstats.json'), result, 'w')
 
     return json.loads(result)
-
-
-def extract_display_name(profile_page):
-    """
-    Extract the display name from the profile page HTML document
-    :param profile_page: HTML document
-    :return:             the display name
-    """
-    # the display name should be in the HTML document as
-    # "displayName":"John.Doe"
-    pattern = re.compile(r".*\"displayName\":\"(.+?)\".*", re.MULTILINE | re.DOTALL)
-    match = pattern.match(profile_page)
-    if not match:
-        raise GarminException('Did not find the display name in the profile page.')
-    display_name = match.group(1)
-    return display_name
 
 
 def fetch_activity_list(args, total_to_download):
@@ -1296,18 +1206,10 @@ def main(argv):
 
     login_to_garmin_connect(args)
 
-    # Query the userstats (activities totals on the profile page). Needed for
-    # filtering and for downloading 'all' to know how many activities are available
-    userstats_json = fetch_userstats(args)
+    # Get user stats
+    userstats = fetch_userstats(args)
 
-    if args.count == 'all':
-        total_to_download = int(userstats_json['userMetrics'][0]['totalActivities'])
-    else:
-        total_to_download = int(args.count)
-
-    device_dict = {}
-
-    # load some dictionaries with lookup data from REST services
+    # Load some dictionaries with lookup data from REST services
     activity_type_props = http_req_as_string(URL_GC_ACT_PROPS)
     if args.verbosity > 0:
         write_to_file(os.path.join(args.directory, 'activity_types.properties'), activity_type_props, 'w')
@@ -1317,12 +1219,13 @@ def main(argv):
         write_to_file(os.path.join(args.directory, 'event_types.properties'), event_type_props, 'w')
     event_type_name = load_properties(event_type_props)
 
-    activities = fetch_activity_list(args, total_to_download)
+    activities = fetch_activity_list(args, userstats['userMetrics'][0]['totalActivities'])
     action_list = annotate_activity_list(activities, args.start_activity_no, exclude_list)
 
     csv_filename = os.path.join(args.directory, 'activities.csv')
     csv_existed = os.path.isfile(csv_filename)
 
+    device_dict = {}
     with open(csv_filename, mode='a', encoding='utf-8') as csv_file:
         csv_filter = CsvFilter(csv_file, args.template)
 

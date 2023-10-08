@@ -44,6 +44,7 @@ If you have many activities, you may find that this script crashes with an "Oper
 - If you're comfortable using Git, just clone the repo from github
 - Otherwise get the latest `zip` (or `tar.gz`) from the [releases page](https://github.com/pe-st/garmin-connect-export/releases)
   and unpack it where it suits you.
+- Install the dependencies: `python3 -m pip install -r requirements.txt`
 
 ## Usage
 
