@@ -43,6 +43,8 @@ from timeit import default_timer as timer
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request
+
+# PyPI imports
 import garth
 
 # Local application/library specific imports
@@ -1206,8 +1208,14 @@ def main(argv):
 
     login_to_garmin_connect(args)
 
-    # Get user stats
-    userstats = fetch_userstats(args)
+    # Query the userstats (activities totals on the profile page). Needed for
+    # filtering and for downloading 'all' to know how many activities are available
+    userstats_json = fetch_userstats(args)
+
+    if args.count == 'all':
+        total_to_download = int(userstats_json['userMetrics'][0]['totalActivities'])
+    else:
+        total_to_download = int(args.count)
 
     # Load some dictionaries with lookup data from REST services
     activity_type_props = http_req_as_string(URL_GC_ACT_PROPS)
@@ -1219,7 +1227,7 @@ def main(argv):
         write_to_file(os.path.join(args.directory, 'event_types.properties'), event_type_props, 'w')
     event_type_name = load_properties(event_type_props)
 
-    activities = fetch_activity_list(args, userstats['userMetrics'][0]['totalActivities'])
+    activities = fetch_activity_list(args, total_to_download)
     action_list = annotate_activity_list(activities, args.start_activity_no, exclude_list)
 
     csv_filename = os.path.join(args.directory, 'activities.csv')
