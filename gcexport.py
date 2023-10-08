@@ -53,7 +53,7 @@ from filtering import read_exclude, update_download_stats
 COOKIE_JAR = http.cookiejar.CookieJar()
 OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
 
-SCRIPT_VERSION = '4.1.0'
+SCRIPT_VERSION = '4.2.0'
 
 # This version here should correspond to what is written in CONTRIBUTING.md#python-3x-versions
 MINIMUM_PYTHON_VERSION = (3, 8)
@@ -971,7 +971,7 @@ def fetch_activity_chunk(args, num_to_download, total_downloaded):
         search_params['startDate'] = args.start_date
     if args.end_date != "":
         search_params['endDate'] = args.end_date
-    
+
     # Query Garmin Connect
     print('Querying list of activities ', total_downloaded + 1, '..', total_downloaded + num_to_download, '...', sep='', end='')
     logging.info('Activity list URL %s', URL_GC_LIST + urlencode(search_params))

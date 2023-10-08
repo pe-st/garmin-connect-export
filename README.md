@@ -181,7 +181,7 @@ For the history of this fork see the [CHANGELOG](CHANGELOG.md)
 
 Contributions are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md)
 
-Contributors as of 2021-12 (Hope I didn't forget anyone,
+Contributors as of 2023-10 (Hope I didn't forget anyone,
 see also [Contributors](https://github.com/pe-st/garmin-connect-export/graphs/contributors)):
 
 - Kyle Krafka @kjkjava
@@ -195,7 +195,7 @@ see also [Contributors](https://github.com/pe-st/garmin-connect-export/graphs/co
 - Chris McCarty @cmccarty
 - Julien Rebetez @julienr
 - Peter Steiner @pe-st
-- @lindback
+- @ulf-lindback
 - @TheKiteRunning
 - Jens Diemer @jedie
 - Christian Moelders @chmoelders
@@ -203,9 +203,13 @@ see also [Contributors](https://github.com/pe-st/garmin-connect-export/graphs/co
 - Josef K @jkall
 - Thomas Th @telemaxx
 - Bart Skowron @bxsx
-- @reto
+- Reto Conconi @retoborm
 - Cristian @cristian5th
 - @hannesweisbach
+- @SimonBaars
+- @geraudloup
+- @app4g
+- Simon Ågren @agrensimon
 
 ## License
 

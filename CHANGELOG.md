@@ -3,6 +3,15 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 4.2.0 - 2023-10-08
+
+- fixed: Use [garth](https://github.com/matin/garth) for OAuth to fix #95
+  [Did not find the display name in the profile page](https://github.com/pe-st/garmin-connect-export/issues/95) 
+  ([Pull Request #96](https://github.com/pe-st/garmin-connect-export/pull/96) by @SimonBaars with @geraudloup and @app4g)
+- added: date filter flags `--start_date` and `--end_date`
+  ([Pull Request #73](https://github.com/pe-st/garmin-connect-export/pull/73) by @bxsx)
+
+
 ## 4.1.0 - 2023-07-22
 
 - changed: updated the list of parent activities (`PARENT_TYPE_ID`) to the new set Garmin is now using
@@ -16,16 +25,16 @@ This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1
 - removed: Python 2 leftovers
   ([Pull Request #73](https://github.com/pe-st/garmin-connect-export/pull/73) by @bxsx)
 - added: configurations for flake8, pylint and black (including the needed improvements of the code for them)
-- changed: Github Actions now execute also flake8, pylint and black tasks
+- changed: GitHub Actions now execute also flake8, pylint and black tasks
 
 
 ## 3.3.0 - 2021-12-26
 
 - added: support for time spent in HR zones (feature request)
   ([Issue #68](https://github.com/pe-st/garmin-connect-export/issues/68)
-- fixed: adapt display name parsing because of change Garmin Connect behaviour
+- fixed: adapt display name parsing because of changed Garmin Connect behaviour
   ([Pull Request #69](https://github.com/pe-st/garmin-connect-export/pull/69) by @hannesweisbach)
-- added: Github Action to execute the tests automatically
+- added: GitHub Action to execute the tests automatically
 
 
 ## 3.2.1 - 2021-08-15
