@@ -112,9 +112,6 @@ URL_GC_GPX_ACTIVITY = f'{GARMIN_BASE_URL}/download-service/export/gpx/activity/'
 URL_GC_TCX_ACTIVITY = f'{GARMIN_BASE_URL}/download-service/export/tcx/activity/'
 URL_GC_ORIGINAL_ACTIVITY = f'{GARMIN_BASE_URL}/download-service/files/activity/'
 
-# Default location for saving garth session information
-GARTH_SESSION = os.getenv('GARTH_SESSION', os.getenv('HOME', '.') + '/.garth_session')
-
 class GarminException(Exception):
     """Exception for problems with Garmin Connect (connection, data consistency etc)."""
 
@@ -475,6 +472,8 @@ def parse_arguments(argv):
         help='give index for first activity to import, i.e. skipping the newest activities')
     parser.add_argument('-ex', '--exclude', metavar='FILE',
         help='JSON file with Array of activity IDs to exclude from download. Format example: {"ids": ["6176888711"]}')
+    parser.add_argument('-ss', '--session', metavar='DIRECTORY',
+        help='enable loading and storing SSO information from/to given directory')
     # fmt: on
 
     return parser.parse_args(argv[1:])
@@ -486,19 +485,24 @@ def login_to_garmin_connect(args):
     """
     username = args.username if args.username else input('Username: ')
     password = args.password if args.password else getpass()
+    garth_session_directory = args.session if args.session else None
 
     print('Authenticating using OAuth...', end=' ')
     try:
         login_required = False
-        if os.path.exists(GARTH_SESSION):
+
+        # try to load data if a session directory is given
+        if garth_session_directory:
             try:
-                garth.resume(GARTH_SESSION)
+                garth.resume(garth_session_directory)
             except Exception:
+                # error during loading the session, a new login is required
                 login_required = True
                 pass
             try:
                 garth.client.username
             except Exception:
+                # session expired, a new login is required
                 login_required = True
                 pass
         else:
@@ -506,7 +510,14 @@ def login_to_garmin_connect(args):
 
         if login_required:
             garth.login(username, password)
-            garth.save(GARTH_SESSION)
+
+            # try to store data if a session directory is given
+            if garth_session_directory:
+                try:
+                    garth.save(garth_session_directory)
+                except Exception:
+                    print('Unable to store session data to ' + garth_session_directory)
+                    pass
 
     except Exception as ex:
         raise GarminException(f'Authentication failure ({ex}). Did you enter correct credentials?') from ex
