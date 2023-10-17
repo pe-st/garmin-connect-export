@@ -112,6 +112,8 @@ URL_GC_GPX_ACTIVITY = f'{GARMIN_BASE_URL}/download-service/export/gpx/activity/'
 URL_GC_TCX_ACTIVITY = f'{GARMIN_BASE_URL}/download-service/export/tcx/activity/'
 URL_GC_ORIGINAL_ACTIVITY = f'{GARMIN_BASE_URL}/download-service/files/activity/'
 
+# Default location for saving garth session information
+GARTH_SESSION = os.getenv('GARTH_SESSION', os.getenv('HOME', '.') + '/.garth_session')
 
 class GarminException(Exception):
     """Exception for problems with Garmin Connect (connection, data consistency etc)."""
@@ -487,7 +489,25 @@ def login_to_garmin_connect(args):
 
     print('Authenticating using OAuth...', end=' ')
     try:
-        garth.login(username, password)
+        login_required = False
+        if os.path.exists(GARTH_SESSION):
+            try:
+                garth.resume(GARTH_SESSION)
+            except Exception:
+                login_required = True
+                pass
+            try:
+                garth.client.username
+            except Exception:
+                login_required = True
+                pass
+        else:
+            login_required = True
+
+        if login_required:
+            garth.login(username, password)
+            garth.save(GARTH_SESSION)
+
     except Exception as ex:
         raise GarminException(f'Authentication failure ({ex}). Did you enter correct credentials?') from ex
     print(' Done.')
