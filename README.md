@@ -58,6 +58,7 @@ usage: gcexport.py [-h] [--version] [-v] [--username USERNAME]
                    [-f {gpx,tcx,original,json}] [-d DIRECTORY] [-s SUBDIR]
                    [-lp LOGPATH] [-u] [-ot] [--desc [DESC]] [-t TEMPLATE]
                    [-fp] [-sa START_ACTIVITY_NO] [-ex FILE]
+                   [-ss DIRECTORY]
 
 Garmin Connect Exporter
 
@@ -96,6 +97,8 @@ optional arguments:
   -ex FILE, --exclude FILE
                         JSON file with Array of activity IDs to exclude from download.
                         Format example: {"ids": ["6176888711"]}
+  -ss DIRECTORY, --session DIRECTORY
+                        enable loading and storing SSO information from/to given directory
 ```
 
 ### Examples
