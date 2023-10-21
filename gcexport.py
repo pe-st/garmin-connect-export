@@ -112,6 +112,7 @@ URL_GC_GPX_ACTIVITY = f'{GARMIN_BASE_URL}/download-service/export/gpx/activity/'
 URL_GC_TCX_ACTIVITY = f'{GARMIN_BASE_URL}/download-service/export/tcx/activity/'
 URL_GC_ORIGINAL_ACTIVITY = f'{GARMIN_BASE_URL}/download-service/files/activity/'
 
+
 class GarminException(Exception):
     """Exception for problems with Garmin Connect (connection, data consistency etc)."""
 
