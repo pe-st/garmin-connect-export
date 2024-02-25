@@ -46,6 +46,7 @@ from urllib.request import Request
 
 # PyPI imports
 import garth
+from garth.exc import GarthException
 
 # Local application/library specific imports
 from filtering import read_exclude, update_download_stats
@@ -53,7 +54,7 @@ from filtering import read_exclude, update_download_stats
 COOKIE_JAR = http.cookiejar.CookieJar()
 OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
 
-SCRIPT_VERSION = '4.2.0'
+SCRIPT_VERSION = '4.3.0-Beta'
 
 # This version here should correspond to what is written in CONTRIBUTING.md#python-3x-versions
 MINIMUM_PYTHON_VERSION = (3, 8)
@@ -484,11 +485,9 @@ def login_to_garmin_connect(args):
     """
     Perform all HTTP requests to login to Garmin Connect.
     """
-    username = args.username if args.username else input('Username: ')
-    password = args.password if args.password else getpass()
     garth_session_directory = args.session if args.session else None
 
-    print('Authenticating using OAuth...', end=' ')
+    print('Authenticating...', end='')
     try:
         login_required = False
 
@@ -496,29 +495,29 @@ def login_to_garmin_connect(args):
         if garth_session_directory:
             try:
                 garth.resume(garth_session_directory)
-            except Exception:
-                # error during loading the session, a new login is required
+            except GarthException as ex:
+                logging.debug("Could not resume session, error: %s", ex)
                 login_required = True
-                pass
             try:
                 garth.client.username
-            except Exception:
-                # session expired, a new login is required
+            except GarthException as ex:
+                logging.debug("Session expired, error: %s", ex)
                 login_required = True
-                pass
+            logging.info("Authenticating using OAuth token from %s", garth_session_directory)
         else:
             login_required = True
 
         if login_required:
+            username = args.username if args.username else input('Username: ')
+            password = args.password if args.password else getpass()
             garth.login(username, password)
 
             # try to store data if a session directory is given
             if garth_session_directory:
                 try:
                     garth.save(garth_session_directory)
-                except Exception:
-                    print('Unable to store session data to ' + garth_session_directory)
-                    pass
+                except GarthException as ex:
+                    logging.warning("Unable to store session data to %s, error: %s", garth_session_directory, ex)
 
     except Exception as ex:
         raise GarminException(f'Authentication failure ({ex}). Did you enter correct credentials?') from ex
