@@ -54,7 +54,7 @@ from filtering import read_exclude, update_download_stats
 COOKIE_JAR = http.cookiejar.CookieJar()
 OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
 
-SCRIPT_VERSION = '4.3.0-Beta'
+SCRIPT_VERSION = '4.3.0'
 
 # This version here should correspond to what is written in CONTRIBUTING.md#python-3x-versions
 MINIMUM_PYTHON_VERSION = (3, 8)
@@ -473,9 +473,9 @@ def parse_arguments(argv):
     parser.add_argument('-sa', '--start_activity_no', type=int, default=1,
         help='give index for first activity to import, i.e. skipping the newest activities')
     parser.add_argument('-ex', '--exclude', metavar='FILE',
-        help='JSON file with Array of activity IDs to exclude from download. Format example: {"ids": ["6176888711"]}')
+        help='JSON file with array of activity IDs to exclude from download. Format example: {"ids": ["6176888711"]}')
     parser.add_argument('-tf', '--type_filter',
-        help="comma-seperated list of activity type IDs to allow.")    
+        help='comma-separated list of activity type IDs to allow. Format example: 3,9')
     parser.add_argument('-ss', '--session', metavar='DIRECTORY',
         help='enable loading and storing SSO information from/to given directory')
     # fmt: on
@@ -973,6 +973,7 @@ def annotate_activity_list(activities, start, exclude_list, type_filter):
     :param start:         One-based index of the first non-skipped activity
                           (i.e. with 1 no activity gets skipped, with 2 the first activity gets skipped etc)
     :param exclude_list:  List of activity ids that have to be skipped explicitly
+    :param type_filter:   list of activity types to include in the output
     :return:              List of action tuples
     """
 
@@ -1117,6 +1118,7 @@ def process_activity_item(item, number_of_items, device_dict, type_filter, activ
     :param item:               activity item tuple, see `annotate_activity_list()`
     :param number_of_items:    total number of items (for progress output)
     :param device_dict:        cache (dict) of already known devices
+    :param type_filter:        list of activity types to include in the output
     :param activity_type_name: lookup table for activity type descriptions
     :param event_type_name:    lookup table for event type descriptions
     :param csv_filter:         object encapsulating CSV file access
@@ -1140,10 +1142,11 @@ def process_activity_item(item, number_of_items, device_dict, type_filter, activ
         print(f"({current_index}/{number_of_items}) [{actvty['activityId']}]")
         return
 
-    # Action: Filtered out by typeID
+    # Action: Filtered out by typeId
     if action == 'f':
         # Display which entry we're skipping.
-        print(f"Filtering out due to typeID, {actvty['activityType']['typeId']} not in {type_filter}   : Garmin Connect activity ", end='')
+        type_id = actvty['activityType']['typeId']
+        print(f"Filtering out due to type ID {type_id} not in {type_filter}: Garmin Connect activity ", end='')
         print(f"({current_index}/{number_of_items}) [{actvty['activityId']}]")
         return
 
@@ -1280,7 +1283,7 @@ def main(argv):
 
     activities = fetch_activity_list(args, total_to_download)
 
-    type_filter = list(map(int,args.type_filter.split(',')))  if args.type_filter is not None else None
+    type_filter = list(map(int, args.type_filter.split(','))) if args.type_filter is not None else None
 
     action_list = annotate_activity_list(activities, args.start_activity_no, exclude_list, type_filter)
 
@@ -1297,7 +1300,9 @@ def main(argv):
 
         # Process each activity.
         for item in action_list:
-            process_activity_item(item, len(action_list), device_dict, type_filter, activity_type_name, event_type_name, csv_filter, args)
+            process_activity_item(
+                item, len(action_list), device_dict, type_filter, activity_type_name, event_type_name, csv_filter, args
+            )
 
     logging.info('CSV file written.')
 

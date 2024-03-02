@@ -51,14 +51,11 @@ If you have many activities, you may find that this script crashes with an "Oper
 You will need a little experience running things from the command line to use this script. That said, here are the usage details from the `--help` flag:
 
 ```
-usage: gcexport.py [-h] [--version] [-v] [--username USERNAME]
-                   [--password PASSWORD] [-c COUNT] 
-                   [-sd START_DATE] [-ed END_DATE] 
-                   [-e EXTERNAL] [-a ARGS]
-                   [-f {gpx,tcx,original,json}] [-d DIRECTORY] [-s SUBDIR]
-                   [-lp LOGPATH] [-u] [-ot] [--desc [DESC]] [-t TEMPLATE]
-                   [-fp] [-sa START_ACTIVITY_NO] [-ex FILE]
-                   [-ss DIRECTORY]
+usage: gcexport.py [-h] [--version] [-v] [--username USERNAME] [--password PASSWORD]
+                   [-c COUNT] [-sd START_DATE] [-ed END_DATE] [-e EXTERNAL] [-a ARGS]
+                   [-f {gpx,tcx,original,json}] [-d DIRECTORY] [-s SUBDIR] [-lp LOGPATH]
+                   [-u] [-ot] [--desc [DESC]] [-t TEMPLATE] [-fp] [-sa START_ACTIVITY_NO]
+                   [-ex FILE] [-tf TYPE_FILTER] [-ss DIRECTORY]
 
 Garmin Connect Exporter
 
@@ -95,11 +92,25 @@ optional arguments:
   -sa START_ACTIVITY_NO, --start_activity_no START_ACTIVITY_NO
                         give index for first activity to import, i.e. skipping the newest activities
   -ex FILE, --exclude FILE
-                        JSON file with Array of activity IDs to exclude from download.
+                        JSON file with array of activity IDs to exclude from download.
                         Format example: {"ids": ["6176888711"]}
+  -tf TYPE_FILTER, --type_filter TYPE_FILTER
+                        comma-separated list of activity type IDs to allow. Format example: 3,9
   -ss DIRECTORY, --session DIRECTORY
                         enable loading and storing SSO information from/to given directory
 ```
+
+### Authentication
+
+You have to authenticate with username and password, and possibly an MFA code, at least for an initial login.
+
+The script is then using OAuth tokens (thanks to the [garth](https://github.com/matin/garth) library).
+You can persist the OAuth token by giving a session directory, removing the need to provide username/password/MFA
+for every script run.
+
+But keep the persistent tokens safe; if somebody gets hold of your tokens, they might be able to
+read all your data in Garmin Connect (e.g. your health data), maybe even change or delete it.
+
 
 ### Examples
 
@@ -184,7 +195,7 @@ For the history of this fork see the [CHANGELOG](CHANGELOG.md)
 
 Contributions are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md)
 
-Contributors as of 2023-10 (Hope I didn't forget anyone,
+Contributors as of 2024-03 (Hope I didn't forget anyone,
 see also [Contributors](https://github.com/pe-st/garmin-connect-export/graphs/contributors)):
 
 - Kyle Krafka @kjkjava
@@ -213,6 +224,8 @@ see also [Contributors](https://github.com/pe-st/garmin-connect-export/graphs/co
 - @geraudloup
 - @app4g
 - Simon Ågren @agrensimon
+- @embear
+- Joe Timmerman @joetimmerman
 
 ## License
 
