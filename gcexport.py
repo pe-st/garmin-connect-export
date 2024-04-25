@@ -500,10 +500,16 @@ def login_to_garmin_connect(args):
             except GarthException as ex:
                 logging.debug("Could not resume session, error: %s", ex)
                 login_required = True
+            except Exception as ex:
+                logging.debug("Could not resume session, (non-garth) error: %s", ex)
+                login_required = True
             try:
                 garth.client.username
             except GarthException as ex:
                 logging.debug("Session expired, error: %s", ex)
+                login_required = True
+            except Exception as ex:
+                logging.debug("Session expired, (non-garth) error: %s", ex)
                 login_required = True
             logging.info("Authenticating using OAuth token from %s", garth_session_directory)
         else:
@@ -520,6 +526,8 @@ def login_to_garmin_connect(args):
                     garth.save(garth_session_directory)
                 except GarthException as ex:
                     logging.warning("Unable to store session data to %s, error: %s", garth_session_directory, ex)
+                except Exception as ex:
+                    logging.warning("Unable to store session data to %s, (non-garth) error: %s", garth_session_directory, ex)
 
     except Exception as ex:
         raise GarminException(f'Authentication failure ({ex}). Did you enter correct credentials?') from ex
