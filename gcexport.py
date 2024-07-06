@@ -536,7 +536,14 @@ def login_to_garmin_connect(args):
 
 def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, event_type_name):
     """
-    Write out the given data as a CSV record
+    Write out the given data for one activity as a CSV record
+
+    :param csv_filter:         object encapsulating CSV file access
+    :param extract:            dict with fields not found in 'actvty' or 'details'
+    :param actvty:             dict for the given activity from the activities list endpoint
+    :param details:            dict for the given activity from the individual activity endpoint
+    :param activity_type_name: lookup table for activity type descriptions
+    :param event_type_name:    lookup table for event type descriptions
     """
 
     type_id = 4 if absent_or_null('activityType', actvty) else actvty['activityType']['typeId']
@@ -582,18 +589,18 @@ def csv_write_record(csv_filter, extract, actvty, details, activity_type_name, e
     csv_filter.set_column('maxSpeedPaceRaw', trunc6(pace_or_speed_raw(type_id, parent_type_id, details['summaryDTO']['maxSpeed'])) if present('maxSpeed', details['summaryDTO']) else None)
     csv_filter.set_column('maxSpeedPace', pace_or_speed_formatted(type_id, parent_type_id, details['summaryDTO']['maxSpeed']) if present('maxSpeed', details['summaryDTO']) else None)
     csv_filter.set_column('elevationLoss', str(round(details['summaryDTO']['elevationLoss'], 2)) if present('elevationLoss', details['summaryDTO']) else None)
-    csv_filter.set_column('elevationLossUncorr', str(round(details['summaryDTO']['elevationLoss'], 2)) if not actvty['elevationCorrected'] and present('elevationLoss', details['summaryDTO']) else None)
-    csv_filter.set_column('elevationLossCorr', str(round(details['summaryDTO']['elevationLoss'], 2)) if actvty['elevationCorrected'] and present('elevationLoss', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationLossUncorr', str(round(details['summaryDTO']['elevationLoss'], 2)) if absent_or_null('elevationCorrected', actvty) and present('elevationLoss', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationLossCorr', str(round(details['summaryDTO']['elevationLoss'], 2)) if present('elevationCorrected', actvty) and present('elevationLoss', details['summaryDTO']) else None)
     csv_filter.set_column('elevationGain', str(round(details['summaryDTO']['elevationGain'], 2)) if present('elevationGain', details['summaryDTO']) else None)
-    csv_filter.set_column('elevationGainUncorr', str(round(details['summaryDTO']['elevationGain'], 2)) if not actvty['elevationCorrected'] and present('elevationGain', details['summaryDTO']) else None)
-    csv_filter.set_column('elevationGainCorr', str(round(details['summaryDTO']['elevationGain'], 2)) if actvty['elevationCorrected'] and present('elevationGain', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationGainUncorr', str(round(details['summaryDTO']['elevationGain'], 2)) if absent_or_null('elevationCorrected', actvty) and present('elevationGain', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationGainCorr', str(round(details['summaryDTO']['elevationGain'], 2)) if present('elevationCorrected', actvty) and present('elevationGain', details['summaryDTO']) else None)
     csv_filter.set_column('minElevation', str(round(details['summaryDTO']['minElevation'], 2)) if present('minElevation', details['summaryDTO']) else None)
-    csv_filter.set_column('minElevationUncorr', str(round(details['summaryDTO']['minElevation'], 2)) if not actvty['elevationCorrected'] and present('minElevation', details['summaryDTO']) else None)
-    csv_filter.set_column('minElevationCorr', str(round(details['summaryDTO']['minElevation'], 2)) if actvty['elevationCorrected'] and present('minElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('minElevationUncorr', str(round(details['summaryDTO']['minElevation'], 2)) if absent_or_null('elevationCorrected', actvty) and present('minElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('minElevationCorr', str(round(details['summaryDTO']['minElevation'], 2)) if present('elevationCorrected', actvty) and present('minElevation', details['summaryDTO']) else None)
     csv_filter.set_column('maxElevation', str(round(details['summaryDTO']['maxElevation'], 2)) if present('maxElevation', details['summaryDTO']) else None)
-    csv_filter.set_column('maxElevationUncorr', str(round(details['summaryDTO']['maxElevation'], 2)) if not actvty['elevationCorrected'] and present('maxElevation', details['summaryDTO']) else None)
-    csv_filter.set_column('maxElevationCorr', str(round(details['summaryDTO']['maxElevation'], 2)) if actvty['elevationCorrected'] and present('maxElevation', details['summaryDTO']) else None)
-    csv_filter.set_column('elevationCorrected', 'true' if actvty['elevationCorrected'] else 'false')
+    csv_filter.set_column('maxElevationUncorr', str(round(details['summaryDTO']['maxElevation'], 2)) if absent_or_null('elevationCorrected', actvty) and present('maxElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('maxElevationCorr', str(round(details['summaryDTO']['maxElevation'], 2)) if present('elevationCorrected', actvty) and present('maxElevation', details['summaryDTO']) else None)
+    csv_filter.set_column('elevationCorrected', 'true' if present('elevationCorrected', actvty) else 'false')
     # csv_record += empty_record  # no minimum heart rate in JSON
     csv_filter.set_column('maxHRRaw', str(details['summaryDTO']['maxHR']) if present('maxHR', details['summaryDTO']) else None)
     csv_filter.set_column('maxHR', f"{actvty['maxHR']:.0f}" if present('maxHR', actvty) else None)
@@ -1161,7 +1168,8 @@ def process_activity_item(item, number_of_items, device_dict, type_filter, activ
     # Action: download
     # Display which entry we're working on.
     print('Downloading: Garmin Connect activity ', end='')
-    print(f"({current_index}/{number_of_items}) [{actvty['activityId']}] {actvty['activityName']}")
+    activity_name = actvty['activityName'] if present('activityName', actvty) else ""
+    print(f"({current_index}/{number_of_items}) [{actvty['activityId']}] {activity_name}")
 
     # Retrieve also the detail data from the activity (the one displayed on
     # the https://connect.garmin.com/modern/activity/xxx page), because some
@@ -1187,7 +1195,7 @@ def process_activity_item(item, number_of_items, device_dict, type_filter, activ
         print('0.000 km')
 
     if args.desc is not None:
-        append_desc = '_' + sanitize_filename(actvty['activityName'], args.desc)
+        append_desc = '_' + sanitize_filename(activity_name, args.desc)
     else:
         append_desc = ''
 
@@ -1225,7 +1233,7 @@ def process_activity_item(item, number_of_items, device_dict, type_filter, activ
     if csv_filter.is_column_active('hrZone1Low') or csv_filter.is_column_active('hrZone1Seconds'):
         extract['hrZones'] = load_zones(str(actvty['activityId']), start_time_seconds, args, http_req_as_string, write_to_file)
 
-    # Save the file and inform if it already existed. If the file already existed, do not apped the record to the csv
+    # Save the file and inform if it already existed. If the file already existed, do not append the record to the csv
     if export_data_file(
         str(actvty['activityId']), activity_details, args, start_time_seconds, append_desc, actvty['startTimeLocal']
     ):
