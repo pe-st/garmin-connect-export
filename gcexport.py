@@ -1308,9 +1308,14 @@ def main(argv):
 
         # Process each activity.
         for item in action_list:
-            process_activity_item(
-                item, len(action_list), device_dict, type_filter, activity_type_name, event_type_name, csv_filter, args
-            )
+            try:
+                process_activity_item(
+                    item, len(action_list), device_dict, type_filter, activity_type_name, event_type_name, csv_filter, args
+                )
+            except Exception as ex_item:
+                activity_id = item['activity']['activityId'] if present('activity', item) and present('activityId', item['activity']) else "(unknown id)"
+                logging.error("Error during processing of activity '%s': %s/%s", activity_id, type(ex_item), ex_item)
+                raise
 
     logging.info('CSV file written.')
 
@@ -1328,3 +1333,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print('Interrupted')
         sys.exit(0)
+    except Exception as ex: # pylint: disable=broad-except
+        logging.error("Processing aborted.")
+        logging.exception(ex)
