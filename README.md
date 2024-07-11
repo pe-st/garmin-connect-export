@@ -114,8 +114,8 @@ read all your data in Garmin Connect (e.g. your health data), maybe even change 
 
 ### Examples
 
-- `python gcexport.py --count all`  
-  will download all of your data to a dated directory.
+- `python gcexport.py -ss ~/.garth --count all`  
+  will download all of your data to a dated directory and save your OAuth tokens in the directory `.garth` in your home directory (from the second run on you will not be asked for your username/password anymore)
 
 - `python gcexport.py -c all -f gpx -ot --desc 20`  
   will export all of your data in GPX format, set the timestamp of the GPX files to the start time of the activity and append the 20 first characters of the activity's description to the file name.
@@ -195,7 +195,7 @@ For the history of this fork see the [CHANGELOG](CHANGELOG.md)
 
 Contributions are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md)
 
-Contributors as of 2024-03 (Hope I didn't forget anyone,
+Contributors as of 2024-07 (Hope I didn't forget anyone,
 see also [Contributors](https://github.com/pe-st/garmin-connect-export/graphs/contributors)):
 
 - Kyle Krafka @kjkjava
@@ -226,6 +226,8 @@ see also [Contributors](https://github.com/pe-st/garmin-connect-export/graphs/co
 - Simon Ågren @agrensimon
 - @embear
 - Joe Timmerman @joetimmerman
+- Rob @rjl6789
+- @gustav-b
 
 ## License
 

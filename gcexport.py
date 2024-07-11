@@ -54,7 +54,7 @@ from filtering import read_exclude, update_download_stats
 COOKIE_JAR = http.cookiejar.CookieJar()
 OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
 
-SCRIPT_VERSION = '4.3.0'
+SCRIPT_VERSION = '4.4.0'
 
 # This version here should correspond to what is written in CONTRIBUTING.md#python-3x-versions
 MINIMUM_PYTHON_VERSION = (3, 8)
@@ -500,7 +500,7 @@ def login_to_garmin_connect(args):
             except GarthException as ex:
                 logging.debug("Could not resume session, error: %s", ex)
                 login_required = True
-            except Exception as ex:
+            except FileNotFoundError as ex:
                 logging.debug("Could not resume session, (non-garth) error: %s", ex)
                 login_required = True
             try:
@@ -508,8 +508,8 @@ def login_to_garmin_connect(args):
             except GarthException as ex:
                 logging.debug("Session expired, error: %s", ex)
                 login_required = True
-            except Exception as ex:
-                logging.debug("Session expired, (non-garth) error: %s", ex)
+            except AssertionError as ex:
+                logging.debug("Token not found, (non-garth) error: %s", ex)
                 login_required = True
             logging.info("Authenticating using OAuth token from %s", garth_session_directory)
         else:
@@ -520,14 +520,12 @@ def login_to_garmin_connect(args):
             password = args.password if args.password else getpass()
             garth.login(username, password)
 
-            # try to store data if a session directory is given
+            # try to store data if a session directory was given
             if garth_session_directory:
                 try:
                     garth.save(garth_session_directory)
                 except GarthException as ex:
                     logging.warning("Unable to store session data to %s, error: %s", garth_session_directory, ex)
-                except Exception as ex:
-                    logging.warning("Unable to store session data to %s, (non-garth) error: %s", garth_session_directory, ex)
 
     except Exception as ex:
         raise GarminException(f'Authentication failure ({ex}). Did you enter correct credentials?') from ex
@@ -799,6 +797,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
         file_mode = 'wb'
     elif args.format == 'json':
         data_filename = os.path.join(directory, f'{prefix}activity_{activity_id}{append_desc}.json')
+        download_url = None
         file_mode = 'w'
     else:
         raise ValueError('Unrecognized format.')
@@ -1100,7 +1099,7 @@ def copy_details_to_summary(summary, details):
     The choice of which properties are copied is determined by the properties
     used by the 'csv_write_record' method.
 
-    This particularly useful for childs of multisport activities, as I don't
+    This particularly useful for children of multisport activities, as I don't
     know how to get these activity summaries otherwise
     :param summary: summary dict, will be modified in-place
     :param details: details dict
@@ -1321,7 +1320,11 @@ def main(argv):
                     item, len(action_list), device_dict, type_filter, activity_type_name, event_type_name, csv_filter, args
                 )
             except Exception as ex_item:
-                activity_id = item['activity']['activityId'] if present('activity', item) and present('activityId', item['activity']) else "(unknown id)"
+                activity_id = (
+                    item['activity']['activityId']
+                    if present('activity', item) and present('activityId', item['activity'])
+                    else "(unknown id)"
+                )
                 logging.error("Error during processing of activity '%s': %s/%s", activity_id, type(ex_item), ex_item)
                 raise
 
@@ -1341,6 +1344,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print('Interrupted')
         sys.exit(0)
-    except Exception as ex: # pylint: disable=broad-except
+    except Exception as abort_exception:  # pylint: disable=broad-except
         logging.error("Processing aborted.")
-        logging.exception(ex)
+        logging.exception(abort_exception)

@@ -3,6 +3,21 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 4.4.0 - 2024-07-12
+
+- changed: allow session directory to work on first go
+  ([Pull Request #108](https://github.com/pe-st/garmin-connect-export/pull/108) by @rjl6789) 
+- fixed: processing of old activities with missing activity name (#113) or elevation correction flag (#112)
+
+
+## 4.3.0 - 2024-03-02
+
+- added: option `-ss` to store OAuth token between sessions
+  ([Pull Request #99](https://github.com/pe-st/garmin-connect-export/pull/99) by @embear) 
+- added: typeId filtering (option `-tf`)
+  ([Pull Request #72](https://github.com/pe-st/garmin-connect-export/pull/72) by @joetimmerman) 
+
+
 ## 4.2.0 - 2023-10-08
 
 - fixed: Use [garth](https://github.com/matin/garth) for OAuth to fix #95
