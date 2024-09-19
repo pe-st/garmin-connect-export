@@ -95,7 +95,7 @@ optional arguments:
                         JSON file with array of activity IDs to exclude from download.
                         Format example: {"ids": ["6176888711"]}
   -tf TYPE_FILTER, --type_filter TYPE_FILTER
-                        comma-separated list of activity type IDs to allow. Format example: 3,9
+                        comma-separated list of activity types to allow. Format example: 'walking,hiking'
   -ss DIRECTORY, --session DIRECTORY
                         enable loading and storing SSO information from/to given directory
 ```
