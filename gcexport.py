@@ -54,10 +54,10 @@ from filtering import read_exclude, update_download_stats
 COOKIE_JAR = http.cookiejar.CookieJar()
 OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
 
-SCRIPT_VERSION = '4.4.0'
+SCRIPT_VERSION = '4.5.0'
 
 # This version here should correspond to what is written in CONTRIBUTING.md#python-3x-versions
-MINIMUM_PYTHON_VERSION = (3, 8)
+MINIMUM_PYTHON_VERSION = (3, 10)
 
 # this is almost the datetime format Garmin used in the activity-search-service
 # JSON 'display' fields (Garmin didn't zero-pad the date and the hour, but %d and %H do)
@@ -998,8 +998,12 @@ def annotate_activity_list(activities, start, exclude_list, type_filter):
         elif str(activity['activityId']) in exclude_list:
             action = 'e'
         else:
-            type = activity['activityType']
-            if type_filter is not None and str(type['typeId']) not in type_filter and type['typeKey'] not in type_filter:
+            activity_type = activity['activityType']
+            if (
+                type_filter is not None
+                and str(activity_type['typeId']) not in type_filter
+                and activity_type['typeKey'] not in type_filter
+            ):
                 action = 'f'
             else:
                 action = 'd'
@@ -1161,8 +1165,11 @@ def process_activity_item(item, number_of_items, device_dict, type_filter, activ
     # Action: Filtered out by typeId
     if action == 'f':
         # Display which entry we're skipping.
-        type = actvty['activityType']
-        print(f"Filtering out due to type {type['typeKey']} (ID {type['typeId']}) not in {type_filter}: Garmin Connect activity ", end='')
+        activity_type = actvty['activityType']
+        print(
+            f"Filtering out due to type {activity_type['typeKey']} (ID {activity_type['typeId']}) not in {type_filter}: Garmin Connect activity ",
+            end='',
+        )
         print(f"({current_index}/{number_of_items}) [{actvty['activityId']}]")
         return
 

@@ -10,5 +10,5 @@ exclude =
    .git,
    __pycache__,
    extras,
-   venv,
+   venv*,
    ./gcexport_test.py

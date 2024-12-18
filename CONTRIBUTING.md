@@ -24,7 +24,10 @@ The script should be usable for a wide range of users and Python versions.
 
 For that reason the script should be compatible with the oldest still [supported
 Python version](https://devguide.python.org/versions/). At the time of this writing
-(July 2023) this is Python 3.8, whose end-of-life is currently scheduled for October 2024.
+(December 2023) this is Python 3.9, whose end-of-life is currently scheduled for October 2025.
+
+Due to the latest version of the [garth](https://github.com/matin/garth) library requiring 3.10+,
+3.9 is not supported anymore (if you really only have 3.9 you can edit `requirements.txt` to use garth 0.4.x).
 
 The Github Actions (see `github/workflows/python-app.yml`) thus run all steps twice,
 once with the oldest supported Python version, and once with the newest released version.

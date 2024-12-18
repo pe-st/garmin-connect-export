@@ -3,6 +3,14 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 4.5.0 - 2024-12-18
+
+- changed: minimum Python version is now 3.10 (as the garth library requires 3.10)
+- changed: add filtering by human-readable activity type
+  ([Pull Request #114](https://github.com/pe-st/garmin-connect-export/pull/114) by @RReverser) 
+- fixed: login with OAuth token works again (#115)
+
+
 ## 4.4.0 - 2024-07-12
 
 - changed: allow session directory to work on first go

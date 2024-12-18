@@ -39,7 +39,7 @@ extension-pkg-whitelist=
 fail-on=
 
 # Specify a score threshold under which the program will exit with error.
-fail-under=10
+fail-under=10.0
 
 # Interpret the stdin as a python script, whose filename needs to be passed as
 # the module_or_package argument.
@@ -59,10 +59,11 @@ ignore-paths=
 # Emacs file locks
 ignore-patterns=^\.#,(.)*_test\.py
 
-# List of module names for which member attributes should not be checked
-# (useful for modules/projects where namespaces are manipulated during runtime
-# and thus existing member attributes cannot be deduced by static analysis). It
-# supports qualified module names, as well as Unix pattern matching.
+# List of module names for which member attributes should not be checked and
+# will not be imported (useful for modules/projects where namespaces are
+# manipulated during runtime and thus existing member attributes cannot be
+# deduced by static analysis). It supports qualified module names, as well as
+# Unix pattern matching.
 ignored-modules=
 
 # Python code to execute, usually for sys.path manipulation such as
@@ -86,9 +87,13 @@ load-plugins=
 # Pickle collected data for later comparisons.
 persistent=yes
 
+# Resolve imports to .pyi stubs if available. May reduce no-member messages and
+# increase not-an-iterable messages.
+prefer-stubs=no
+
 # Minimum Python version to use for version dependent checks. Will default to
 # the version used to run pylint.
-# py-version=3.9
+# py-version=3.13
 
 # Discover python modules and packages in the file system subtree.
 recursive=no
@@ -302,6 +307,9 @@ max-locals=15
 # Maximum number of parents for a class (see R0901).
 max-parents=7
 
+# Maximum number of positional arguments for function / method.
+max-positional-arguments=8
+
 # Maximum number of public methods for a class (see R0904).
 max-public-methods=20
 
@@ -429,6 +437,8 @@ disable=raw-checker-failed,
         useless-suppression,
         deprecated-pragma,
         use-symbolic-message-instead,
+        use-implicit-booleaness-not-comparison-to-string,
+        use-implicit-booleaness-not-comparison-to-zero,
         import-error,
         line-too-long,
         too-many-arguments,
@@ -474,6 +484,11 @@ max-nested-blocks=5
 # printed.
 never-returning-functions=sys.exit,argparse.parse_error
 
+# Let 'consider-using-join' be raised when the separator to join on would be
+# non-empty (resulting in expected fixes of the type: ``"- " + " -
+# ".join(items)``)
+suggest-join-with-non-empty-separator=yes
+
 
 [REPORTS]
 
@@ -488,8 +503,9 @@ evaluation=max(0, 0 if fatal else 10.0 - ((float(5 * error + warning + refactor 
 # used to format the message information. See doc for all details.
 msg-template=
 
-# Set the output format. Available formats are text, parseable, colorized, json
-# and msvs (visual studio). You can also give a reporter class, e.g.
+# Set the output format. Available formats are: text, parseable, colorized,
+# json2 (improved json format), json (old json format) and msvs (visual
+# studio). You can also give a reporter class, e.g.
 # mypackage.mymodule.MyReporterClass.
 #output-format=
 
@@ -524,7 +540,7 @@ min-similarity-lines=4
 max-spelling-suggestions=4
 
 # Spelling dictionary name. No available dictionaries : You need to install
-# both the python package and the system dependency for enchant to work..
+# both the python package and the system dependency for enchant to work.
 spelling-dict=
 
 # List of comma separated words that should be considered directives if they
