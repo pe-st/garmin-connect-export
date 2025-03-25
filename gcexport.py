@@ -824,27 +824,34 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
         # this script will die, but nothing will have been written to disk about this activity, so
         # just running it again should pick up where it left off.
 
-        try:
-            data = http_req(download_url)
-        except HTTPError as ex:
-            # Handle expected (though unfortunate) error codes; die on unexpected ones.
-            if ex.code == 500 and args.format == 'tcx':
-                # Garmin will give an internal server error (HTTP 500) when downloading TCX files
-                # if the original was a manual GPX upload. Writing an empty file prevents this file
-                # from being redownloaded, similar to the way GPX files are saved even when there
-                # are no tracks. One could be generated here, but that's a bit much. Use the GPX
-                # format if you want actual data in every file, as I believe Garmin provides a GPX
-                # file for every activity.
-                logging.info('Writing empty file since Garmin did not generate a TCX file for this activity...')
-                data = ''
-            elif ex.code == 404 and args.format == 'original':
-                # For manual activities (i.e., entered in online without a file upload), there is
-                # no original file. # Write an empty file to prevent redownloading it.
-                logging.info('Writing empty file since there was no original activity data...')
-                data = ''
-            else:
-                logging.info('Got %s for %s', ex.code, download_url)
-                raise GarminException(f'Failed. Got an HTTP error {ex.code} for {download_url}') from ex
+        tries = MAX_TRIES
+        while tries > 0:
+            try:
+                data = http_req(download_url)
+                break
+            except HTTPError as ex:
+                # Handle expected (though unfortunate) error codes; die on unexpected ones.
+                if ex.code == 500 and args.format == 'tcx':
+                    # Garmin will give an internal server error (HTTP 500) when downloading TCX files
+                    # if the original was a manual GPX upload. Writing an empty file prevents this file
+                    # from being redownloaded, similar to the way GPX files are saved even when there
+                    # are no tracks. One could be generated here, but that's a bit much. Use the GPX
+                    # format if you want actual data in every file, as I believe Garmin provides a GPX
+                    # file for every activity.
+                    logging.info('Writing empty file since Garmin did not generate a TCX file for this activity...')
+                    data = ''
+                    break
+                elif ex.code == 404 and args.format == 'original':
+                    # For manual activities (i.e., entered in online without a file upload), there is
+                    # no original file. # Write an empty file to prevent redownloading it.
+                    logging.info('Writing empty file since there was no original activity data...')
+                    data = ''
+                    break
+                else:
+                    logging.info('Got %s for %s', ex.code, download_url)
+            tries = tries - 1
+            if not tries:
+                raise GarminException('Failed. Cannot download')
     else:
         data = activity_details
 
