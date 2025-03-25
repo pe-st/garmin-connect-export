@@ -1356,3 +1356,4 @@ if __name__ == "__main__":
     except Exception as abort_exception:  # pylint: disable=broad-except
         logging.error("Processing aborted.")
         logging.exception(abort_exception)
+        sys.exit(1)
