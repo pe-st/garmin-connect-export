@@ -6,7 +6,7 @@ it is the default branch. This is where my tinkering happens, and always contain
 Other notable branches in this repo:
 
 - [develop](https://github.com/pe-st/garmin-connect-export/tree/develop)
-  Former develop branch of my repo, kept for for the time being for compatibility
+  Former develop branch of my repo, kept for the time being for compatibility
   for the existing clones of my repo out there somewhere
 - [moderation](https://github.com/pe-st/garmin-connect-export/tree/moderation)
   Copy of the master branch of **@moderation**'s repo, kept for reference and comparison purposes

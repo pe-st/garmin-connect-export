@@ -1,8 +1,5 @@
 # garmin-connect-export script
 
-:exclamation: | This script [now requires Python 3.8 or newer](https://github.com/pe-st/garmin-connect-export/issues/64)
----|---
-
 :exclamation: | There is a [report of a deactivated user account that might by caused by using this script](https://github.com/pe-st/garmin-connect-export/issues/60). The exact reasons are not known, and my account has never been deactivated. But be aware that I can give no guarantee that Garmin tolerates requests made from this script. I believe though that this script is fair use (it doesn't do anything other than automating stuff that you do in the browser). But be careful if you plan to run the script as periodical task (with `cron` etc)
 ---|---
 
@@ -28,8 +25,6 @@ There exist many [forks](https://help.github.com/articles/fork-a-repo/) of this 
   father repo of my repo. In April 2018 **@moderation** migrated his script to Python 3. Unfortunately
   **@moderation**'s script [didn't work for me for a couple of months](https://github.com/moderation/garmin-connect-export/issues/11),
   probably because of different Garmin Connect REST endpoints (URLs).
-
-For the [branches](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging) in **pe-st**'s repo see [BRANCH.md](BRANCH.md)
 
 ## Description
 
