@@ -224,6 +224,7 @@ see also [Contributors](https://github.com/pe-st/garmin-connect-export/graphs/co
 - Rob @rjl6789
 - @gustav-b
 - Ingvar Stepanyan @RReverser
+- Jakub Tymejczyk @tymmej
 
 ## License
 

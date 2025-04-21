@@ -54,7 +54,7 @@ from filtering import read_exclude, update_download_stats
 COOKIE_JAR = http.cookiejar.CookieJar()
 OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
 
-SCRIPT_VERSION = '4.5.0'
+SCRIPT_VERSION = '4.6.0'
 
 # This version here should correspond to what is written in CONTRIBUTING.md#python-3x-versions
 MINIMUM_PYTHON_VERSION = (3, 10)
@@ -826,6 +826,7 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
 
         tries = MAX_TRIES
         while tries > 0:
+            tries -= 1
             try:
                 data = http_req(download_url)
                 break
@@ -841,17 +842,15 @@ def export_data_file(activity_id, activity_details, args, file_time, append_desc
                     logging.info('Writing empty file since Garmin did not generate a TCX file for this activity...')
                     data = ''
                     break
-                elif ex.code == 404 and args.format == 'original':
+                if ex.code == 404 and args.format == 'original':
                     # For manual activities (i.e., entered in online without a file upload), there is
                     # no original file. # Write an empty file to prevent redownloading it.
                     logging.info('Writing empty file since there was no original activity data...')
                     data = ''
                     break
-                else:
-                    logging.info('Got %s for %s', ex.code, download_url)
-            tries = tries - 1
-            if not tries:
-                raise GarminException('Failed. Cannot download')
+                logging.info('Got %s for %s, %s tries left', ex.code, download_url, tries)
+            if tries == 0:
+                raise GarminException(f'No tries left. Could not download {download_url}')
     else:
         data = activity_details
 
@@ -1091,17 +1090,23 @@ def fetch_details(activity_id, http_caller):
     details = None
     tries = MAX_TRIES
     while tries > 0:
-        activity_details = http_caller(f'{URL_GC_ACTIVITY}{activity_id}')
-        details = json.loads(activity_details)
-        # I observed a failure to get a complete JSON detail in about 5-10 calls out of 1000
-        # retrying then statistically gets a better JSON ;-)
-        if details['summaryDTO']:
-            tries = 0
-        else:
-            logging.info("Retrying activity details download %s", URL_GC_ACTIVITY + str(activity_id))
-            tries -= 1
-            if tries == 0:
-                raise GarminException(f'Didn\'t get "summaryDTO" after {MAX_TRIES} tries for {activity_id}')
+        tries -= 1
+        try:
+            activity_details = http_caller(f'{URL_GC_ACTIVITY}{activity_id}')
+            details = json.loads(activity_details)
+            # I observed a failure to get a complete JSON detail in about 5-10 calls out of 1000
+            # retrying then statistically gets a better JSON ;-)
+            if details['summaryDTO']:
+                tries = 0
+            else:
+                logging.info("Retrying activity details download %s", URL_GC_ACTIVITY + str(activity_id))
+                if tries == 0:
+                    raise GarminException(f'Didn\'t get "summaryDTO" after {MAX_TRIES} tries for {activity_id}')
+        except HTTPError as ex:
+            if tries > 0:
+                logging.info("HTTP %s, retrying activity details download %s", ex.code, URL_GC_ACTIVITY + str(activity_id))
+            else:
+                raise GarminException(f'No tries left. Could not download details for {activity_id}') from ex
     return activity_details, details
 
 

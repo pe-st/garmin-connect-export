@@ -3,6 +3,13 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 4.6.0 - 2025-04-21
+
+- changed: return error code in case of exception
+  ([Pull Request #117](https://github.com/pe-st/garmin-connect-export/pull/117) by @tymmej) 
+- changed: retry gpx download
+  ([Pull Request #118](https://github.com/pe-st/garmin-connect-export/pull/118) by @tymmej) 
+
 ## 4.5.0 - 2024-12-18
 
 - changed: minimum Python version is now 3.10 (as the garth library requires 3.10)
