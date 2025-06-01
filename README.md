@@ -34,7 +34,16 @@ If there is no GPS track data (e.g., due to an indoor treadmill workout), a data
 
 If you have many activities, you may find that this script crashes with an "Operation timed out" message. Just run the script again and it will pick up where it left off.
 
-## Installation
+## Running the script
+
+To run the script, you can either:
+
+- Run the script using the Docker CLI using the pre-built Docker image. See [Docker Usage](#docker-usage) for details.
+- Install the dependencies locally and run the script using the Python CLI. See [Local Installation](#local-installation) and [Usage](#usage) for details.
+
+## Local Installation
+
+If you are **not** using Docker, install the dependencies locally:
 
 - If you're comfortable using Git, just clone the repo from github
 - Otherwise get the latest `zip` (or `tar.gz`) from the [releases page](https://github.com/pe-st/garmin-connect-export/releases)
@@ -93,6 +102,84 @@ optional arguments:
                         comma-separated list of activity types to allow. Format example: 'walking,hiking'
   -ss DIRECTORY, --session DIRECTORY
                         enable loading and storing SSO information from/to given directory
+```
+
+### Docker Usage
+
+This section contains some tips and tricks to run the script using Docker. See the [Usage](#usage) section above for general script usage.
+
+#### Create working directory
+
+Create a directory where you want to store the garmin export data and session data:
+
+```shell
+mkdir -p ~/Documents/garmin_export
+cd ~/Documents/garmin_export
+```
+
+#### Set environment variables
+
+Export your username and password as environment variables:
+
+```shell
+export GARMIN_USERNAME=abc
+export GARMIN_PASSWORD=xyz
+```
+
+#### Run the docker container
+
+When running the docker container, make sure to:
+
+1. Override the `--directory` and `--session` command line arguments with static directories in the container.
+2. Mount the static `export_data` and `session_data` directories in the container to your local directories.
+
+This results in garmin export data being outputted to the local `./my_garmin_data` directory.
+
+```shell
+docker run -it --rm \
+  -v "$(pwd)/my_garmin_data:/export_data" \
+  -v "$(pwd)/my_garmin_session:/session_data" \
+  garmin-connect-exporter \
+  --directory /export_data \
+  --subdir '{YYYY}/{MM}/' \
+  --logpath /export_data/logs \
+  --session /session_data \
+  --username ${GARMIN_USERNAME} \
+  --password ${GARMIN_PASSWORD}
+```
+
+Optionally, follow the same process for the `--template` argument:
+
+```shell
+
+docker run -it --rm \
+  -v "$(pwd)/my_garmin_template:/template_data" \
+  ... \
+  garmin-connect-exporter \
+  --template /template_data/my_template.properties \
+  ...
+```
+
+#### Output directories
+
+After running the script, you should see the following directories in your working directory (e.g. `~/Documents/garmin_export`):
+
+```text
+.
+├── my_garmin_data
+│   ├── 2025
+│   │   └── 05
+│   │       └── activity_19000000000.gpx
+│   ├── activities-1-1.json
+│   ├── activities.csv
+│   ├── device_120000.json
+│   ├── downloaded_ids.json
+│   ├── logs
+│   │   └── gcexport.log
+│   └── userstats.json
+└── my_garmin_session
+    ├── oauth1_token.json
+    └── oauth2_token.json
 ```
 
 ### Authentication
