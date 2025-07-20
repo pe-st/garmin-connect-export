@@ -113,17 +113,8 @@ This section contains some tips and tricks to run the script using Docker. See t
 Create a directory where you want to store the garmin export data and session data:
 
 ```shell
-mkdir -p ~/Documents/garmin_export
-cd ~/Documents/garmin_export
-```
-
-#### Set environment variables
-
-Export your username and password as environment variables:
-
-```shell
-export GARMIN_USERNAME=abc
-export GARMIN_PASSWORD=xyz
+cd ~/Documents
+mkdir my_garmin_data
 ```
 
 #### Run the docker container
@@ -133,29 +124,34 @@ When running the docker container, make sure to:
 1. Override the `--directory` and `--session` command line arguments with static directories in the container.
 2. Mount the static `export_data` and `session_data` directories in the container to your local directories.
 
-This results in garmin export data being outputted to the local `./my_garmin_data` directory.
+This results in garmin export data being outputted to the local `./my_garmin_data` directory,
+assuming the session directory is the standard `~/.garth`.
 
 ```shell
 docker run -it --rm \
   -v "$(pwd)/my_garmin_data:/export_data" \
-  -v "$(pwd)/my_garmin_session:/session_data" \
-  garmin-connect-exporter \
+  -v "$HOME/.garth:/session_data" \
+  ghcr.io/pe-st/garmin-connect-export \
   --directory /export_data \
   --subdir '{YYYY}/{MM}/' \
   --logpath /export_data/logs \
   --session /session_data \
-  --username ${GARMIN_USERNAME} \
-  --password ${GARMIN_PASSWORD}
+  --count all # replace this line with your arguments
 ```
 
-Optionally, follow the same process for the `--template` argument:
+Another example, following the same process for the `--template` argument and using environment variables for
+user/password (be aware that this might disclose your password to other processes/users and you should prefer the session option):
 
 ```shell
+export GARMIN_USERNAME=abc
+export GARMIN_PASSWORD=xyz
 
 docker run -it --rm \
   -v "$(pwd)/my_garmin_template:/template_data" \
   ... \
-  garmin-connect-exporter \
+  ghcr.io/pe-st/garmin-connect-export \
+  --username ${GARMIN_USERNAME} \
+  --password ${GARMIN_PASSWORD} \
   --template /template_data/my_template.properties \
   ...
 ```
@@ -167,16 +163,16 @@ After running the script, you should see the following directories in your worki
 ```text
 .
 ├── my_garmin_data
-│   ├── 2025
-│   │   └── 05
-│   │       └── activity_19000000000.gpx
-│   ├── activities-1-1.json
-│   ├── activities.csv
-│   ├── device_120000.json
-│   ├── downloaded_ids.json
-│   ├── logs
-│   │   └── gcexport.log
-│   └── userstats.json
+│   ├── 2025
+│   │   └── 05
+│   │       └── activity_19000000000.gpx
+│   ├── activities-1-1.json
+│   ├── activities.csv
+│   ├── device_120000.json
+│   ├── downloaded_ids.json
+│   ├── logs
+│   │   └── gcexport.log
+│   └── userstats.json
 └── my_garmin_session
     ├── oauth1_token.json
     └── oauth2_token.json
@@ -187,7 +183,7 @@ After running the script, you should see the following directories in your worki
 You have to authenticate with username and password, and possibly an MFA code, at least for an initial login.
 
 The script is then using OAuth tokens (thanks to the [garth](https://github.com/matin/garth) library).
-You can persist the OAuth token by giving a session directory, removing the need to provide username/password/MFA
+You can persist the OAuth token by giving a session directory (`--session`), removing the need to provide username/password/MFA
 for every script run.
 
 But keep the persistent tokens safe; if somebody gets hold of your tokens, they might be able to
@@ -269,7 +265,7 @@ After 2015, when the original repo stopped being maintained, several forks from 
 Forks and Branches section above).
 
 In 2021 this fork was [detached from the original repo](https://github.com/pe-st/garmin-connect-export/issues/53);
-in what concerns Github, the repo isn't a fork anymore, but a new "original".
+in what concerns GitHub, the repo isn't a fork anymore, but a new "original".
 For the history of this fork see the [CHANGELOG](CHANGELOG.md)
 
 
@@ -277,7 +273,7 @@ For the history of this fork see the [CHANGELOG](CHANGELOG.md)
 
 Contributions are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md)
 
-Contributors as of 2024-07 (Hope I didn't forget anyone,
+Contributors as of 2025-07 (Hope I didn't forget anyone,
 see also [Contributors](https://github.com/pe-st/garmin-connect-export/graphs/contributors)):
 
 - Kyle Krafka @kjkjava
@@ -312,6 +308,8 @@ see also [Contributors](https://github.com/pe-st/garmin-connect-export/graphs/co
 - @gustav-b
 - Ingvar Stepanyan @RReverser
 - Jakub Tymejczyk @tymmej
+- Teju Nareddy @nareddyt
+- @jonasbg
 
 ## License
 
@@ -319,4 +317,4 @@ see also [Contributors](https://github.com/pe-st/garmin-connect-export/graphs/co
 
 ## Thank You
 
-Thanks for using this script and I hope you find it as useful as I do! :smile:
+Thanks for using this script, and I hope you find it as useful as I do! :smile:

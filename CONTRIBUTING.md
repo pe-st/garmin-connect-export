@@ -29,7 +29,7 @@ Python version](https://devguide.python.org/versions/). At the time of this writ
 Due to the latest version of the [garth](https://github.com/matin/garth) library requiring 3.10+,
 3.9 is not supported anymore (if you really only have 3.9 you can edit `requirements.txt` to use garth 0.4.x).
 
-The Github Actions (see `github/workflows/python-app.yml`) thus run all steps twice,
+The GitHub Actions (see `github/workflows/python-app.yml`) thus run all steps twice,
 once with the oldest supported Python version, and once with the newest released version.
 
 ### Updating the minimum Python version

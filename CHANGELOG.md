@@ -3,6 +3,11 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 4.6.1 - 2025-07-20
+
+- added: Add Dockerfile and usage examples to README
+  ([Pull Request #121](https://github.com/pe-st/garmin-connect-export/pull/121) by @nareddyt) 
+
 ## 4.6.0 - 2025-04-21
 
 - changed: return error code in case of exception
