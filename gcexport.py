@@ -54,7 +54,7 @@ from filtering import read_exclude, update_download_stats
 COOKIE_JAR = http.cookiejar.CookieJar()
 OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
 
-SCRIPT_VERSION = '4.6.1'
+SCRIPT_VERSION = '4.6.2'
 
 # This version here should correspond to what is written in CONTRIBUTING.md#python-3x-versions
 MINIMUM_PYTHON_VERSION = (3, 10)
@@ -67,7 +67,7 @@ ALMOST_RFC_1123 = "%a, %d %b %Y %H:%M"
 VALID_FILENAME_CHARS = f'-_.() {string.ascii_letters}{string.digits}'
 
 # map the numeric parentTypeId to its name for the CSV output
-# this comes from https://connect.garmin.com/activity-service/activity/activityTypes
+# this comes from https://connect.garmin.com/gc-api/activity-service/activity/activityTypes
 PARENT_TYPE_ID = {
     1: 'running',
     2: 'cycling',
@@ -79,6 +79,7 @@ PARENT_TYPE_ID = {
     144: 'diving',
     157: 'safety',
     165: 'winter_sports',
+    199: 'para_sports',
     206: 'team_sports',
     219: 'racket_sports',
     228: 'water_sports',

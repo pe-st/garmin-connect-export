@@ -15,14 +15,17 @@ jobs:
   build:
     strategy:
       matrix:
-        version: ["3.10", "3.x"]
+        # it seems that garth is not ready for Python 3.14 yet
+        # https://github.com/matin/garth/issues/148
+        # version: ["3.10", "3.x"]
+        version: ["3.10", "3.13"]
 
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Set up Python 3.x
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.version }}
     - name: Install dependencies

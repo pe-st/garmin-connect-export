@@ -310,6 +310,7 @@ see also [Contributors](https://github.com/pe-st/garmin-connect-export/graphs/co
 - Jakub Tymejczyk @tymmej
 - Teju Nareddy @nareddyt
 - @jonasbg
+- Sebastian Kuzminsky @SebKuzminsky
 
 ## License
 
