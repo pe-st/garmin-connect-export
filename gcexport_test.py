@@ -39,10 +39,10 @@ def test_trunc6_less():
 
 def test_offset_date_time():
     assert offset_date_time("2018-03-08 12:23:22", "2018-03-08 11:23:22") == datetime(
-        2018, 3, 8, 12, 23, 22, 0, FixedOffset(60, "LCL")
+        2018, 3, 8, 12, 23, 22, 0, timezone(timedelta(minutes=60), "LCL")
     )
     assert offset_date_time("2018-03-08 12:23:22", "2018-03-08 12:23:22") == datetime(
-        2018, 3, 8, 12, 23, 22, 0, FixedOffset(0, "LCL")
+        2018, 3, 8, 12, 23, 22, 0, timezone(timedelta(minutes=0), "LCL")
     )
 
 

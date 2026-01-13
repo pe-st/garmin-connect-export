@@ -34,7 +34,7 @@ import sys
 import unicodedata
 import urllib.request
 import zipfile
-from datetime import datetime, timedelta, tzinfo
+from datetime import datetime, timedelta, timezone
 from getpass import getpass
 from math import floor
 from platform import python_version
@@ -302,26 +302,6 @@ def trunc6(some_float):
     return f'{floor(some_float * 1000000) / 1000000:12.6f}'.lstrip()
 
 
-# A class building tzinfo objects for fixed-offset time zones.
-# (copied from https://docs.python.org/2/library/datetime.html)
-class FixedOffset(tzinfo):
-    """Fixed offset in minutes east from UTC."""
-
-    def __init__(self, offset, name):
-        super().__init__()
-        self.__offset = timedelta(minutes=offset)
-        self.__name = name
-
-    def utcoffset(self, dt):
-        return self.__offset
-
-    def tzname(self, dt):
-        return self.__name
-
-    def dst(self, dt):
-        return timedelta(0)
-
-
 def offset_date_time(time_local, time_gmt):
     """
     Build an 'aware' datetime from two 'naive' datetime objects (that is timestamps
@@ -330,7 +310,7 @@ def offset_date_time(time_local, time_gmt):
     local_dt = datetime_from_iso(time_local)
     gmt_dt = datetime_from_iso(time_gmt)
     offset = local_dt - gmt_dt
-    offset_tz = FixedOffset(offset.seconds // 60, "LCL")
+    offset_tz = timezone(timedelta(minutes=offset.seconds // 60), "LCL")
     return local_dt.replace(tzinfo=offset_tz)
 
 

@@ -3,10 +3,19 @@
 This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## 4.6.2 - 2026-01-13
+
+- fixed: Change URLs for `activity_types.properties` and `event_types.properties`
+  to fix #125 [Activity types page don't exist anymore](https://github.com/pe-st/garmin-connect-export/issues/125) 
+  ([Pull Request #126](https://github.com/pe-st/garmin-connect-export/pull/126) by @SebKuzminsky)
+- changed: replace local `FixedOffset` with Python 3.x standard `datetime.timezone`
+
+
 ## 4.6.1 - 2025-07-20
 
 - added: Add Dockerfile and usage examples to README
   ([Pull Request #121](https://github.com/pe-st/garmin-connect-export/pull/121) by @nareddyt) 
+
 
 ## 4.6.0 - 2025-04-21
 
@@ -14,6 +23,7 @@ This changelog is inspired by [Keep a Changelog](https://keepachangelog.com/en/1
   ([Pull Request #117](https://github.com/pe-st/garmin-connect-export/pull/117) by @tymmej) 
 - changed: retry gpx download
   ([Pull Request #118](https://github.com/pe-st/garmin-connect-export/pull/118) by @tymmej) 
+
 
 ## 4.5.0 - 2024-12-18
 
