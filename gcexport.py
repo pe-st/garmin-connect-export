@@ -22,7 +22,6 @@ Activity & event types:
 # Standard library imports
 import argparse
 import csv
-import http.cookiejar
 import io
 import json
 import logging
@@ -32,7 +31,6 @@ import re
 import string
 import sys
 import unicodedata
-import urllib.request
 import zipfile
 from datetime import datetime, timedelta, timezone
 from getpass import getpass
@@ -40,19 +38,25 @@ from math import floor
 from platform import python_version
 from subprocess import call
 from timeit import default_timer as timer
-from urllib.error import HTTPError, URLError
+from urllib.error import HTTPError
 from urllib.parse import urlencode
-from urllib.request import Request
 
 # PyPI imports
-import garth
-from garth.exc import GarthException
+from garminconnect.client import Client as GarminClient
+from garminconnect.exceptions import GarminConnectConnectionError
 
 # Local application/library specific imports
 from filtering import read_exclude, update_download_stats
 
-COOKIE_JAR = http.cookiejar.CookieJar()
-OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(COOKIE_JAR), urllib.request.HTTPSHandler(debuglevel=0))
+# Monkey-patch garminconnect to skip broken mobile login strategies that cause 429 errors
+GarminClient._mobile_login_cffi = lambda *args, **kwargs: (_ for _ in ()).throw(Exception("Skipping broken mobile login"))
+GarminClient._mobile_login_requests = lambda *args, **kwargs: (_ for _ in ()).throw(Exception("Skipping broken mobile login"))
+
+# Suppress garminconnect logging for the skipped strategies to avoid confusing output
+import logging
+logging.getLogger("garminconnect.client").setLevel(logging.ERROR)
+
+_garmin_client: GarminClient | None = None
 
 SCRIPT_VERSION = '4.6.2'
 
@@ -108,8 +112,8 @@ URL_GC_LIST = f'{GARMIN_BASE_URL}/activitylist-service/activities/search/activit
 URL_GC_ACTIVITY = f'{GARMIN_BASE_URL}/activity-service/activity/'
 URL_GC_DEVICE = f'{GARMIN_BASE_URL}/device-service/deviceservice/app-info/'
 URL_GC_GEAR = f'{GARMIN_BASE_URL}/gear-service/gear/filterGear?activityId='
-URL_GC_ACT_PROPS = f'{GARMIN_BASE_URL}/web-translations/activity_types/activity_types.properties'
-URL_GC_EVT_PROPS = f'{GARMIN_BASE_URL}/web-translations/event_types/event_types.properties'
+URL_GC_ACT_PROPS = f'{GARMIN_BASE_URL}/activity-service/activity/activityTypes'
+URL_GC_EVT_PROPS = f'{GARMIN_BASE_URL}/activity-service/activity/eventTypes'
 URL_GC_GPX_ACTIVITY = f'{GARMIN_BASE_URL}/download-service/export/gpx/activity/'
 URL_GC_TCX_ACTIVITY = f'{GARMIN_BASE_URL}/download-service/export/tcx/activity/'
 URL_GC_ORIGINAL_ACTIVITY = f'{GARMIN_BASE_URL}/download-service/files/activity/'
@@ -184,56 +188,54 @@ def write_to_file(filename, content, mode='w', file_time=None):
         os.utime(filename, (file_time, file_time))
 
 
+def _path_from_url(url: str) -> str:
+    """Strip the Garmin Connect base URL, returning just the path for the client."""
+    for prefix in ('https://connect.garmin.com/', 'https://connectapi.garmin.com/'):
+        if url.startswith(prefix):
+            return url[len(prefix):]
+    return url.lstrip('/')
+
+
 def http_req(url, post=None, headers=None):
     """
-    Helper function that makes the HTTP requests.
+    Helper function that makes the HTTP requests via the garminconnect client,
+    which handles TLS impersonation, auth tokens and session refresh internally.
 
     :param url:          URL for the request
     :param post:         dictionary of POST parameters
     :param headers:      dictionary of headers
     :return: response body (type 'bytes')
     """
-    request = Request(url)
-    # Tell Garmin we're some supported browser.
-    request.add_header(
-        'User-Agent',
-        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2816.0 Safari/537.36',
-    )
-    request.add_header('nk', 'NT')  # necessary since 2021-02-23 to avoid http error code 402
-    request.add_header('authorization', str(garth.client.oauth2_token))
-    request.add_header('di-backend', 'connectapi.garmin.com')
-    if headers:
-        for header_key, header_value in headers.items():
-            request.add_header(header_key, header_value)
-    if post:
-        post = urlencode(post)  # Convert dictionary to POST parameter string.
-        post = post.encode("utf-8")
-    start_time = timer()
+    if _garmin_client is None:
+        raise GarminException('Not authenticated')
+
+    path = _path_from_url(url)
+    extra_headers = headers or {}
+
     try:
-        response = OPENER.open(request, data=post)
-    except HTTPError as ex:
-        if hasattr(ex, 'code'):
-            logging.error('Server couldn\'t fulfill the request, url %s, code %s, error: %s', url, ex.code, ex)
-            logging.info('Headers returned:\n%s', ex.info())
-        raise
-    except URLError as ex:
-        if hasattr(ex, 'reason'):
-            logging.error('Failed to reach url %s, error: %s', url, ex)
-        raise
-    logging.debug('Got %s in %s s from %s', response.getcode(), timer() - start_time, url)
-    logging.debug('Headers returned:\n%s', response.info())
+        if post is None and path.startswith('download-service/'):
+            return _garmin_client.download(path, headers=extra_headers)
 
-    # N.B. urllib2 will follow any 302 redirects.
-    # print(response.getcode())
-    if response.getcode() == 204:
-        # 204 = no content, e.g. for activities without GPS coordinates there is no GPX download.
-        # Write an empty file to prevent redownloading it.
-        logging.info('Got 204 for %s, returning empty response', url)
-        return b''
-    if response.getcode() != 200:
-        raise GarminException(f'Bad return code ({response.getcode()}) for: {url}')
+        if post is not None:
+            post_data = urlencode(post).encode('utf-8') if isinstance(post, dict) else post
+            resp = _garmin_client.request('POST', 'connectapi', path, headers=extra_headers, data=post_data)
+        else:
+            resp = _garmin_client.request('GET', 'connectapi', path, headers=extra_headers)
 
-    return response.read()
+    except GarminConnectConnectionError as ex:
+        msg = str(ex)
+        m = re.search(r'API Error (\d+)', msg)
+        if m:
+            code = int(m.group(1))
+            if code == 404:
+                logging.debug("Server couldn't fulfill the request, url %s, code %s, error: %s", url, code, ex)
+            else:
+                logging.error("Server couldn't fulfill the request, url %s, code %s, error: %s", url, code, ex)
+            raise HTTPError(url, code, msg, {}, None) from ex
+        logging.error('Failed to reach url %s, error: %s', url, ex)
+        raise GarminException(f'Failed to reach {url}: {ex}') from ex
+
+    return resp.content
 
 
 def http_req_as_string(url, post=None, headers=None):
@@ -253,6 +255,22 @@ def load_properties(multiline, separator='=', comment_char='#', keys=None):
     :return:
     """
     props = {}
+    
+    # Attempt to parse Garmin's new JSON array format that returns 'typeKey'
+    try:
+        data = json.loads(multiline)
+        if isinstance(data, list):
+            for item in data:
+                type_key = item.get('typeKey', item.get('key'))
+                if type_key:
+                    # Provide a fallback display name by title-casing the key
+                    props[type_key] = type_key.replace('_', ' ').title()
+                    if keys is not None:
+                        keys.append(type_key)
+            return props
+    except ValueError:
+        pass
+
     for line in multiline.splitlines():
         stripped_line = line.strip()
         if stripped_line and not stripped_line.startswith(comment_char):
@@ -468,45 +486,40 @@ def login_to_garmin_connect(args):
     """
     Perform all HTTP requests to login to Garmin Connect.
     """
-    garth_session_directory = args.session if args.session else None
+    global _garmin_client
+    session_directory = args.session if args.session else None
 
     print('Authenticating...', end='')
     try:
+        _garmin_client = GarminClient()
         login_required = False
 
         # try to load data if a session directory is given
-        if garth_session_directory:
+        if session_directory:
             try:
-                garth.resume(garth_session_directory)
-            except GarthException as ex:
+                _garmin_client.load(session_directory)
+            except Exception as ex:
                 logging.debug("Could not resume session, error: %s", ex)
                 login_required = True
-            except FileNotFoundError as ex:
-                logging.debug("Could not resume session, (non-garth) error: %s", ex)
+            if not login_required and not _garmin_client.is_authenticated:
+                logging.debug("Session expired or invalid")
                 login_required = True
-            try:
-                garth.client.username
-            except GarthException as ex:
-                logging.debug("Session expired, error: %s", ex)
-                login_required = True
-            except AssertionError as ex:
-                logging.debug("Token not found, (non-garth) error: %s", ex)
-                login_required = True
-            logging.info("Authenticating using OAuth token from %s", garth_session_directory)
+            if not login_required:
+                logging.info("Authenticating using saved token from %s", session_directory)
         else:
             login_required = True
 
         if login_required:
             username = args.username if args.username else input('Username: ')
             password = args.password if args.password else getpass()
-            garth.login(username, password)
+            _garmin_client.login(username, password)
 
             # try to store data if a session directory was given
-            if garth_session_directory:
+            if session_directory:
                 try:
-                    garth.save(garth_session_directory)
-                except GarthException as ex:
-                    logging.warning("Unable to store session data to %s, error: %s", garth_session_directory, ex)
+                    _garmin_client.dump(session_directory)
+                except Exception as ex:
+                    logging.warning("Unable to store session data to %s, error: %s", session_directory, ex)
 
     except Exception as ex:
         raise GarminException(f'Authentication failure ({ex}). Did you enter correct credentials?') from ex
@@ -1289,14 +1302,29 @@ def main(argv):
         total_to_download = int(args.count)
 
     # Load some dictionaries with lookup data from REST services
-    activity_type_props = http_req_as_string(URL_GC_ACT_PROPS)
-    if args.verbosity > 0:
-        write_to_file(os.path.join(args.directory, 'activity_types.properties'), activity_type_props, 'w')
-    activity_type_name = load_properties(activity_type_props)
-    event_type_props = http_req_as_string(URL_GC_EVT_PROPS)
-    if args.verbosity > 0:
-        write_to_file(os.path.join(args.directory, 'event_types.properties'), event_type_props, 'w')
-    event_type_name = load_properties(event_type_props)
+    try:
+        activity_type_props = http_req_as_string(URL_GC_ACT_PROPS)
+        if args.verbosity > 0:
+            write_to_file(os.path.join(args.directory, 'activity_types.properties'), activity_type_props, 'w')
+        activity_type_name = load_properties(activity_type_props)
+    except HTTPError as ex:
+        if hasattr(ex, 'code') and ex.code == 404:
+            logging.warning("Could not fetch activity types properties (HTTP 404). Proceeding without translations.")
+            activity_type_name = {}
+        else:
+            raise
+
+    try:
+        event_type_props = http_req_as_string(URL_GC_EVT_PROPS)
+        if args.verbosity > 0:
+            write_to_file(os.path.join(args.directory, 'event_types.properties'), event_type_props, 'w')
+        event_type_name = load_properties(event_type_props)
+    except HTTPError as ex:
+        if hasattr(ex, 'code') and ex.code == 404:
+            logging.warning("Could not fetch event types properties (HTTP 404). Proceeding without translations.")
+            event_type_name = {}
+        else:
+            raise
 
     activities = fetch_activity_list(args, total_to_download)
 
